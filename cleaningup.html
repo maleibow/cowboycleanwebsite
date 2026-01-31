@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cowboy Clean: Cleaning up the Desert</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            border: 4px solid #2c3e50;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            text-shadow: 2px 2px #000;
+            pointer-events: none;
+        }
+
+        .hud-text {
+            font-size: 16px;
+            color: #fff;
+            text-transform: uppercase;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        
+        #powerup-status {
+            color: #f1c40f;
+            display: none;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        #start-screen, #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 10;
+        }
+
+        h1 {
+            color: #3498db; 
+            font-size: 40px;
+            margin-bottom: 20px;
+            text-shadow: 0px 0px 10px #3498db, 4px 4px #e67e22;
+            line-height: 1.5;
+        }
+
+        p {
+            line-height: 1.8;
+            font-size: 14px;
+            color: #ddd;
+            max-width: 600px;
+        }
+
+        .blink {
+            animation: blinker 0.5s linear infinite;
+            color: #e74c3c;
+            margin-top: 30px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        @keyframes blinker {
+            50% { opacity: 0; }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
+    
+    <div id="ui-layer">
+        <div>
+            <div id="score-display" class="hud-text">SCORE: 000000</div>
+            <div id="health-display" class="hud-text">HEALTH: 100%</div>
+        </div>
+        <div id="powerup-status" class="hud-text">SUPER SPRAY!</div>
+    </div>
+
+    <div id="start-screen">
+        <h1>COWBOY CLEAN<br><span style="font-size:20px; color:#3498db">Cleaning up the Desert</span></h1>
+        <p>The desert is filthy. Use your trusty <strong>Spray Bottle</strong> to wash away the grime!</p>
+        <p style="color: #3498db; margin-top: 10px;">
+            ARROWS: Move & Aim<br>
+            SPACE: Jump<br>
+            SHIFT: Spray Cleaner
+        </p>
+        <div class="blink">PRESS SPACE TO START</div>
+    </div>
+
+    <div id="game-over-screen" class="hidden">
+        <h1 style="color: #e74c3c;">GRIME OVERLOAD</h1>
+        <div id="final-score" class="hud-text">FINAL SCORE: 0</div>
+        <div class="blink">PRESS SPACE TO RETRY</div>
+    </div>
+</div>
+
+<script>
+/**
+ * AUDIO ENGINE
+ */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+const Sound = {
+    playTone: (freq, type, duration, vol = 0.1) => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    },
+    shoot: () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+    },
+    jump: () => Sound.playTone(200, 'square', 0.15, 0.1),
+    hit: () => {
+        Sound.playTone(80, 'sawtooth', 0.2, 0.3);
+        Sound.playTone(60, 'square', 0.2, 0.3);
+    },
+    enemyDie: () => Sound.playTone(150, 'triangle', 0.1, 0.2),
+    bombDrop: () => Sound.playTone(300, 'sawtooth', 0.4, 0.15),
+    powerup: () => {
+        Sound.playTone(500, 'sine', 0.1, 0.1);
+        setTimeout(() => Sound.playTone(700, 'sine', 0.1, 0.1), 80);
+        setTimeout(() => Sound.playTone(900, 'sine', 0.2, 0.1), 160);
+    },
+    bossSpawn: () => {
+        Sound.playTone(60, 'sawtooth', 1.5, 0.4);
+        Sound.playTone(50, 'square', 1.5, 0.4);
+    }
+};
+
+/**
+ * GAME ENGINE
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const startScreen = document.getElementById('start-screen');
+const gameOverScreen = document.getElementById('game-over-screen');
+const scoreDisplay = document.getElementById('score-display');
+const finalScoreDisplay = document.getElementById('final-score');
+const healthDisplay = document.getElementById('health-display');
+const powerupStatus = document.getElementById('powerup-status');
+
+// Dirt spots for damage overlay
+const dirtSpots = [];
+for(let i=0; i<25; i++) {
+    dirtSpots.push({
+        x: Math.random() * 800,
+        y: Math.random() * 450,
+        r: Math.random() * 30 + 10,
+        type: Math.random() > 0.7 ? 'web' : 'mud',
+        seed: Math.random()
+    });
+}
+
+// Game State
+let gameState = 'START';
+let score = 0;
+let frames = 0;
+
+// Input Handling
+const keys = {
+    ArrowUp: false,
+    ArrowDown: false,
+    ArrowLeft: false,
+    ArrowRight: false,
+    Space: false,
+    Shift: false
+};
+
+window.addEventListener('keydown', (e) => {
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code) || e.key === 'Shift') e.preventDefault();
+    if (e.key === 'Shift') keys.Shift = true;
+    if (e.code === 'Space') keys.Space = true;
+    if (e.code === 'ArrowLeft') keys.ArrowLeft = true;
+    if (e.code === 'ArrowRight') keys.ArrowRight = true;
+    if (e.code === 'ArrowDown') keys.ArrowDown = true;
+    if (e.code === 'ArrowUp') keys.ArrowUp = true;
+
+    if (gameState === 'START' && e.code === 'Space') startGame();
+    if (gameState === 'GAMEOVER' && e.code === 'Space') startGame();
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'Shift') keys.Shift = false;
+    if (e.code === 'Space') keys.Space = false;
+    if (e.code === 'ArrowLeft') keys.ArrowLeft = false;
+    if (e.code === 'ArrowRight') keys.ArrowRight = false;
+    if (e.code === 'ArrowDown') keys.ArrowDown = false;
+    if (e.code === 'ArrowUp') keys.ArrowUp = false;
+});
+
+// Physics Constants
+const GRAVITY = 0.7; 
+const FRICTION = 0.85;
+const JUMP_FORCE = -13;
+const SPEED = 6; 
+
+// Global Game Variables
+let player;
+let projectiles = [];
+let enemyProjectiles = [];
+let enemies = [];
+let obstacles = [];
+let powerups = [];
+let effects = [];
+let spawnTimer = 0;
+let obstacleTimer = 0;
+let bgOffset1 = 0;
+let bgOffset2 = 0;
+let bgOffset3 = 0;
+let nextBossScore = 800;
+
+class Player {
+    constructor() {
+        this.width = 40;
+        this.height = 70;
+        this.x = 100;
+        this.y = canvas.height - 100 - this.height;
+        this.vx = 0;
+        this.vy = 0;
+        this.grounded = false;
+        this.facingRight = true;
+        this.ducking = false;
+        this.health = 100;
+        this.invulnerable = 0;
+        this.shootTimer = 0;
+        this.runCycle = 0;
+        this.superSprayTimer = 0;
+    }
+
+    update() {
+        if (keys.ArrowLeft) {
+            this.vx = -SPEED;
+            this.facingRight = false;
+            this.runCycle++;
+        }
+        if (keys.ArrowRight) {
+            this.vx = SPEED;
+            this.facingRight = true;
+            this.runCycle++;
+        }
+        if (!keys.ArrowLeft && !keys.ArrowRight) {
+            this.vx *= FRICTION;
+            this.runCycle = 0;
+        }
+
+        if (keys.ArrowDown && this.grounded) {
+            this.ducking = true;
+            this.height = 45;
+            this.vx = 0;
+        } else {
+            this.ducking = false;
+            this.height = 70;
+        }
+
+        if (keys.Space && this.grounded && !this.ducking) {
+            this.vy = JUMP_FORCE;
+            this.grounded = false;
+            Sound.jump();
+        }
+
+        let cooldown = this.superSprayTimer > 0 ? 4 : 8; 
+        if (keys.Shift && this.shootTimer <= 0) {
+            this.shoot();
+            this.shootTimer = cooldown;
+        }
+        if (this.shootTimer > 0) this.shootTimer--;
+        if (this.superSprayTimer > 0) this.superSprayTimer--;
+
+        this.vy += GRAVITY;
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0) this.x = 0;
+        if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+
+        const groundLevel = canvas.height - 50; 
+        if (this.y + this.height > groundLevel) {
+            this.y = groundLevel - this.height;
+            this.vy = 0;
+            this.grounded = true;
+        }
+
+        if (this.invulnerable > 0) this.invulnerable--;
+    }
+
+    shoot() {
+        let originX = this.facingRight ? this.x + this.width : this.x;
+        let originY = this.ducking ? this.y + 15 : this.y + 25;
+        let baseSpeedX = 0;
+        let baseSpeedY = 0;
+        let spreadX = 0;
+        let spreadY = 0;
+
+        if (keys.ArrowUp) {
+            originX = this.x + this.width/2;
+            originY = this.y;
+            baseSpeedX = 0;
+            baseSpeedY = -12;
+            spreadX = 5;
+            spreadY = 2;
+        } else if (keys.ArrowDown && !this.grounded) {
+            originX = this.x + this.width/2;
+            originY = this.y + this.height;
+            baseSpeedX = 0;
+            baseSpeedY = 12;
+            spreadX = 5;
+            spreadY = 2;
+        } else {
+            baseSpeedX = this.facingRight ? 12 : -12;
+            baseSpeedY = 0;
+            spreadX = 2;
+            spreadY = 5;
+        }
+
+        let count = this.superSprayTimer > 0 ? 10 : 6;
+        let modifier = this.superSprayTimer > 0 ? 1.5 : 1.0;
+
+        for(let i=0; i<count; i++) {
+            let vx = baseSpeedX + (Math.random() * spreadX * modifier - (spreadX * modifier / 2));
+            let vy = baseSpeedY + (Math.random() * spreadY * modifier - (spreadY * modifier / 2));
+            projectiles.push(new Projectile(originX, originY, vx, vy));
+        }
+        Sound.shoot();
+    }
+
+    draw() {
+        if (this.invulnerable > 0 && Math.floor(frames / 4) % 2 === 0) return;
+
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        if (!this.facingRight) ctx.scale(-1, 1);
+
+        // Drop Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.beginPath();
+        ctx.ellipse(0, this.height/2, 15, 4, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // Legs (Gradient)
+        let legGrad = ctx.createLinearGradient(-10, 0, 10, 40);
+        legGrad.addColorStop(0, '#222');
+        legGrad.addColorStop(1, '#000');
+        ctx.fillStyle = legGrad;
+
+        if (this.ducking) {
+            ctx.fillRect(-10, 10, 25, 12);
+        } else {
+            const legOffset = Math.sin(this.runCycle * 0.4) * 6;
+            ctx.fillRect(-12 + legOffset/2, 10, 10, 25 - legOffset);
+            ctx.fillRect(2 - legOffset/2, 10, 10, 25 + legOffset);
+        }
+
+        // Boots (Gradient & Detail)
+        let bootGrad = ctx.createLinearGradient(0, 20, 0, 40);
+        bootGrad.addColorStop(0, '#8d6e63');
+        bootGrad.addColorStop(1, '#3e2723');
+        ctx.fillStyle = bootGrad;
+        
+        if (!this.ducking) {
+            const legOffset = Math.sin(this.runCycle * 0.4) * 6;
+            ctx.fillRect(-14 + legOffset/2, 32 - legOffset, 16, 8); 
+            ctx.fillRect(0 - legOffset/2, 32 + legOffset, 16, 8);
+        } else {
+             ctx.fillRect(-14, 20, 16, 8);
+        }
+
+        // Torso
+        ctx.fillStyle = '#f5f5f5';
+        if (this.ducking) {
+            ctx.fillRect(-15, -5, 30, 20);
+        } else {
+            ctx.fillRect(-15, -15, 30, 30);
+            ctx.fillStyle = '#ddd';
+            ctx.fillRect(-2, -10, 4, 2);
+            ctx.fillRect(-2, 0, 4, 2);
+            ctx.fillRect(-2, 10, 4, 2);
+        }
+
+        // Belt Buckle
+        let goldGrad = ctx.createLinearGradient(-5, 10, 5, 15);
+        goldGrad.addColorStop(0, '#f1c40f');
+        goldGrad.addColorStop(0.5, '#fff');
+        goldGrad.addColorStop(1, '#f39c12');
+        ctx.fillStyle = goldGrad;
+        if (this.ducking) ctx.fillRect(-6, 12, 12, 6);
+        else ctx.fillRect(-6, 10, 12, 6);
+
+        // Head
+        let headY = this.ducking ? -15 : -25;
+        if (keys.ArrowUp) headY -= 3; 
+
+        ctx.fillStyle = '#ffccaa';
+        ctx.fillRect(-10, headY, 20, 20);
+        ctx.fillStyle = 'rgba(0,0,0,0.1)';
+        ctx.fillRect(-10, headY + 15, 20, 5); 
+
+        // Hair
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath();
+        for(let i=0; i<3; i++) {
+            ctx.arc(-8 + (i*2), headY + 16 + (i*2), 6, 0, Math.PI * 2);
+        }
+        ctx.fill();
+
+        // Hat
+        let hatGrad = ctx.createLinearGradient(0, headY-15, 0, headY);
+        hatGrad.addColorStop(0, '#5d4037');
+        hatGrad.addColorStop(1, '#3e2723');
+        ctx.fillStyle = hatGrad;
+        ctx.fillRect(-22, headY - 5, 44, 6); 
+        ctx.fillRect(-14, headY - 16, 28, 12); 
+        ctx.fillStyle = '#111';
+        ctx.fillRect(-14, headY - 8, 28, 3);
+
+        // Arms & Aiming
+        let armX = 5;
+        let armY = this.ducking ? 0 : -5;
+        let armRot = 0;
+        
+        if (keys.ArrowUp) armRot = -Math.PI / 2;
+        else if (keys.ArrowDown && !this.grounded) armRot = Math.PI / 2;
+
+        ctx.save();
+        ctx.translate(armX, armY);
+        ctx.rotate(armRot);
+
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, -4, 16, 8);
+        ctx.fillStyle = '#ffccaa';
+        ctx.fillRect(16, -4, 6, 8);
+
+        // Windex Bottle
+        ctx.fillStyle = this.superSprayTimer > 0 ? '#e74c3c' : '#3498db'; 
+        let liquidGrad = ctx.createLinearGradient(20, -10, 30, 10);
+        liquidGrad.addColorStop(0, this.superSprayTimer > 0 ? '#c0392b' : '#2980b9');
+        liquidGrad.addColorStop(1, this.superSprayTimer > 0 ? '#e74c3c' : '#3498db');
+        ctx.fillStyle = liquidGrad;
+        
+        ctx.beginPath();
+        ctx.moveTo(22, -8);
+        ctx.lineTo(32, -8);
+        ctx.lineTo(34, 5);
+        ctx.lineTo(20, 5);
+        ctx.fill();
+
+        ctx.fillStyle = '#ecf0f1';
+        ctx.fillRect(26, -11, 8, 4); 
+        ctx.fillRect(34, -12, 4, 6); 
+
+        ctx.restore(); 
+        ctx.restore(); 
+    }
+}
+
+class Projectile {
+    constructor(x, y, vx, vy) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.size = Math.random() * 3 + 3;
+        this.life = 50;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+    }
+    draw() {
+        let grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        grad.addColorStop(0.4, 'rgba(52, 152, 219, 0.6)');
+        grad.addColorStop(1, 'rgba(52, 152, 219, 0)');
+        
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+class EnemyProjectile {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = 0;
+        this.vy = 5; 
+        this.life = 120;
+        this.rot = 0;
+    }
+    update() {
+        this.y += this.vy;
+        this.life--;
+        this.rot += 0.1;
+    }
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rot);
+        
+        ctx.fillStyle = '#5d4037';
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI*2);
+        ctx.moveTo(0, -8);
+        ctx.lineTo(0, -12);
+        ctx.fill();
+
+        ctx.strokeStyle = '#27ae60';
+        ctx.beginPath();
+        ctx.arc(0, 0, 12, 0, 1);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+}
+
+class Obstacle {
+    constructor(type) {
+        this.type = type; 
+        this.width = 30;
+        this.height = 50;
+        this.x = canvas.width + 50;
+        this.y = canvas.height - 50 - this.height; 
+        this.vx = -SPEED; 
+        this.rot = 0;
+        
+        if (this.type === 'tumbleweed') {
+            this.width = 30;
+            this.height = 30;
+            this.vx = -(SPEED + 2); 
+            this.vy = 0;
+        }
+    }
+    update() {
+        this.x += this.vx;
+        if (this.type === 'tumbleweed') {
+            this.rot += 0.2;
+            this.y = (canvas.height - 50 - this.height) - Math.abs(Math.sin(frames * 0.15)) * 80;
+        }
+    }
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(0, this.height/2 + 5, this.width/2, 4, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        if (this.type === 'cactus') {
+            let cactusGrad = ctx.createLinearGradient(-15, 0, 15, 0);
+            cactusGrad.addColorStop(0, '#1e8449');
+            cactusGrad.addColorStop(0.5, '#2ecc71');
+            cactusGrad.addColorStop(1, '#1e8449');
+            ctx.fillStyle = cactusGrad;
+
+            ctx.beginPath();
+            ctx.roundRect(-10, -25, 20, 50, 10);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.roundRect(-22, -15, 12, 12, 5); 
+            ctx.roundRect(-22, -25, 10, 15, 5); 
+            ctx.fill();
+            
+            ctx.fillStyle = '#f1c40f';
+            for(let i=0; i<5; i++) {
+                ctx.fillRect(-12, -20 + (i*10), 4, 2);
+                ctx.fillRect(8, -20 + (i*10), 4, 2);
+            }
+
+        } else {
+            ctx.rotate(this.rot);
+            ctx.strokeStyle = '#8d6e63';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for(let i=0; i<12; i++) {
+                let angle = (i/12) * Math.PI*2;
+                let r = 15;
+                let cp1x = Math.cos(angle) * r;
+                let cp1y = Math.sin(angle) * r;
+                let cp2x = Math.cos(angle + Math.PI) * (r/2);
+                let cp2y = Math.sin(angle + Math.PI) * (r/2);
+                ctx.moveTo(cp1x, cp1y);
+                ctx.quadraticCurveTo(0, 0, cp2x, cp2y);
+            }
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+}
+
+class Powerup {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type; 
+        this.width = 25;
+        this.height = 25;
+        this.vx = -2;
+        this.vy = -6;
+        this.glow = 0;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.3;
+        this.glow += 0.1;
+        if (this.y + this.height > canvas.height - 50) {
+            this.y = canvas.height - 50 - this.height;
+            this.vy = 0;
+            this.vx = -SPEED;
+        }
+    }
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        ctx.translate(0, Math.sin(frames * 0.2) * 5);
+        
+        let glowSize = 15 + Math.sin(this.glow)*5;
+        let grad = ctx.createRadialGradient(0,0,5, 0,0, glowSize);
+        grad.addColorStop(0, 'rgba(255,255,255,0.8)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0,0,glowSize,0,Math.PI*2);
+        ctx.fill();
+
+        if (this.type === 'health') {
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.moveTo(0, 5);
+            ctx.bezierCurveTo(0, 5, -10, -10, -5, -12);
+            ctx.bezierCurveTo(0, -15, 0, -5, 0, -5);
+            ctx.bezierCurveTo(0, -5, 0, -15, 5, -12);
+            ctx.bezierCurveTo(10, -10, 0, 5, 0, 5);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(-3, -8, 2, 0, Math.PI*2);
+            ctx.fill();
+        } else {
+            ctx.fillStyle = '#f1c40f'; 
+            ctx.beginPath();
+            ctx.moveTo(2, -10);
+            ctx.lineTo(8, -2);
+            ctx.lineTo(12, -2);
+            ctx.lineTo(0, 12);
+            ctx.lineTo(4, 2);
+            ctx.lineTo(-4, 2);
+            ctx.lineTo(-10, -10);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+class Enemy {
+    constructor(type, spawnSide = 'right') {
+        this.type = type; 
+        this.width = 40;
+        this.height = 40;
+        
+        let speedMod = (score/1000) + 1.5; 
+
+        if (spawnSide === 'right') {
+            this.x = canvas.width + 50;
+            this.vx = -(Math.random() * 2 + speedMod);
+        } else {
+            this.x = -50;
+            this.vx = (Math.random() * 2 + speedMod);
+        }
+
+        this.y = canvas.height - 50 - this.height;
+        this.health = 1;
+        this.maxHealth = 1;
+        this.frameOffset = Math.random() * 100;
+        this.startY = this.y;
+        this.spawnSide = spawnSide;
+        
+        if (this.type === 'ice') {
+            this.health = 2;
+            this.y -= 15;
+            this.vx *= 1.1; 
+        }
+        if (this.type === 'dirty_ice') {
+            this.health = 4; 
+            this.vx *= 1.3;
+            this.width = 50;
+            this.height = 50;
+            this.y = canvas.height - 50 - this.height;
+        }
+        if (this.type === 'boss') {
+            this.width = 140;
+            this.height = 140;
+            this.y = canvas.height - 50 - this.height;
+            this.health = 80; 
+            this.maxHealth = 80;
+            this.vx = -0.8; 
+            this.x = canvas.width + 100;
+        }
+        if (this.type === 'vulture') {
+            this.width = 60;
+            this.height = 30;
+            this.y = 40 + (Math.random() * 100); 
+            this.vx = (spawnSide === 'right') ? -6 : 6;
+            this.health = 3;
+        }
+        if (this.type === 'rabbit') {
+            this.width = 40;
+            this.height = 50;
+            this.health = 4;
+            this.vx = (spawnSide === 'right') ? -4.5 : 4.5;
+            this.startY = canvas.height - 50 - this.height;
+            this.y = this.startY;
+        }
+        if (this.type === 'spider') {
+            this.width = 50;
+            this.height = 20;
+            this.health = 2;
+            this.state = 'climbing';
+            this.x = Math.random() * (canvas.width - 100) + 50;
+            this.y = canvas.height + 20;
+            this.vx = 0;
+            this.vy = -3; 
+        }
+
+        this.maxHealth = this.health;
+    }
+
+    update() {
+        if (this.type === 'boss') {
+            this.x += this.vx;
+            if (this.x < 600 && this.vx < 0) this.vx = 0;
+            if (frames % 90 === 0 && this.x < 750) {
+                 let minion = new Enemy('dirt', 'right');
+                 minion.x = this.x;
+                 minion.vx = -6;
+                 enemies.push(minion);
+            }
+            return;
+        }
+
+        if (this.type === 'spider') {
+            if (this.state === 'climbing') {
+                this.y += this.vy;
+                if (this.y <= canvas.height - 50 - this.height) {
+                    this.y = canvas.height - 50 - this.height;
+                    this.state = 'walking';
+                    this.vx = (player.x > this.x) ? 5 + (score/2000) : -5 - (score/2000); 
+                    this.vy = 0;
+                }
+            } else {
+                this.x += this.vx;
+                this.y = (canvas.height - 50 - this.height) + (Math.random() * 2 - 1); 
+            }
+            return;
+        }
+
+        this.x += this.vx;
+
+        if (this.type === 'ice') {
+            this.y += Math.sin((frames + this.frameOffset) * 0.15) * 3;
+        }
+        
+        if (this.type === 'vulture') {
+            this.y += Math.sin((frames * 0.08) + this.frameOffset) * 2;
+            if (Math.random() < 0.04 && this.x > 50 && this.x < canvas.width - 50) {
+                enemyProjectiles.push(new EnemyProjectile(this.x + this.width/2, this.y + this.height));
+                Sound.bombDrop();
+            }
+        }
+
+        if (this.type === 'rabbit') {
+            let hopHeight = 90;
+            let hopSpeed = 0.2;
+            let hopOffset = Math.abs(Math.sin((frames + this.frameOffset) * hopSpeed)) * hopHeight;
+            this.y = this.startY - hopOffset;
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        
+        if (this.vx > 0) ctx.scale(-1, 1);
+
+        if (this.type === 'boss') {
+            let pulse = Math.sin(frames * 0.1) * 5;
+            
+            let aura = ctx.createRadialGradient(0, 0, 40, 0, 0, 80);
+            aura.addColorStop(0, 'rgba(142, 68, 173, 0.8)');
+            aura.addColorStop(1, 'rgba(142, 68, 173, 0)');
+            ctx.fillStyle = aura;
+            ctx.beginPath();
+            ctx.arc(0, 0, 80 + pulse, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.fillStyle = '#6c3483';
+            ctx.beginPath();
+            ctx.roundRect(-50, -50, 100, 100, 20);
+            ctx.fill();
+            
+            ctx.fillStyle = '#8e44ad';
+            ctx.beginPath();
+            ctx.arc(-20, 20, 15 + pulse/2, 0, Math.PI*2);
+            ctx.arc(30, -30, 10 - pulse/2, 0, Math.PI*2);
+            ctx.arc(20, 30, 8, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#f1c40f';
+            ctx.fillStyle = '#f1c40f';
+            ctx.beginPath();
+            ctx.moveTo(-30, -10); ctx.lineTo(-10, -10); ctx.lineTo(-20, 0); 
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(10, -10); ctx.lineTo(30, -10); ctx.lineTo(20, 0); 
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#c0392b';
+            ctx.fillRect(-50, -70, 100, 10);
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(-50, -70, 100 * (this.health/this.maxHealth), 10);
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(-50, -70, 100, 10);
+
+        } else if (this.type === 'dirt') {
+            let grad = ctx.createRadialGradient(-5, -5, 2, 0, 0, 20);
+            grad.addColorStop(0, '#795548');
+            grad.addColorStop(1, '#3e2723');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            let r = this.width/2 + Math.sin((frames + this.frameOffset)*0.2) * 2;
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(-8, -5, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(8, -5, 5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(-8, -5, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(8, -5, 2, 0, Math.PI*2); ctx.fill();
+
+        } else if (this.type === 'ice') {
+            let grad = ctx.createLinearGradient(-10, -20, 10, 20);
+            grad.addColorStop(0, '#d6eaf8');
+            grad.addColorStop(1, '#5dade2');
+            ctx.fillStyle = grad;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -20);
+            ctx.lineTo(15, -5);
+            ctx.lineTo(10, 20);
+            ctx.lineTo(-10, 20);
+            ctx.lineTo(-15, -5);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-5, -15); ctx.lineTo(-10, 0);
+            ctx.stroke();
+
+            ctx.fillStyle = '#154360';
+            ctx.fillRect(-8, 0, 16, 4);
+
+        } else if (this.type === 'dirty_ice') {
+            let grad = ctx.createLinearGradient(-20, -20, 20, 20);
+            grad.addColorStop(0, '#a1887f');
+            grad.addColorStop(1, '#5d4037');
+            ctx.fillStyle = grad;
+            ctx.fillRect(-25, -25, 50, 50);
+            
+            ctx.fillStyle = '#AED6F1';
+            ctx.beginPath();
+            ctx.moveTo(-25, -25); ctx.lineTo(-10, -25); ctx.lineTo(-25, -10);
+            ctx.fill();
+
+            ctx.shadowColor = 'red';
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(-10, -5, 4, 0, Math.PI*2);
+            ctx.arc(10, -5, 4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+        } else if (this.type === 'vulture') {
+            ctx.fillStyle = '#222';
+            let wingY = Math.sin(frames * 0.4) * 20;
+            
+            ctx.beginPath();
+            ctx.moveTo(5, -5);
+            ctx.quadraticCurveTo(20, -20 + wingY, 30, 0);
+            ctx.lineTo(10, 5);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 20, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(15, -25 + wingY, 35, 5);
+            ctx.lineTo(10, 10);
+            ctx.fill();
+
+            ctx.fillStyle = '#e74c3c'; 
+            ctx.beginPath();
+            ctx.arc(-20, -5, 9, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(-22, -7, 3, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.beginPath(); ctx.arc(-23, -7, 1, 0, Math.PI*2); ctx.fill();
+
+            ctx.fillStyle = '#f1c40f';
+            ctx.beginPath();
+            ctx.moveTo(-28, -5);
+            ctx.lineTo(-38, 0);
+            ctx.lineTo(-28, 5);
+            ctx.fill();
+            
+        } else if (this.type === 'rabbit') {
+            let furGrad = ctx.createRadialGradient(0,0,5, 0,0,20);
+            furGrad.addColorStop(0, '#bdc3c7');
+            furGrad.addColorStop(1, '#7f8c8d');
+            ctx.fillStyle = furGrad;
+            
+            ctx.beginPath();
+            ctx.ellipse(0, 10, 22, 18, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(-12, -12, 14, 14, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#95a5a6';
+            ctx.beginPath();
+            ctx.ellipse(-18, -35, 5, 18, -0.3, 0, Math.PI*2); 
+            ctx.ellipse(-8, -35, 5, 18, 0.1, 0, Math.PI*2); 
+            ctx.fill();
+            ctx.fillStyle = '#ffcdd2';
+            ctx.beginPath();
+            ctx.ellipse(-18, -35, 2, 12, -0.3, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.fillStyle = 'red'; 
+            ctx.beginPath();
+            ctx.arc(-18, -14, 4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(-19, -15, 1, 0, Math.PI*2);
+            ctx.fill();
+
+            ctx.fillStyle = '#7f8c8d';
+            if (this.y < this.startY - 10) {
+                ctx.beginPath(); ctx.roundRect(-20, 20, 25, 10, 5); ctx.fill();
+            } else {
+                ctx.beginPath(); ctx.roundRect(-25, 22, 15, 8, 4); ctx.fill();
+                ctx.beginPath(); ctx.roundRect(5, 22, 15, 8, 4); ctx.fill();
+            }
+
+        } else if (this.type === 'spider') {
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.ellipse(5, 0, 12, 10, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(-8, 0, 6, 6, 0, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.moveTo(2, -4); ctx.lineTo(8, -4); ctx.lineTo(5, 0);
+            ctx.moveTo(2, 4); ctx.lineTo(8, 4); ctx.lineTo(5, 0);
+            ctx.fill();
+
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let legWiggle = Math.sin(frames * 0.8) * 3;
+            for(let i=0; i<4; i++) {
+                ctx.moveTo(-8, 0); 
+                ctx.quadraticCurveTo(-15 - (i*5), -15 + (i*5) + legWiggle, -20 - (i*5), 20);
+                ctx.moveTo(-8, 0);
+                ctx.quadraticCurveTo(5 + (i*5), -15 + (i*5) - legWiggle, 10 + (i*5), 20);
+            }
+            ctx.stroke();
+        }
+
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = Math.random() * 8 - 4;
+        this.vy = Math.random() * 8 - 4;
+        this.life = 40;
+        this.color = color;
+        this.size = Math.random() * 4 + 2;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+        this.vx *= 0.95;
+        this.vy *= 0.95;
+        this.size *= 0.95;
+    }
+    draw() {
+        ctx.globalAlpha = this.life / 40;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+}
+
+function startGame() {
+    player = new Player();
+    projectiles = [];
+    enemyProjectiles = [];
+    enemies = [];
+    effects = [];
+    obstacles = [];
+    powerups = [];
+    score = 0;
+    nextBossScore = 800;
+    player.health = 100;
+    gameState = 'PLAYING';
+    startScreen.classList.add('hidden');
+    gameOverScreen.classList.add('hidden');
+    
+    if (frames === 0) requestAnimationFrame(gameLoop);
+}
+
+function gameOver() {
+    gameState = 'GAMEOVER';
+    gameOverScreen.classList.remove('hidden');
+    finalScoreDisplay.innerText = "FINAL SCORE: " + score;
+    Sound.enemyDie(); 
+}
+
+function spawnManager() {
+    if (score >= nextBossScore) {
+        enemies.push(new Enemy('boss'));
+        nextBossScore += 2000; 
+        Sound.bossSpawn();
+        return; 
+    }
+    
+    const bossExists = enemies.some(e => e.type === 'boss');
+    if (bossExists) return;
+
+    spawnTimer--;
+    if (spawnTimer <= 0) {
+        let availableTypes = ['dirt'];
+        
+        if (score > 50) availableTypes.push('ice');
+        if (score > 150) availableTypes.push('vulture');
+        if (score > 250) availableTypes.push('rabbit');
+        if (score > 400) availableTypes.push('dirty_ice');
+        if (score > 600) availableTypes.push('spider');
+
+        let type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        
+        let side = 'right';
+        if (Math.random() > 0.6 && type !== 'boss' && type !== 'spider') side = 'left';
+
+        enemies.push(new Enemy(type, side));
+        
+        let difficultyMod = Math.min(70, score / 30);
+        spawnTimer = Math.max(15, 80 - difficultyMod); 
+    }
+
+    obstacleTimer--;
+    if (obstacleTimer <= 0) {
+        const rand = Math.random();
+        let type = rand > 0.5 ? 'cactus' : 'tumbleweed';
+        obstacles.push(new Obstacle(type));
+        obstacleTimer = Math.random() * 150 + 80; 
+    }
+}
+
+function update() {
+    if (gameState !== 'PLAYING') return;
+    
+    player.update();
+    spawnManager();
+
+    bgOffset1 -= 0.2; 
+    bgOffset2 -= 0.5;   
+    bgOffset3 -= SPEED;  
+    
+    if (bgOffset1 <= -canvas.width) bgOffset1 = 0;
+    if (bgOffset2 <= -canvas.width) bgOffset2 = 0;
+    if (bgOffset3 <= -canvas.width) bgOffset3 = 0;
+
+    [projectiles, enemyProjectiles, enemies, obstacles, powerups, effects].forEach(arr => {
+        for (let i = arr.length - 1; i >= 0; i--) {
+            arr[i].update();
+            if (arr[i].life <= 0 || arr[i].x < -150 || arr[i].x > canvas.width + 150 || arr[i].y > canvas.height + 50) {
+                if (arr === projectiles && arr[i].x <= canvas.width && arr[i].x > 0 && arr[i].y > 0 && arr[i].y < canvas.height) {} 
+                else arr.splice(i, 1);
+            }
+        }
+    });
+
+    checkCollisions();
+
+    scoreDisplay.innerText = "SCORE: " + score.toString().padStart(6, '0');
+    healthDisplay.innerText = "HEALTH: " + player.health + "%";
+    
+    if (player.superSprayTimer > 0) {
+        powerupStatus.style.display = 'block';
+    } else {
+        powerupStatus.style.display = 'none';
+    }
+}
+
+function checkCollisions() {
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        let enemy = enemies[i];
+        for (let j = projectiles.length - 1; j >= 0; j--) {
+            let p = projectiles[j];
+            if (rectIntersect(p.x - p.size, p.y - p.size, p.size*2, p.size*2, enemy.x, enemy.y, enemy.width, enemy.height)) {
+                
+                enemy.health--;
+                projectiles.splice(j, 1);
+                
+                for(let k=0; k<2; k++) effects.push(new Particle(p.x, p.y, '#fff'));
+
+                if (enemy.health <= 0) {
+                    let points = 20; 
+                    if (enemy.type === 'boss') points = 1000;
+                    if (enemy.type === 'dirty_ice') points = 100;
+                    if (enemy.type === 'rabbit') points = 80;
+                    if (enemy.type === 'vulture') points = 50;
+                    if (enemy.type === 'spider') points = 60;
+                    
+                    score += points;
+                    Sound.enemyDie();
+                    
+                    if (Math.random() > 0.85 || enemy.type === 'boss') {
+                        let pType = Math.random() > 0.6 ? 'health' : 'super';
+                        powerups.push(new Powerup(enemy.x, enemy.y, pType));
+                    }
+
+                    enemies.splice(i, 1);
+                    for(let k=0; k<8; k++) effects.push(new Particle(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#5d4037'));
+                }
+                break;
+            }
+        }
+    }
+
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        let enemy = enemies[i];
+        if (rectIntersect(player.x + 10, player.y + 10, player.width - 20, player.height - 20, enemy.x, enemy.y, enemy.width, enemy.height)) {
+            takeDamage(25); 
+        }
+    }
+
+    for (let i = enemyProjectiles.length - 1; i >= 0; i--) {
+        let p = enemyProjectiles[i];
+        if (rectIntersect(player.x + 10, player.y + 10, player.width - 20, player.height - 20, p.x - 5, p.y - 5, 10, 10)) {
+             takeDamage(20);
+             enemyProjectiles.splice(i, 1);
+             for(let k=0; k<5; k++) effects.push(new Particle(p.x, p.y, '#5d4037'));
+        }
+    }
+
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+        let obs = obstacles[i];
+        if (rectIntersect(player.x + 12, player.y + 12, player.width - 24, player.height - 24, obs.x + 5, obs.y + 5, obs.width - 10, obs.height - 10)) {
+            takeDamage(15);
+        }
+    }
+
+    for (let i = powerups.length - 1; i >= 0; i--) {
+        let p = powerups[i];
+        if (rectIntersect(player.x, player.y, player.width, player.height, p.x, p.y, p.width, p.height)) {
+            Sound.powerup();
+            if (p.type === 'health') {
+                player.health = Math.min(100, player.health + 30);
+            } else if (p.type === 'super') {
+                player.superSprayTimer = 400; 
+            }
+            powerups.splice(i, 1);
+        }
+    }
+}
+
+function rectIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+    return x2 < x1 + w1 && x2 + w2 > x1 && y2 < y1 + h1 && y2 + h2 > y1;
+}
+
+function takeDamage(amount) {
+    if (player.invulnerable <= 0) {
+        player.health -= amount;
+        player.invulnerable = 60;
+        Sound.hit();
+        canvas.style.transform = `translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+        setTimeout(() => canvas.style.transform = 'none', 100);
+
+        player.vy = -6;
+        
+        if (player.health <= 0) {
+            player.health = 0;
+            gameOver();
+        }
+    }
+}
+
+function drawDamageOverlay() {
+    if (player.health >= 100) return;
+    
+    let intensity = (100 - player.health) / 100;
+    if (intensity < 0) intensity = 0;
+    
+    ctx.save();
+    
+    let grad = ctx.createRadialGradient(400, 225, 200, 400, 225, 500);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, `rgba(60, 30, 0, ${intensity * 0.8})`); 
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+
+    dirtSpots.forEach(spot => {
+        if (spot.type === 'mud') {
+            ctx.fillStyle = `rgba(93, 64, 55, ${intensity * 0.9})`; 
+            ctx.beginPath();
+            ctx.arc(spot.x, spot.y, spot.r, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(spot.x + 5, spot.y + 5, spot.r/2, 0, Math.PI*2);
+            ctx.fill();
+        } else if (spot.type === 'web' && intensity > 0.5) {
+            ctx.strokeStyle = `rgba(255, 255, 255, ${intensity * 0.5})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(spot.x, spot.y);
+            ctx.lineTo(spot.x + 40, spot.y + 40);
+            ctx.moveTo(spot.x + 40, spot.y);
+            ctx.lineTo(spot.x, spot.y + 40);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(spot.x + 20, spot.y + 20, 15, 0, Math.PI*2);
+            ctx.stroke();
+        }
+    });
+
+    ctx.restore();
+}
+
+function drawBackground() {
+    let grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, '#1a1a2e');
+    grad.addColorStop(1, '#e67e22'); 
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    let sunGrad = ctx.createRadialGradient(600, 150, 20, 600, 150, 100);
+    sunGrad.addColorStop(0, '#f1c40f');
+    sunGrad.addColorStop(0.5, 'rgba(241, 196, 15, 0.4)');
+    sunGrad.addColorStop(1, 'rgba(241, 196, 15, 0)');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(600, 150, 100, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#f39c12';
+    ctx.beginPath();
+    ctx.arc(600, 150, 30, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = '#4a235a'; 
+    for (let i = 0; i < 2; i++) {
+        let xOff = bgOffset2 + (i * canvas.width);
+        ctx.beginPath();
+        ctx.moveTo(xOff, canvas.height - 50);
+        ctx.lineTo(xOff + 150, canvas.height - 250);
+        ctx.lineTo(xOff + 250, canvas.height - 180);
+        ctx.lineTo(xOff + 400, canvas.height - 300);
+        ctx.lineTo(xOff + 600, canvas.height - 150);
+        ctx.lineTo(xOff + 800, canvas.height - 50);
+        ctx.fill();
+    }
+
+    for (let i = 0; i < 2; i++) {
+        let xOff = bgOffset3 + (i * canvas.width);
+        let duneGrad = ctx.createLinearGradient(0, canvas.height - 100, 0, canvas.height);
+        duneGrad.addColorStop(0, '#d35400');
+        duneGrad.addColorStop(1, '#a04000');
+        ctx.fillStyle = duneGrad;
+        
+        ctx.beginPath();
+        ctx.moveTo(xOff, canvas.height);
+        ctx.quadraticCurveTo(xOff + 400, canvas.height - 120, xOff + 800, canvas.height);
+        ctx.fill();
+    }
+
+    let groundGrad = ctx.createLinearGradient(0, canvas.height-50, 0, canvas.height);
+    groundGrad.addColorStop(0, '#e67e22');
+    groundGrad.addColorStop(1, '#873600');
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+    
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    for(let i=0; i<20; i++) {
+        let rx = (frames * SPEED + i * 50) % canvas.width;
+        let ry = canvas.height - 40 + (i * 3) % 40;
+        ctx.fillRect(rx, ry, 4, 2);
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+
+    if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
+        obstacles.forEach(o => o.draw());
+        powerups.forEach(p => p.draw());
+        enemies.forEach(e => e.draw());
+        player.draw();
+        effects.forEach(e => e.draw());
+        projectiles.forEach(p => p.draw());
+        enemyProjectiles.forEach(p => p.draw());
+        
+        drawDamageOverlay();
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    frames++;
+    requestAnimationFrame(gameLoop);
+}
+
+drawBackground();
+
+</script>
+</body>
+</html>
