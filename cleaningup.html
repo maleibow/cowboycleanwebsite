@@ -265,27 +265,26 @@
             .action-btn { width: 55px; height: 55px; font-size: 8px; }
         }
         
-        /* DESKTOP MODE: Hide mobile controls, clean up UI */
-        /* Trigger on wider screens OR devices with a fine pointer (mouse) */
-        @media (min-width: 768px), (hover: hover) and (pointer: fine) {
-            .control-panel {
-                display: none !important;
-            }
-            
-            #handheld-console {
-                background-color: transparent;
-                padding: 0;
-            }
+        /* DESKTOP MODE STYLES 
+           These apply when the .desktop-mode class is added by JS
+        */
+        body.desktop-mode .control-panel {
+            display: none !important;
+        }
+        
+        body.desktop-mode #handheld-console {
+            background-color: transparent;
+            padding: 0;
+        }
 
-            #game-wrapper {
-                border: 4px solid #2c3e50;
-                max-width: 900px;
-                box-shadow: 0 0 40px rgba(0,0,0,0.8);
-            }
+        body.desktop-mode #game-wrapper {
+            border: 4px solid #2c3e50;
+            max-width: 900px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
 
-            .mobile-hint {
-                display: none;
-            }
+        body.desktop-mode .mobile-hint {
+            display: none;
         }
     </style>
 </head>
@@ -322,7 +321,7 @@
             
             <p>Use your trusty <strong>Spray Bottle</strong> to wash away the grime!</p>
             <p style="color: #3498db; margin-top: 5px;">
-                DESKTOP: Arrows to Move, Shift to Shoot, Space to Jump
+                ARROWS: Move & Aim<br>SHIFT: Spray<br>SPACE: Jump
             </p>
             <div class="blink" id="start-btn">TAP / CLICK TO START</div>
         </div>
@@ -398,6 +397,24 @@ const Sound = {
 /**
  * GAME ENGINE
  */
+// Detect Desktop vs Mobile using Feature Detection
+function checkPlatform() {
+    // If no touch start event, assume desktop/mouse environment
+    // This fixes the iframe width issue
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    if (!isTouch) {
+        document.body.classList.add('desktop-mode');
+    } else {
+        document.body.classList.remove('desktop-mode');
+    }
+}
+// Run check immediately
+checkPlatform();
+// Run on resize too just in case
+window.addEventListener('resize', checkPlatform);
+
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('start-screen');
