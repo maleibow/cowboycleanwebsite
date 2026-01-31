@@ -266,7 +266,8 @@
         }
         
         /* DESKTOP MODE: Hide mobile controls, clean up UI */
-        @media (min-width: 1024px) {
+        /* Trigger on wider screens OR devices with a fine pointer (mouse) */
+        @media (min-width: 768px), (hover: hover) and (pointer: fine) {
             .control-panel {
                 display: none !important;
             }
