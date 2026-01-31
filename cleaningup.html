@@ -10,7 +10,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #050505;
+            background-color: #1a1a1a;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -19,27 +19,61 @@
             overflow: hidden;
             color: white;
             font-family: 'Press Start 2P', cursive;
-            touch-action: none; /* Prevent browser zooming/scrolling */
+            touch-action: none;
             user-select: none;
             -webkit-user-select: none;
         }
 
-        #game-wrapper {
-            position: relative;
+        /* Console Layout Container */
+        #handheld-console {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
             width: 100%;
+            height: 100%;
+            background-color: #222;
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        /* Side Control Panels */
+        .control-panel {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            min-width: 120px; /* Ensure space for buttons */
+            max-width: 180px;
+            background: #2c3e50;
+            border-radius: 20px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        /* Screen Area */
+        #game-wrapper {
+            flex: 3;
+            position: relative;
             max-width: 800px;
             aspect-ratio: 16/9;
+            height: auto;
+            max-height: 100%;
+            border: 8px solid #111;
+            border-radius: 5px;
+            background: #000;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
         }
 
         canvas {
             display: block;
             width: 100%;
             height: 100%;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            border: 2px solid #2c3e50;
-            background: #000;
         }
 
+        /* UI Overlay inside screen */
         #ui-layer {
             position: absolute;
             top: 10px;
@@ -53,7 +87,7 @@
         }
 
         .hud-text {
-            font-size: 12px; /* Smaller for mobile */
+            font-size: 10px;
             color: #fff;
             text-transform: uppercase;
             background: rgba(0,0,0,0.4);
@@ -61,8 +95,8 @@
             border-radius: 4px;
         }
 
-        @media (min-width: 600px) {
-            .hud-text { font-size: 16px; }
+        @media (min-width: 800px) {
+            .hud-text { font-size: 14px; }
         }
         
         #powerup-status {
@@ -90,74 +124,55 @@
             align-items: center;
             text-align: center;
             z-index: 20;
-            padding: 20px;
-            box-sizing: border-box;
+            padding: 10px;
         }
 
         h1 {
             color: #3498db; 
-            font-size: 24px;
-            margin-bottom: 15px;
+            font-size: 18px;
+            margin-bottom: 10px;
             text-shadow: 0px 0px 10px #3498db, 4px 4px #e67e22;
             line-height: 1.5;
         }
         
         @media (min-width: 600px) {
-            h1 { font-size: 40px; }
+            h1 { font-size: 30px; }
         }
 
         p {
-            line-height: 1.6;
-            font-size: 10px;
+            line-height: 1.4;
+            font-size: 8px;
             color: #ddd;
-            max-width: 600px;
+            max-width: 90%;
             margin-bottom: 10px;
         }
         
         @media (min-width: 600px) {
-            p { font-size: 14px; }
+            p { font-size: 12px; }
         }
 
         .blink {
             animation: blinker 0.5s linear infinite;
             color: #e74c3c;
-            margin-top: 20px;
-            font-size: 14px;
+            margin-top: 15px;
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
+            border: 2px solid #e74c3c;
+            padding: 10px;
+            border-radius: 5px;
         }
 
         @keyframes blinker {
-            50% { opacity: 0; }
+            50% { opacity: 0.5; }
         }
 
         .hidden {
             display: none !important;
         }
 
-        /* --- MOBILE CONTROLS --- */
-        #mobile-controls {
-            position: absolute;
-            bottom: 10px;
-            left: 0;
-            width: 100%;
-            height: 100%; /* Covers full area for layout but pointer events only on buttons */
-            pointer-events: none;
-            z-index: 15;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
-        .control-group {
-            pointer-events: auto;
-            display: flex;
-            gap: 10px;
-        }
-
-        .dpad-container {
+        /* --- CONTROLS Styling --- */
+        .dpad {
             position: relative;
             width: 120px;
             height: 120px;
@@ -167,19 +182,24 @@
             position: absolute;
             width: 40px;
             height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 5px;
+            background: #34495e;
+            border: 2px solid #1abc9c; /* Windex Color border */
+            border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
+            color: #ccc;
             font-size: 20px;
-            color: rgba(255, 255, 255, 0.8);
-            user-select: none;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #16a085;
+            transition: transform 0.1s, box-shadow 0.1s;
         }
 
-        .dpad-btn:active, .action-btn:active {
-            background: rgba(52, 152, 219, 0.5);
+        .dpad-btn:active, .dpad-btn.active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 #16a085;
+            background: #16a085;
+            color: white;
         }
 
         #btn-up { top: 0; left: 40px; }
@@ -187,82 +207,102 @@
         #btn-right { top: 40px; left: 80px; }
         #btn-down { top: 80px; left: 40px; }
 
-        .action-group {
+        .action-container {
             display: flex;
-            gap: 15px;
-            align-items: flex-end;
-            margin-bottom: 10px;
-            margin-right: 10px;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
         }
 
         .action-btn {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            background: rgba(231, 76, 60, 0.3); /* Red tint for Spray */
-            border: 2px solid rgba(255, 255, 255, 0.4);
             display: flex;
             justify-content: center;
             align-items: center;
             color: white;
             font-size: 10px;
             font-weight: bold;
-            pointer-events: auto;
-            user-select: none;
+            cursor: pointer;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.5);
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-align: center;
+        }
+
+        .action-btn:active, .action-btn.active {
+            transform: translateY(5px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.5);
         }
 
         #btn-jump {
-            background: rgba(46, 204, 113, 0.3); /* Green tint for Jump */
-            width: 70px;
-            height: 70px;
+            background: #27ae60; /* Green */
+            border: 3px solid #2ecc71;
+        }
+        
+        #btn-shoot {
+            background: #c0392b; /* Red */
+            border: 3px solid #e74c3c;
         }
 
-        /* Hide controls on desktop if desired, but keeping them ensures playability on touch laptops */
-        @media (min-width: 1024px) {
-            /* Optional: #mobile-controls { display: none; } */
+        /* Mobile Landscape Optimization */
+        @media (max-height: 500px) {
+            #handheld-console { padding: 5px; gap: 5px; }
+            .control-panel { min-width: 100px; }
+            .dpad { transform: scale(0.8); }
+            .action-btn { width: 55px; height: 55px; font-size: 8px; }
         }
+        
+        /* Hide controls on very large screens (Desktop) if desired, 
+           but we keep them for "touch laptop" compatibility */
     </style>
 </head>
 <body>
 
-<div id="game-wrapper">
-    <canvas id="gameCanvas" width="800" height="450"></canvas>
-    
-    <div id="ui-layer">
-        <div>
-            <div id="score-display" class="hud-text">SCORE: 000000</div>
-            <div id="health-display" class="hud-text">HEALTH: 100%</div>
-        </div>
-        <div id="powerup-status" class="hud-text">SUPER SPRAY!</div>
-    </div>
-
-    <div id="start-screen">
-        <h1>COWBOY CLEAN<br><span style="font-size:0.6em; color:#3498db">Cleaning up the Desert</span></h1>
-        <p>Use your trusty <strong>Spray Bottle</strong> to wash away the grime!</p>
-        <p style="color: #3498db; margin-top: 5px;">
-            KEYBOARD: Arrows Move, Space Jump, Shift Spray<br>
-            MOBILE: Use on-screen controls
-        </p>
-        <div class="blink" id="start-btn">TAP TO START</div>
-    </div>
-
-    <div id="game-over-screen" class="hidden">
-        <h1 style="color: #e74c3c;">GRIME OVERLOAD</h1>
-        <div id="final-score" class="hud-text">FINAL SCORE: 0</div>
-        <div class="blink" id="retry-btn">TAP TO RETRY</div>
-    </div>
-
-    <!-- Mobile Controls Overlay -->
-    <div id="mobile-controls">
-        <div class="dpad-container">
+<div id="handheld-console">
+    <!-- LEFT CONTROLS (Movement) -->
+    <div class="control-panel left">
+        <div class="dpad">
             <div class="dpad-btn" id="btn-up">▲</div>
             <div class="dpad-btn" id="btn-left">◀</div>
             <div class="dpad-btn" id="btn-right">▶</div>
             <div class="dpad-btn" id="btn-down">▼</div>
         </div>
-        <div class="action-group">
-            <div class="action-btn" id="btn-shoot">SPRAY</div>
-            <div class="action-btn" id="btn-jump">JUMP</div>
+    </div>
+
+    <!-- CENTER SCREEN -->
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+        
+        <div id="ui-layer">
+            <div>
+                <div id="score-display" class="hud-text">SCORE: 000000</div>
+                <div id="health-display" class="hud-text">HEALTH: 100%</div>
+            </div>
+            <div id="powerup-status" class="hud-text">SUPER SPRAY!</div>
+        </div>
+
+        <div id="start-screen">
+            <h1>COWBOY CLEAN<br><span style="font-size:0.6em; color:#3498db">Cleaning up the Desert</span></h1>
+            <p>Use your trusty <strong>Spray Bottle</strong> to wash away the grime!</p>
+            <p style="color: #3498db; margin-top: 5px;">
+                Use the SIDE BUTTONS to play!
+            </p>
+            <div class="blink" id="start-btn">TAP HERE TO START</div>
+        </div>
+
+        <div id="game-over-screen" class="hidden">
+            <h1 style="color: #e74c3c;">GRIME OVERLOAD</h1>
+            <div id="final-score" class="hud-text">FINAL SCORE: 0</div>
+            <div class="blink" id="retry-btn">TAP TO RETRY</div>
+        </div>
+    </div>
+
+    <!-- RIGHT CONTROLS (Actions) -->
+    <div class="control-panel right">
+        <div class="action-container">
+            <div class="action-btn" id="btn-shoot">SPRAY<br>(Shift)</div>
+            <div class="action-btn" id="btn-jump">JUMP<br>(Space)</div>
         </div>
     </div>
 </div>
@@ -381,12 +421,34 @@ window.addEventListener('keyup', (e) => {
     if (e.code === 'ArrowUp') keys.ArrowUp = false;
 });
 
-// Touch/Mobile Input Setup
+// Touch/Mobile Input Setup (IMPROVED)
 function setupTouch(id, keyName) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; }, {passive: false});
-    el.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; }, {passive: false});
+
+    // Helper to add visual class
+    const activate = (e) => {
+        if(e.cancelable) e.preventDefault();
+        keys[keyName] = true;
+        el.classList.add('active');
+        // Vibrate if supported
+        if (navigator.vibrate) navigator.vibrate(5);
+    };
+
+    const deactivate = (e) => {
+        if(e.cancelable) e.preventDefault();
+        keys[keyName] = false;
+        el.classList.remove('active');
+    };
+
+    el.addEventListener('touchstart', activate, {passive: false});
+    el.addEventListener('touchend', deactivate, {passive: false});
+    el.addEventListener('touchcancel', deactivate, {passive: false});
+    
+    // Mouse fallback for testing on PC without touch
+    el.addEventListener('mousedown', activate);
+    el.addEventListener('mouseup', deactivate);
+    el.addEventListener('mouseleave', deactivate);
 }
 
 setupTouch('btn-left', 'ArrowLeft');
