@@ -267,7 +267,15 @@
         
         /* DESKTOP MODE STYLES 
            These apply when the .desktop-mode class is added by JS
+           OR automatically via Media Query for large screens
         */
+        @media (min-width: 1024px) {
+            .control-panel { display: none !important; }
+            #handheld-console { background-color: transparent; padding: 0; }
+            #game-wrapper { border: 4px solid #2c3e50; max-width: 900px; box-shadow: 0 0 40px rgba(0,0,0,0.8); }
+            .mobile-hint { display: none !important; }
+        }
+
         body.desktop-mode .control-panel {
             display: none !important;
         }
@@ -284,7 +292,7 @@
         }
 
         body.desktop-mode .mobile-hint {
-            display: none;
+            display: none !important;
         }
     </style>
 </head>
@@ -397,21 +405,23 @@ const Sound = {
 /**
  * GAME ENGINE
  */
-// Detect Desktop vs Mobile using Feature Detection
+// Detect Desktop vs Mobile using Smart Feature Detection
 function checkPlatform() {
-    // If no touch start event, assume desktop/mouse environment
-    // This fixes the iframe width issue
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // 1. Primary Check: Does the device use a mouse/trackpad? (Desktop)
+    const hasMouse = window.matchMedia('(pointer: fine)').matches;
     
-    if (!isTouch) {
+    // 2. Secondary Check: Is the screen remarkably wide? (Desktop/Laptop)
+    const isLargeScreen = window.innerWidth >= 1024;
+
+    // If it has a mouse or is huge, assume Desktop Mode
+    if (hasMouse || isLargeScreen) {
         document.body.classList.add('desktop-mode');
     } else {
         document.body.classList.remove('desktop-mode');
     }
 }
-// Run check immediately
+// Run checks
 checkPlatform();
-// Run on resize too just in case
 window.addEventListener('resize', checkPlatform);
 
 
