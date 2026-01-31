@@ -36,6 +36,7 @@
             gap: 10px;
             padding: 10px;
             box-sizing: border-box;
+            transition: background-color 0.3s;
         }
 
         /* Side Control Panels */
@@ -65,6 +66,7 @@
             border-radius: 5px;
             background: #000;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            transition: all 0.3s;
         }
 
         canvas {
@@ -149,6 +151,16 @@
         
         @media (min-width: 600px) {
             p { font-size: 12px; }
+        }
+
+        .mobile-hint {
+            display: block;
+            color: #f39c12;
+            font-size: 10px;
+            margin-bottom: 15px;
+            animation: blinker 1s linear infinite;
+            border: 1px dashed #f39c12;
+            padding: 5px;
         }
 
         .blink {
@@ -253,8 +265,27 @@
             .action-btn { width: 55px; height: 55px; font-size: 8px; }
         }
         
-        /* Hide controls on very large screens (Desktop) if desired, 
-           but we keep them for "touch laptop" compatibility */
+        /* DESKTOP MODE: Hide mobile controls, clean up UI */
+        @media (min-width: 1024px) {
+            .control-panel {
+                display: none !important;
+            }
+            
+            #handheld-console {
+                background-color: transparent;
+                padding: 0;
+            }
+
+            #game-wrapper {
+                border: 4px solid #2c3e50;
+                max-width: 900px;
+                box-shadow: 0 0 40px rgba(0,0,0,0.8);
+            }
+
+            .mobile-hint {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -284,11 +315,15 @@
 
         <div id="start-screen">
             <h1>COWBOY CLEAN<br><span style="font-size:0.6em; color:#3498db">Cleaning up the Desert</span></h1>
+            
+            <!-- Mobile Only Hint -->
+            <p class="mobile-hint">⟳ FLIP PHONE SIDEWAYS ⟳<br>FOR HANDHELD CONTROLS</p>
+            
             <p>Use your trusty <strong>Spray Bottle</strong> to wash away the grime!</p>
             <p style="color: #3498db; margin-top: 5px;">
-                Use the SIDE BUTTONS to play!
+                DESKTOP: Arrows to Move, Shift to Shoot, Space to Jump
             </p>
-            <div class="blink" id="start-btn">TAP HERE TO START</div>
+            <div class="blink" id="start-btn">TAP / CLICK TO START</div>
         </div>
 
         <div id="game-over-screen" class="hidden">
@@ -301,8 +336,8 @@
     <!-- RIGHT CONTROLS (Actions) -->
     <div class="control-panel right">
         <div class="action-container">
-            <div class="action-btn" id="btn-shoot">SPRAY<br>(Shift)</div>
-            <div class="action-btn" id="btn-jump">JUMP<br>(Space)</div>
+            <div class="action-btn" id="btn-shoot">SPRAY</div>
+            <div class="action-btn" id="btn-jump">JUMP</div>
         </div>
     </div>
 </div>
