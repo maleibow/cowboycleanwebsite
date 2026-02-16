@@ -506,18 +506,6 @@
                         </div>
                       </div>
                     </div>
-                    <script>
-                    function ml_webform_success_37235624() {
-                      var $ = ml_jQuery || jQuery;
-                      $('.ml-subscribe-form-37235624 .row-success').show();
-                      $('.ml-subscribe-form-37235624 .row-form').hide();
-                    }
-                    </script>
-                    <script src="https://groot.mailerlite.com/js/w/webforms.min.js?v95037e5bac78f29ed026832ca21a7c7b" type="text/javascript"></script>
-                    <script>
-                        fetch("https://assets.mailerlite.com/jsonp/2119029/forms/179598963155928272/takel")
-                    </script>
-                    <!-- END MAILERLITE FORM -->
 
                     <div class="flex flex-wrap justify-center items-center gap-8 mt-6">
                         <!-- Instagram Link -->
@@ -577,7 +565,19 @@
         </svg>
     </button>
 
+    <!-- Scripts for MailerLite and Fetch News (Moved to bottom of body) -->
     <script>
+        function ml_webform_success_37235624() {
+            var $ = ml_jQuery || jQuery;
+            $('.ml-subscribe-form-37235624 .row-success').show();
+            $('.ml-subscribe-form-37235624 .row-form').hide();
+        }
+    </script>
+    <script src="https://groot.mailerlite.com/js/w/webforms.min.js?v95037e5bac78f29ed026832ca21a7c7b" type="text/javascript"></script>
+    <script>
+        // Trigger view tracking for MailerLite
+        fetch("https://assets.mailerlite.com/jsonp/2119029/forms/179598963155928272/takel");
+
         // Back to Top Button Logic
         const backToTopBtn = document.getElementById('back-to-top');
 
@@ -599,7 +599,6 @@
         });
 
         // Script to fetch Substack RSS feed via a CORS proxy (rss2json)
-        // This allows client-side parsing of the feed without backend code.
         const RSS_URL = 'https://cowboyclean.substack.com/feed';
         const API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_URL)}`;
 
@@ -627,7 +626,6 @@
 
                     // Add Posts
                     data.items.forEach(item => {
-                        // Create a formatted date
                         const date = new Date(item.pubDate).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
@@ -661,7 +659,6 @@
             }
         }
 
-        // Initialize fetching on load
         fetchNews();
 
         // Music Player Carousel Logic
