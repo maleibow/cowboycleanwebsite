@@ -44,6 +44,86 @@
     </script>
     <!-- End MailerLite Universal -->
 
+    <!-- MailerLite Custom Styles (Adapted for Dark Mode) -->
+    <style type="text/css">
+        @import url("https://assets.mlcdn.com/fonts.css?version=1770645");
+        
+        /* Loader */
+        .ml-form-embedSubmitLoad { display: inline-block; width: 20px; height: 20px; }
+        .g-recaptcha { transform: scale(1); -webkit-transform: scale(1); transform-origin: 0 0; -webkit-transform-origin: 0 0; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+        .ml-form-embedSubmitLoad:after { content: " "; display: block; width: 11px; height: 11px; margin: 1px; border-radius: 50%; border: 4px solid #fff; border-color: #ffffff #ffffff #ffffff transparent; animation: ml-form-embedSubmitLoad 1.2s linear infinite; }
+        @keyframes ml-form-embedSubmitLoad { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #mlb2-37235624.ml-form-embedContainer { box-sizing: border-box; display: table; margin: 0 auto; position: static; width: 100% !important; }
+        #mlb2-37235624.ml-form-embedContainer h4, #mlb2-37235624.ml-form-embedContainer p, #mlb2-37235624.ml-form-embedContainer span, #mlb2-37235624.ml-form-embedContainer button { text-transform: none !important; letter-spacing: normal !important; }
+        
+        /* Wrapper Background - Transparent/Dark for this site */
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper { 
+            background-color: transparent; 
+            border-width: 0px; border-color: transparent; border-radius: 4px; border-style: solid; box-sizing: border-box; display: inline-block !important; margin: 0; padding: 0; position: relative; 
+        }
+        
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper.embedPopup, #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper.embedDefault { width: 400px; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper.embedForm { max-width: 400px; width: 100%; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-align-left { text-align: left; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-align-center { text-align: center; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-align-default { display: table-cell !important; vertical-align: middle !important; text-align: center !important; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-align-right { text-align: right; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedHeader img { border-top-left-radius: 4px; border-top-right-radius: 4px; height: auto; margin: 0 auto !important; max-width: 100%; width: undefinedpx; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody, #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-successBody { padding: 20px 20px 0 20px; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody.ml-form-embedBodyHorizontal { padding-bottom: 0; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-embedContent, #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-successBody .ml-form-successContent { text-align: left; margin: 0 0 20px 0; }
+        
+        /* Text Colors - Adapted to Light Gray/White */
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-embedContent h4, #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-successBody .ml-form-successContent h4 { 
+            color: #e5e7eb !important; 
+            font-family: 'Bebas Neue', Arial, Helvetica, sans-serif !important; 
+            font-size: 30px; font-weight: 400; margin: 0 0 10px 0; text-align: center; word-break: break-word; letter-spacing: 1px !important;
+        }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-embedContent p, #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-successBody .ml-form-successContent p { 
+            color: #9ca3af !important; 
+            font-family: 'Michroma', sans-serif !important; 
+            font-size: 14px; font-weight: 400; line-height: 20px; margin: 0 0 10px 0; text-align: center; 
+        }
+        
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-fieldRow input {
+            background-color: #1f2937 !important; /* Dark Gray Input */
+            color: #ffffff !important; /* White Text */
+            border-color: #374151 !important; /* Dark Border */
+            border-radius: 4px !important; border-style: solid !important; border-width: 1px !important; font-family: 'Michroma', sans-serif; font-size: 14px !important; height: auto; line-height: 21px !important; margin-bottom: 0; margin-top: 0; margin-left: 0; margin-right: 0; padding: 10px 10px !important; width: 100% !important; box-sizing: border-box !important; max-width: 100% !important; 
+        }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-fieldRow input::-webkit-input-placeholder { color: #9ca3af; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-fieldRow input::-moz-placeholder { color: #9ca3af; }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-fieldRow input:-ms-input-placeholder { color: #9ca3af; }
+        
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-horizontalRow input {
+            background-color: #1f2937; color: #ffffff; border-color: #374151; border-radius: 4px; border-style: solid; border-width: 1px; font-family: 'Michroma', sans-serif; font-size: 14px; line-height: 20px; margin-bottom: 0; margin-top: 0; padding: 10px 10px; width: 100%; box-sizing: border-box; overflow-y: initial; 
+        }
+        
+        /* Button Styles - Adapted to Rose */
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-horizontalRow button { 
+            background-color: #e11d48 !important; /* Rose 600 */
+            border-color: #e11d48; border-style: solid; border-width: 1px; border-radius: 4px; box-shadow: none; color: #ffffff !important; cursor: pointer; font-family: 'Bebas Neue', sans-serif !important; font-size: 14px !important; font-weight: 700; line-height: 20px; margin: 0 !important; padding: 10px !important; width: 100%; height: auto; letter-spacing: 1px !important;
+        }
+        #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-horizontalRow button:hover { 
+            background-color: #be123c !important; /* Rose 700 */
+            border-color: #be123c !important; 
+        }
+        
+        /* Mobile specific styles from snippet */
+        .ml-mobileButton-horizontal { display: none; }
+        #mlb2-37235624 .ml-mobileButton-horizontal button { background-color: #e11d48 !important; border-color: #e11d48 !important; border-style: solid !important; border-width: 1px !important; border-radius: 4px !important; box-shadow: none !important; color: #ffffff !important; cursor: pointer; font-family: 'Bebas Neue', sans-serif !important; font-size: 14px !important; font-weight: 700 !important; line-height: 20px !important; padding: 10px !important; width: 100% !important; letter-spacing: 1px !important; }
+        
+        @media only screen and (max-width: 400px) {
+            #mlb2-37235624.ml-form-embedContainer .ml-form-embedWrapper .ml-form-embedBody .ml-form-formContent.horozintalForm { padding: 0 0 10px 0 !important; }
+            .ml-hide-horizontal { display: none !important; }
+            .ml-form-formContent.horozintalForm .ml-button-horizontal { display: none!important; }
+            .ml-mobileButton-horizontal { display: inline-block !important; margin-bottom: 20px;width:100%; }
+            .ml-form-formContent.horozintalForm .ml-form-horizontalRow .ml-input-horizontal > div { padding-bottom: 0px !important; }
+        }
+    </style>
+
     <style>
         body {
             font-family: 'Michroma', sans-serif;
@@ -377,7 +457,69 @@
                 <h3 class="text-3xl font-bold mb-6 text-gray-50">Connect</h3>
                 <p class="text-gray-400 mb-8">Follow the transmission and say hello.</p>
                 <div class="flex flex-col items-center justify-center gap-6 bg-gray-900 border border-gray-700 p-8 rounded-xl shadow-2xl">
-                    <div class="flex flex-wrap justify-center items-center gap-8">
+                    
+                    <!-- MAILERLITE EMBEDDED FORM -->
+                    <div id="mlb2-37235624" class="ml-form-embedContainer ml-subscribe-form ml-subscribe-form-37235624">
+                      <div class="ml-form-align-center ">
+                        <div class="ml-form-embedWrapper embedForm">
+                          <div class="ml-form-embedBody ml-form-embedBodyHorizontal row-form">
+                            <div class="ml-form-embedContent">
+                                <h4>Newsletter</h4>
+                                <p>Signup for news and special offers!</p>
+                            </div>
+                            <form class="ml-block-form" action="https://assets.mailerlite.com/jsonp/2119029/forms/179598963155928272/subscribe" data-code="" method="post" target="_blank">
+                              <div class="ml-form-formContent horozintalForm">
+                                <div class="ml-form-horizontalRow">
+                                  <div class="ml-input-horizontal">
+                                      <div style="width: 100%;" class="horizontal-fields">
+                                        <div class="ml-field-group ml-field-email ml-validate-email ml-validate-required">
+                                          <input type="email" class="form-control" data-inputmask="" name="fields[email]" placeholder="Email" autocomplete="email">
+                                        </div>
+                                      </div>
+                                  </div>
+                                  <div class="ml-button-horizontal primary ">
+                                      <button type="submit" class="primary">Subscribe</button>
+                                    <button disabled="disabled" style="display: none;" type="button" class="loading">
+                                      <div class="ml-form-embedSubmitLoad"></div>
+                                      <span class="sr-only">Loading...</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                              <input type="hidden" name="ml-submit" value="1">
+                              <div class="ml-mobileButton-horizontal">
+                                <button type="submit" class="primary">Subscribe</button>
+                                <button disabled="disabled" style="display: none;" type="button" class="loading">
+                                  <div class="ml-form-embedSubmitLoad"></div>
+                                  <span class="sr-only">Loading...</span>
+                                </button>
+                              </div>
+                              <input type="hidden" name="anticsrf" value="true">
+                            </form>
+                          </div>
+                          <div class="ml-form-successBody row-success" style="display: none">
+                            <div class="ml-form-successContent">
+                                <h4>Thank you!</h4>
+                                <p>You have successfully joined our subscriber list.</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <script>
+                    function ml_webform_success_37235624() {
+                      var $ = ml_jQuery || jQuery;
+                      $('.ml-subscribe-form-37235624 .row-success').show();
+                      $('.ml-subscribe-form-37235624 .row-form').hide();
+                    }
+                    </script>
+                    <script src="https://groot.mailerlite.com/js/w/webforms.min.js?v95037e5bac78f29ed026832ca21a7c7b" type="text/javascript"></script>
+                    <script>
+                        fetch("https://assets.mailerlite.com/jsonp/2119029/forms/179598963155928272/takel")
+                    </script>
+                    <!-- END MAILERLITE FORM -->
+
+                    <div class="flex flex-wrap justify-center items-center gap-8 mt-6">
                         <!-- Instagram Link -->
                         <a href="https://www.instagram.com/thecowboyclean" target="_blank" class="transition-transform duration-300 hover:scale-110" aria-label="Instagram">
                             <svg class="h-10 w-10 text-gray-300 hover:text-rose-500 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -420,14 +562,6 @@
                                 <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                             </svg>
                         </a>
-                    </div>
-                    
-                    <!-- NEW MAILING LIST BUTTON -->
-                    <div class="mt-8 text-center">
-                        <p class="text-gray-400 mb-4 text-sm">Join the mailing list for updates.</p>
-                        <button class="ml-onclick-form px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg transition-colors duration-300 font-[Bebas Neue] tracking-wide" onclick="ml('show', '0JKODq', true)">
-                            Sign Up
-                        </button>
                     </div>
                 </div>
             </section>
