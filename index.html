@@ -291,7 +291,7 @@
             <!-- Watch Section -->
             <section id="watch" class="mb-12">
                 <h3 class="text-3xl font-bold mb-6 text-gray-50">Watch</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div id="youtube-feed" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- YouTube Video: Grendel -->
                     <div class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-gray-900 aspect-video relative group">
                         <a href="https://www.youtube.com/watch?v=EDuGd5yc5ik" target="_blank" class="block w-full h-full relative">
@@ -335,24 +335,43 @@
             <section id="shows" class="mb-12">
                 <h3 class="text-3xl font-bold mb-6 text-gray-50">Shows</h3>
                 <ul class="space-y-4">
-                    <!-- FEBRUARY 22nd -->
+                    <!-- APRIL 6th -->
                     <li class="rounded-xl border border-gray-800 p-6 flex justify-between items-center bg-gray-900 shadow-lg">
                         <div class="flex-1">
-                            <span class="text-lg text-gray-50 block">February 22nd</span>
-                            <p class="text-gray-400">Arlene's Grocery (New York, NY) w/ Emma Kimberley / Argyres / Sumu</p>
+                            <span class="text-lg text-gray-50 block">April 6th</span>
+                            <p class="text-gray-400">Bowery Palace (New York, NY)</p>
                         </div>
                         <div>
-                            <a href="https://www.arlenesgrocerynyc.com/upcoming-events" target="_blank" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 rounded-lg text-gray-50 transition-colors duration-300">Tickets</a>
+                            <span class="px-4 py-2 bg-gray-700 rounded-lg text-gray-400 text-sm opacity-50 cursor-default">TBA</span>
                         </div>
                     </li>
                     <!-- APRIL 24th -->
                     <li class="rounded-xl border border-gray-800 p-6 flex justify-between items-center bg-gray-900 shadow-lg">
                         <div class="flex-1">
                             <span class="text-lg text-gray-50 block">April 24th</span>
-                            <p class="text-gray-400">Chiapas (MX) w/ The Shelter</p>
+                            <p class="text-gray-400">McCarthy's Irish Pub (Tuxtla, MX) w/ The Shelter</p>
                         </div>
                         <div>
-                            <!-- Placeholder for ticket info -->
+                            <a href="https://www.bandsintown.com/e/107800655-the-shelter-at-mccarthy's-irish-pub-ambar-tuxtla?came_from=253&utm_medium=web&utm_source=artist_page&utm_campaign=event" target="_blank" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 rounded-lg text-gray-50 transition-colors duration-300">Tickets</a>
+                        </div>
+                    </li>
+                    <!-- APRIL 25th -->
+                    <li class="rounded-xl border border-gray-800 p-6 flex justify-between items-center bg-gray-900 shadow-lg">
+                        <div class="flex-1">
+                            <span class="text-lg text-gray-50 block">April 25th</span>
+                            <p class="text-gray-400">San Cristobal (MX) w/ The Shelter</p>
+                        </div>
+                        <div>
+                            <a href="https://www.instagram.com/p/DVMSLcICZgg/" target="_blank" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 rounded-lg text-gray-50 transition-colors duration-300">Info</a>
+                        </div>
+                    </li>
+                    <!-- MAY 18th -->
+                    <li class="rounded-xl border border-gray-800 p-6 flex justify-between items-center bg-gray-900 shadow-lg">
+                        <div class="flex-1">
+                            <span class="text-lg text-gray-50 block">May 18th</span>
+                            <p class="text-gray-400">Arlene's Grocery (New York, NY)</p>
+                        </div>
+                        <div>
                             <span class="px-4 py-2 bg-gray-700 rounded-lg text-gray-400 text-sm opacity-50 cursor-default">TBA</span>
                         </div>
                     </li>
@@ -661,8 +680,62 @@
             }
         }
 
-        // Initialize fetching on load
         fetchNews();
+
+        // YouTube Auto-Fetch Logic
+        // IMPORTANT: Replace the ID below with your actual YouTube Channel ID (starts with 'UC')
+        const YOUTUBE_CHANNEL_ID = 'UCognfD1tq9DlIvpByubdLYA'; 
+        const YT_RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
+        const YT_API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(YT_RSS_URL)}`;
+
+        async function fetchYouTubeVideos() {
+            if (YOUTUBE_CHANNEL_ID === 'YOUR_CHANNEL_ID_HERE') return; // Skips fetch if ID hasn't been updated yet
+            
+            try {
+                const response = await fetch(YT_API_URL);
+                const data = await response.json();
+                
+                if (data.status === 'ok' && data.items.length > 0) {
+                    const container = document.getElementById('youtube-feed');
+                    container.innerHTML = ''; // Clears the hardcoded static videos
+                    
+                    // Get the 2 most recent videos (change the 2 to 4 if you want a 4-video grid instead)
+                    const latestVideos = data.items.slice(0, 2); 
+                    
+                    latestVideos.forEach(video => {
+                        // Extract the video ID from the YouTube URL to get the thumbnail
+                        const videoIdMatch = video.link.match(/v=([^&]+)/) || video.link.match(/youtu\.be\/([^?]+)/);
+                        const videoId = videoIdMatch ? videoIdMatch[1] : null;
+                        
+                        if (videoId) {
+                            const videoHTML = `
+                                <div class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-gray-900 aspect-video relative group">
+                                    <a href="${video.link}" target="_blank" class="block w-full h-full relative">
+                                        <img src="https://img.youtube.com/vi/${videoId}/maxresdefault.jpg" alt="Watch ${video.title}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300" loading="lazy" onerror="this.src='https://img.youtube.com/vi/${videoId}/hqdefault.jpg'">
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <div class="bg-rose-600/80 rounded-full p-4 group-hover:bg-rose-600 group-hover:scale-110 transition-all duration-300 shadow-xl backdrop-blur-sm">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white fill-current" viewBox="0 0 24 24">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="absolute bottom-4 left-4 pr-4">
+                                            <span class="bg-black/70 text-white text-xs px-2 py-1 rounded font-[Bebas Neue] tracking-wide line-clamp-1">${video.title}</span>
+                                        </div>
+                                    </a>
+                                </div>
+                            `;
+                            container.innerHTML += videoHTML;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching YouTube videos:', error);
+                // Fails silently so your hardcoded videos stay visible if the API drops
+            }
+        }
+        
+        fetchYouTubeVideos();
 
         // Music Player Carousel Logic
         const slides = document.querySelectorAll('.song-slide');
