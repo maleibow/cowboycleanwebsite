@@ -319,28 +319,30 @@
             <!-- Watch Section -->
             <section id="watch" class="mb-12">
                 <h3 class="text-3xl font-bold mb-6 text-gray-50">Watch</h3>
-                <div class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-gray-900 relative w-full p-4 md:p-6">
-                    <!-- Video Grid Container -->
-                    <div id="youtube-feed" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-500 min-h-[200px] md:min-h-[300px]">
-                        <!-- Fallback / Loading State -->
-                        <div class="text-gray-500 text-center col-span-1 md:col-span-2 py-10 font-[Michroma] animate-pulse">
-                            Scanning for broadcasts...
+                <div class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-gray-900 relative w-full">
+                    <div class="p-4 md:p-6">
+                        <!-- Video Grid Container -->
+                        <div id="youtube-feed" class="grid grid-cols-1 md:grid-cols-2 gap-6 transition-all duration-500">
+                            <!-- Fallback / Loading State -->
+                            <div class="text-gray-500 text-center col-span-1 md:col-span-2 py-10 font-[Michroma] animate-pulse">
+                                Scanning for broadcasts...
+                            </div>
                         </div>
                     </div>
-                </div>
-                <!-- Navigation Controls -->
-                <div class="flex justify-between items-center p-4 bg-gray-900 border-t border-gray-800 rounded-b-xl border-x border-b -mt-1 relative z-20">
-                    <button id="prev-video" class="text-gray-400 hover:text-rose-500 transition-colors focus:outline-none disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Previous Video">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-                    <span id="video-indicator" class="text-sm text-gray-500 font-[Bebas Neue] tracking-widest">LOADING</span>
-                    <button id="next-video" class="text-gray-400 hover:text-rose-500 transition-colors focus:outline-none disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Next Video">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
+                    <!-- Navigation Controls -->
+                    <div class="flex justify-between items-center p-4 bg-gray-900 border-t border-gray-800 relative z-20">
+                        <button id="prev-video" class="text-gray-400 hover:text-rose-500 transition-colors focus:outline-none disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Previous Video">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <span id="video-indicator" class="text-sm text-gray-500 font-[Bebas Neue] tracking-widest">LOADING</span>
+                        <button id="next-video" class="text-gray-400 hover:text-rose-500 transition-colors focus:outline-none disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Next Video">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </section>
             
@@ -687,8 +689,8 @@
 
         // YouTube Auto-Fetch and Carousel Logic (Link Out Version)
         const YOUTUBE_CHANNEL_ID = 'UCognfD1tq9DlIvpByubdLYA'; 
-        const YT_RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
         // Using a more reliable CORS proxy that acts as an API
+        const YT_RSS_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
         const YT_API_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(YT_RSS_URL)}`;
 
         let allYouTubeVideos = [];
