@@ -33,7 +33,7 @@
         /* --- GAME SCREEN SCALING --- */
         #game-wrapper {
             flex: 1; display: flex; justify-content: center; align-items: center;
-            height: 100%; padding: 5px; box-sizing: border-box;
+            height: 100%; padding: 5px; box-sizing: border-box; position: relative;
         }
         #game-scale-box {
             position: relative; width: 100%; height: 100%; max-width: 100%; max-height: 100%;
@@ -58,6 +58,13 @@
         .powerup-indicator { color: #f1c40f; display: none; animation: pulse 0.5s infinite alternate; }
         @keyframes pulse { 0% { transform: scale(1); color: #f1c40f; } 100% { transform: scale(1.05); color: #fff; } }
 
+        #fullscreen-btn {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+            cursor: pointer; z-index: 100; font-size: 14px; padding: 4px 10px;
+            background: rgba(52, 152, 219, 0.8); border-color: #2980b9; pointer-events: auto;
+        }
+        #fullscreen-btn:active { background: rgba(41, 128, 185, 1); transform: translateX(-50%) scale(0.95); }
+
         #start-screen, #game-over-screen, #store-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85);
             display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
@@ -71,14 +78,13 @@
             padding-right: 5%;
         }
         #store-ui-bottom {
-            background: rgba(32, 43, 51, 0.95); /* Chalkboard dark green/grey */
-            border: 12px solid #5d4037; /* Thick wood frame */
+            background: rgba(32, 43, 51, 0.95);
+            border: 12px solid #5d4037;
             border-radius: 5px; padding: 15px; width: 50%; max-width: 450px;
             display: flex; flex-direction: column; align-items: center;
             box-shadow: 0 15px 40px rgba(0,0,0,0.9), inset 0 0 20px rgba(0,0,0,0.8);
             position: relative; margin: 0;
         }
-        /* Menu Header text on chalkboard */
         .chalk-text {
             font-family: 'Bangers', cursive; color: #ecf0f1; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
             letter-spacing: 2px; margin: 0;
@@ -108,16 +114,24 @@
         .hidden { display: none !important; }
         #flash-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 10; transition: opacity 0.1s; }
 
-        /* --- BUTTON STYLING --- */
-        .dpad { position: relative; width: 120px; height: 120px; margin-bottom: 10px;}
-        .dpad-btn {
-            position: absolute; width: 40px; height: 40px; background: rgba(52, 73, 94, 1);
-            border: 2px solid #1abc9c; border-radius: 8px; display: flex; justify-content: center; align-items: center;
-            color: #ecf0f1; font-family: Arial, sans-serif; font-size: 20px; font-weight: bold;
-            box-shadow: 0 4px 0 rgba(22, 160, 133, 1); transition: transform 0.05s, box-shadow 0.05s;
+        /* --- BUTTON & JOYSTICK STYLING --- */
+        #joystick-area {
+            width: 120px; height: 120px; margin-bottom: 10px;
+            display: flex; justify-content: center; align-items: center;
+            touch-action: none;
         }
-        .dpad-btn.active { transform: translateY(4px); box-shadow: 0 0 0 rgba(22, 160, 133, 1); background: rgba(26, 188, 156, 1); color: white; }
-        #btn-up { top: 0; left: 40px; } #btn-left { top: 40px; left: 0; } #btn-right { top: 40px; left: 80px; } #btn-down { top: 80px; left: 40px; }
+        #joystick-base {
+            width: 100px; height: 100px; background: rgba(52, 73, 94, 0.6);
+            border: 3px solid #1abc9c; border-radius: 50%; position: relative;
+            box-shadow: 0 4px 0 rgba(22, 160, 133, 0.8);
+            display: flex; justify-content: center; align-items: center;
+        }
+        #joystick-stick {
+            width: 46px; height: 46px; background: rgba(26, 188, 156, 0.9);
+            border-radius: 50%; pointer-events: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.5);
+            transform: translate(0px, 0px);
+        }
 
         .action-container { display: flex; flex-direction: column; gap: 20px; align-items: center; margin-bottom: 10px;}
         .action-btn {
@@ -131,7 +145,7 @@
 
         @media (max-width: 650px) {
             .mobile-only { width: 100px; min-width: 100px; }
-            .dpad { transform: scale(0.75); transform-origin: bottom center; }
+            #joystick-area { transform: scale(0.85); transform-origin: bottom center; }
             .action-btn { width: 55px; height: 55px; font-size: 14px; }
         }
 
@@ -147,18 +161,19 @@
 </head>
 <body>
 
-    <!-- LEFT THUMB CONTROLS -->
+    <!-- LEFT THUMB CONTROLS (Virtual Joystick) -->
     <div id="left-controls" class="mobile-only">
-        <div class="dpad">
-            <div class="dpad-btn" id="btn-up">▲</div>
-            <div class="dpad-btn" id="btn-left">◀</div>
-            <div class="dpad-btn" id="btn-right">▶</div>
-            <div class="dpad-btn" id="btn-down">▼</div>
+        <div id="joystick-area">
+            <div id="joystick-base">
+                <div id="joystick-stick"></div>
+            </div>
         </div>
     </div>
 
     <!-- CENTER GAME SCREEN -->
     <div id="game-wrapper">
+        <div id="fullscreen-btn" class="hud-text">⛶ FULLSCREEN</div>
+
         <div id="game-scale-box">
             <canvas id="gameCanvas" width="960" height="540"></canvas>
             <div id="flash-overlay"></div>
@@ -256,41 +271,53 @@ const Sound = {
 /** SALOON BACKGROUND MUSIC **/
 const SaloonMusic = {
     isPlaying: false,
-    // A jaunty, major ragtime-style melody sequence
     notes: [392.00, 329.63, 261.63, 329.63, 392.00, 329.63, 261.63, 261.63, 392.00, 329.63, 261.63, 329.63, 440.00, 392.00, 349.23, 329.63], 
     bass: [130.81, 196.00, 130.81, 196.00],
     step: 0,
     timer: null,
     start: function() {
         if (this.isPlaying) return;
-        this.isPlaying = true;
-        this.step = 0;
-        this.playNext();
+        this.isPlaying = true; this.step = 0; this.playNext();
     },
     playNext: function() {
         if (!this.isPlaying) return;
         let freq = this.notes[this.step % this.notes.length];
         let bFreq = this.bass[this.step % this.bass.length];
-        
-        // Play melody (Honky-tonk piano feel using square/sawtooth mix)
         Sound.play('bgm1', freq, 'square', 0.15, 0.05);
         Sound.play('bgm2', bFreq, 'triangle', 0.2, 0.08);
-        
         this.step++;
-        this.timer = setTimeout(() => this.playNext(), 220); // Bounce tempo
+        this.timer = setTimeout(() => this.playNext(), 220);
     },
     stop: function() {
-        this.isPlaying = false;
-        clearTimeout(this.timer);
+        this.isPlaying = false; clearTimeout(this.timer);
     }
 };
 
-/** PLATFORM DETECTION **/
+/** PLATFORM & FULLSCREEN **/
+const fsBtn = document.getElementById('fullscreen-btn');
+fsBtn.addEventListener('click', () => {
+    let elem = document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (elem.requestFullscreen) { elem.requestFullscreen(); }
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT); }
+        fsBtn.innerText = "✖ EXIT FS";
+    } else {
+        if (document.exitFullscreen) { document.exitFullscreen(); }
+        else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+        fsBtn.innerText = "⛶ FULLSCREEN";
+    }
+});
+
 function checkPlatform() {
     const hasMouse = window.matchMedia('(pointer: fine)').matches;
     const isLargeScreen = window.innerWidth >= 1024;
-    if (hasMouse || isLargeScreen) document.body.classList.add('desktop-mode');
-    else document.body.classList.remove('desktop-mode');
+    if (hasMouse || isLargeScreen) {
+        document.body.classList.add('desktop-mode');
+        fsBtn.style.display = 'none'; // Hide FS button on obvious desktop
+    } else {
+        document.body.classList.remove('desktop-mode');
+        fsBtn.style.display = 'block';
+    }
 }
 checkPlatform(); window.addEventListener('resize', checkPlatform);
 
@@ -322,13 +349,15 @@ let bossDefeated = false;
 const stageNames = ["", "DESERT SCRUB", "TOXIC JUNGLE", "NEO-SCRAP CITY"];
 
 const keys = { Up: false, Down: false, Left: false, Right: false, Jump: false, Shoot: false };
+
 function bindKey(code, keyRef) {
     window.addEventListener('keydown', e => { if(e.code===code || e.key===code) { e.preventDefault(); keys[keyRef] = true; if(gameState==='START'||gameState==='GAMEOVER') startGame(); }});
     window.addEventListener('keyup', e => { if(e.code===code || e.key===code) { e.preventDefault(); keys[keyRef] = false; }});
 }
 bindKey('ArrowUp', 'Up'); bindKey('ArrowDown', 'Down'); bindKey('ArrowLeft', 'Left'); bindKey('ArrowRight', 'Right'); bindKey('Space', 'Jump'); bindKey('Shift', 'Shoot');
 
-function setupTouch(id, keyRef) {
+// TOUCH CONTROLS (Joystick & Buttons)
+function setupTouchBtn(id, keyRef) {
     const el = document.getElementById(id); if (!el) return;
     const on = e => { if(e.cancelable) e.preventDefault(); keys[keyRef] = true; el.classList.add('active'); if(navigator.vibrate) navigator.vibrate(5); };
     const off = e => { if(e.cancelable) e.preventDefault(); keys[keyRef] = false; el.classList.remove('active'); };
@@ -336,7 +365,74 @@ function setupTouch(id, keyRef) {
     el.addEventListener('touchcancel', off, {passive: false});
     el.addEventListener('mousedown', on); el.addEventListener('mouseup', off); el.addEventListener('mouseleave', off);
 }
-setupTouch('btn-left', 'Left'); setupTouch('btn-right', 'Right'); setupTouch('btn-up', 'Up'); setupTouch('btn-down', 'Down'); setupTouch('btn-jump', 'Jump'); setupTouch('btn-shoot', 'Shoot');
+setupTouchBtn('btn-jump', 'Jump'); setupTouchBtn('btn-shoot', 'Shoot');
+
+// VIRTUAL JOYSTICK LOGIC
+const joystickArea = document.getElementById('joystick-area');
+const joystickBase = document.getElementById('joystick-base');
+const joystickStick = document.getElementById('joystick-stick');
+let joyActive = false;
+let joyOrigin = { x: 0, y: 0 };
+const maxRadius = 35; // How far the stick can be dragged
+
+function handleJoyStart(e) {
+    if (e.cancelable) e.preventDefault();
+    joyActive = true;
+    joystickStick.style.transition = 'none';
+    
+    // Find absolute center of the joystick base on screen
+    let rect = joystickBase.getBoundingClientRect();
+    joyOrigin.x = rect.left + rect.width / 2;
+    joyOrigin.y = rect.top + rect.height / 2;
+    updateJoy(e);
+}
+
+function handleJoyMove(e) {
+    if (!joyActive) return;
+    if (e.cancelable) e.preventDefault();
+    updateJoy(e);
+}
+
+function handleJoyEnd(e) {
+    if (e.cancelable) e.preventDefault();
+    joyActive = false;
+    joystickStick.style.transition = 'transform 0.2s ease-out';
+    joystickStick.style.transform = `translate(0px, 0px)`;
+    keys.Left = false; keys.Right = false; keys.Up = false; keys.Down = false;
+}
+
+function updateJoy(e) {
+    let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    let dx = clientX - joyOrigin.x;
+    let dy = clientY - joyOrigin.y;
+    let distance = Math.sqrt(dx*dx + dy*dy);
+
+    if (distance > maxRadius) {
+        dx = (dx / distance) * maxRadius;
+        dy = (dy / distance) * maxRadius;
+    }
+
+    joystickStick.style.transform = `translate(${dx}px, ${dy}px)`;
+
+    // Directional Thresholds
+    let threshold = 15;
+    keys.Right = dx > threshold;
+    keys.Left = dx < -threshold;
+    keys.Down = dy > threshold;
+    keys.Up = dy < -threshold;
+}
+
+joystickArea.addEventListener('touchstart', handleJoyStart, {passive: false});
+joystickArea.addEventListener('touchmove', handleJoyMove, {passive: false});
+joystickArea.addEventListener('touchend', handleJoyEnd, {passive: false});
+joystickArea.addEventListener('touchcancel', handleJoyEnd, {passive: false});
+
+joystickArea.addEventListener('mousedown', handleJoyStart);
+document.addEventListener('mousemove', handleJoyMove);
+document.addEventListener('mouseup', handleJoyEnd);
+
 
 ['start-screen', 'game-over-screen'].forEach(id => {
     const el = document.getElementById(id);
@@ -364,7 +460,7 @@ const nxtStageFn = (e) => {
     if(e.cancelable) e.preventDefault(); 
     if (gameState === 'STORE') { 
         ui.store.classList.add('hidden'); 
-        SaloonMusic.stop(); // Stop the ragtime music
+        SaloonMusic.stop(); 
         triggerStageTransition(); 
     } 
 };
@@ -385,7 +481,7 @@ function openStore() {
     ui.store.classList.remove('hidden'); 
     updateStoreUI();
     projectiles = []; enemyProjectiles = []; powerups = []; 
-    SaloonMusic.start(); // Start the ragtime music
+    SaloonMusic.start(); 
 }
 
 /** DRAWING HELPERS **/
@@ -1088,8 +1184,8 @@ function checkCollisions() {
                     }
                     enemies.splice(i, 1);
                     if (e.type.startsWith('boss')) {
-                        nextBossScore = Infinity; // Safely stop bosses from spawning repeatedly
-                        bossDefeated = true; // Stop regular enemies from spawning
+                        nextBossScore = Infinity; 
+                        bossDefeated = true; 
                         setTimeout(() => openStore(), 2000);
                     }
                 }
@@ -1250,50 +1346,37 @@ function drawBackground() {
 }
 
 function drawSaloon() {
-    // Wallpaper / Background
     ctx.fillStyle = '#5d4037'; ctx.fillRect(0, 0, 960, 540);
-    // Wood paneling lines
     ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = 4;
     for(let i=0; i<960; i+=60) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 540); ctx.stroke(); }
 
-    // Big Mirror behind bar (Shifted Left)
     drawPath(ctx, [[80, 50], [480, 50], [480, 320], [80, 320]], '#1abc9c', '#3e2723', 12);
-    // Mirror glare
     drawPath(ctx, [[120, 300], [320, 70], [370, 70], [170, 300]], 'rgba(255,255,255,0.2)', null, 0);
 
-    // Shelves with bottles (Shifted to Right side)
     ctx.fillStyle = '#3e2723';
     ctx.fillRect(520, 160, 400, 15); ctx.fillRect(520, 280, 400, 15);
     
     const colors = ['#2ecc71', '#e74c3c', '#3498db', '#f1c40f', '#9b59b6'];
     for(let i=0; i<7; i++) {
-        // Right shelf bottles
         ctx.fillStyle = colors[i%colors.length]; ctx.fillRect(550 + i*50, 100, 20, 60); ctx.fillRect(555 + i*50, 70, 10, 30);
         ctx.fillStyle = colors[(i+1)%colors.length]; ctx.fillRect(560 + i*50, 220, 20, 60); ctx.fillRect(565 + i*50, 190, 10, 30);
     }
 
-    // JERRY THE BARKEEP (Shifted Left)
     ctx.save();
     ctx.translate(280, 280);
     let bob = Math.sin(frames*0.05)*3; ctx.translate(0, bob);
 
-    // Body (White Shirt)
     drawPath(ctx, [[-60,0], [60,0], [75,180], [-75,180]], '#f5f5f5', '#000', 4); 
-    // Vest (Dark grey)
     drawPath(ctx, [[-60,0], [-20,80], [-30,180], [-75,180]], '#34495e', '#000', 3);
     drawPath(ctx, [[60,0], [20,80], [30,180], [75,180]], '#34495e', '#000', 3);
-    // Red Bowtie
     drawPath(ctx, [[0, 5], [-15, -5], [-15, 15]], '#c0392b', '#000', 2);
     drawPath(ctx, [[0, 5], [15, -5], [15, 15]], '#c0392b', '#000', 2);
     drawCircle(ctx, 0, 5, 5, '#e74c3c', '#000', 2);
 
-    // Head
     drawCircle(ctx, 0, -40, 45, '#ffccaa', '#000', 3); 
-    // Hair
     drawPath(ctx, [[-45,-40], [-55,-10], [-35,20], [-30,0]], '#7f8c8d', '#000', 2); 
     drawPath(ctx, [[45,-40], [55,-10], [35,20], [30,0]], '#7f8c8d', '#000', 2); 
 
-    // Blink/Eyes
     if (frames % 120 < 5) {
         drawPath(ctx, [[-25, -50], [-5, -50]], null, '#000', 3); drawPath(ctx, [[5, -50], [25, -50]], null, '#000', 3);
     } else {
@@ -1301,19 +1384,16 @@ function drawSaloon() {
         drawCircle(ctx, 15, -50, 6, '#fff', '#000', 2); drawCircle(ctx, 15, -50, 2, '#000', null, 0);
     }
 
-    // Mustache & Nose
     drawPath(ctx, [[-35,-20], [0,-30], [35,-20], [25,-5], [0,-15], [-25,-5]], '#7f8c8d', '#000', 3); 
     drawCircle(ctx, 0, -30, 8, '#e67e22', '#000', 2); 
 
-    // Arms wiping the bar
     let wipeX = Math.sin(frames*0.06)*30;
-    drawPath(ctx, [[-60, 30], [-90, 80], [-40, 110]], '#f5f5f5', '#000', 4); drawCircle(ctx, -40, 110, 18, '#ffccaa', '#000', 3); // L Arm
-    drawPath(ctx, [[60, 30], [80, 80], [30 + wipeX, 120]], '#f5f5f5', '#000', 4); drawCircle(ctx, 30 + wipeX, 120, 18, '#ffccaa', '#000', 3); // R Arm
-    drawPath(ctx, [[10 + wipeX, 110], [45 + wipeX, 110], [40 + wipeX, 150], [5 + wipeX, 145]], '#bdc3c7', '#000', 2); // Rag
+    drawPath(ctx, [[-60, 30], [-90, 80], [-40, 110]], '#f5f5f5', '#000', 4); drawCircle(ctx, -40, 110, 18, '#ffccaa', '#000', 3); 
+    drawPath(ctx, [[60, 30], [80, 80], [30 + wipeX, 120]], '#f5f5f5', '#000', 4); drawCircle(ctx, 30 + wipeX, 120, 18, '#ffccaa', '#000', 3); 
+    drawPath(ctx, [[10 + wipeX, 110], [45 + wipeX, 110], [40 + wipeX, 150], [5 + wipeX, 145]], '#bdc3c7', '#000', 2); 
 
     ctx.restore();
 
-    // Bar Top (Foreground)
     ctx.fillStyle = '#8d6e63'; ctx.fillRect(0, 360, 960, 40);
     ctx.fillStyle = '#4e342e'; ctx.fillRect(0, 400, 960, 140);
     ctx.strokeStyle = '#000'; ctx.lineWidth = 6;
