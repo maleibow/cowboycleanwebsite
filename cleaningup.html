@@ -13,34 +13,39 @@
             color: white; font-family: 'Bangers', cursive; touch-action: none; user-select: none; -webkit-user-select: none;
         }
 
-        /* --- MOBILE SIDE PANELS --- */
+        /* --- GAME SCREEN SCALING --- */
+        #game-wrapper {
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            height: 100%; width: 100%; padding: 0; box-sizing: border-box; position: relative;
+        }
+        #game-scale-box {
+            position: relative; width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+            aspect-ratio: 16 / 9; background: #000; overflow: hidden;
+        }
+        @media (min-width: 1024px) {
+            #game-wrapper { padding: 5px; }
+            #game-scale-box { border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.9); }
+        }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* --- MOBILE OVERLAY CONTROLS --- */
         .mobile-only {
+            position: absolute;
+            bottom: 10px;
             width: 140px;
-            min-width: 140px;
-            height: 100%;
-            background: #111;
+            height: auto;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            padding-bottom: 20px;
             z-index: 100;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            pointer-events: none; /* Let touches pass through empty space */
         }
-        #left-controls { border-right: 2px solid #222; }
-        #right-controls { border-left: 2px solid #222; }
-
-        /* --- GAME SCREEN SCALING --- */
-        #game-wrapper {
-            flex: 1; display: flex; justify-content: center; align-items: center;
-            height: 100%; padding: 5px; box-sizing: border-box; position: relative;
+        .mobile-only > * {
+            pointer-events: auto; /* Catch touches on buttons/joystick */
         }
-        #game-scale-box {
-            position: relative; width: 100%; height: 100%; max-width: 100%; max-height: 100%;
-            aspect-ratio: 16 / 9; background: #000; border-radius: 8px; overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.9);
-        }
-        canvas { display: block; width: 100%; height: 100%; }
+        #left-controls { left: 10px; }
+        #right-controls { right: 10px; }
 
         /* --- UI OVERLAYS --- */
         #ui-layer {
@@ -61,9 +66,10 @@
         #fullscreen-btn {
             position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
             cursor: pointer; z-index: 100; font-size: 14px; padding: 4px 10px;
-            background: rgba(52, 152, 219, 0.8); border-color: #2980b9; pointer-events: auto;
+            background: rgba(52, 152, 219, 0.5); border-color: rgba(41, 128, 185, 0.8); pointer-events: auto;
+            backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
         }
-        #fullscreen-btn:active { background: rgba(41, 128, 185, 1); transform: translateX(-50%) scale(0.95); }
+        #fullscreen-btn:active { background: rgba(41, 128, 185, 0.8); transform: translateX(-50%) scale(0.95); }
 
         #start-screen, #game-over-screen, #store-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85);
@@ -114,39 +120,42 @@
         .hidden { display: none !important; }
         #flash-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; opacity: 0; pointer-events: none; z-index: 10; transition: opacity 0.1s; }
 
-        /* --- BUTTON & JOYSTICK STYLING --- */
+        /* --- BUTTON & JOYSTICK STYLING (TRANSPARENT) --- */
         #joystick-area {
             width: 120px; height: 120px; margin-bottom: 10px;
             display: flex; justify-content: center; align-items: center;
             touch-action: none;
         }
         #joystick-base {
-            width: 100px; height: 100px; background: rgba(52, 73, 94, 0.6);
-            border: 3px solid #1abc9c; border-radius: 50%; position: relative;
-            box-shadow: 0 4px 0 rgba(22, 160, 133, 0.8);
+            width: 100px; height: 100px; background: rgba(52, 73, 94, 0.3);
+            border: 2px solid rgba(26, 188, 156, 0.5); border-radius: 50%; position: relative;
             display: flex; justify-content: center; align-items: center;
+            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
         }
         #joystick-stick {
-            width: 46px; height: 46px; background: rgba(26, 188, 156, 0.9);
-            border-radius: 50%; pointer-events: none; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            border: 2px solid rgba(255,255,255,0.5);
+            width: 46px; height: 46px; background: rgba(26, 188, 156, 0.6);
+            border-radius: 50%; pointer-events: none;
             transform: translate(0px, 0px);
         }
 
         .action-container { display: flex; flex-direction: column; gap: 20px; align-items: center; margin-bottom: 10px;}
         .action-btn {
             width: 70px; height: 70px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            color: white; font-family: 'Bangers', cursive; font-size: 18px; letter-spacing: 1px; text-shadow: 1px 1px 0 #000;
-            box-shadow: 0 5px 0 rgba(0,0,0,0.8); transition: transform 0.05s, box-shadow 0.05s; text-align: center; border: 2px solid rgba(255,255,255,0.5);
+            font-family: 'Bangers', cursive; font-size: 18px; letter-spacing: 1px; text-shadow: 1px 1px 0 #000;
+            transition: transform 0.05s, background 0.05s; text-align: center; 
+            backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
         }
-        .action-btn.active { transform: translateY(5px); box-shadow: 0 0 0 rgba(0,0,0,0.8); }
-        #btn-jump { background: rgba(46, 204, 113, 1); } #btn-jump.active { background: rgba(39, 174, 96, 1); }
-        #btn-shoot { background: rgba(231, 76, 60, 1); } #btn-shoot.active { background: rgba(192, 57, 43, 1); }
+        .action-btn.active { transform: scale(0.9); }
+        #btn-jump { background: rgba(46, 204, 113, 0.3); border: 2px solid rgba(46, 204, 113, 0.6); color: rgba(255,255,255,0.9); } 
+        #btn-jump.active { background: rgba(46, 204, 113, 0.6); }
+        #btn-shoot { background: rgba(231, 76, 60, 0.3); border: 2px solid rgba(231, 76, 60, 0.6); color: rgba(255,255,255,0.9); } 
+        #btn-shoot.active { background: rgba(231, 76, 60, 0.6); }
 
         @media (max-width: 650px) {
             .mobile-only { width: 100px; min-width: 100px; }
-            #joystick-area { transform: scale(0.85); transform-origin: bottom center; }
-            .action-btn { width: 55px; height: 55px; font-size: 14px; }
+            #joystick-area { transform: scale(0.85); transform-origin: bottom left; }
+            .action-btn { width: 60px; height: 60px; font-size: 14px; }
+            .action-container { transform: scale(0.85); transform-origin: bottom right; }
         }
 
         /* --- DESKTOP OVERRIDES --- */
@@ -172,22 +181,31 @@
 </head>
 <body>
 
-    <!-- LEFT THUMB CONTROLS (Virtual Joystick) -->
-    <div id="left-controls" class="mobile-only">
-        <div id="joystick-area">
-            <div id="joystick-base">
-                <div id="joystick-stick"></div>
-            </div>
-        </div>
-    </div>
-
     <!-- CENTER GAME SCREEN -->
     <div id="game-wrapper">
-        <div id="fullscreen-btn" class="hud-text">⛶ FULLSCREEN</div>
 
         <div id="game-scale-box">
             <canvas id="gameCanvas" width="960" height="540"></canvas>
             <div id="flash-overlay"></div>
+            
+            <div id="fullscreen-btn" class="hud-text">⛶ FULLSCREEN</div>
+
+            <!-- LEFT THUMB CONTROLS (Virtual Joystick - OVERLAY) -->
+            <div id="left-controls" class="mobile-only">
+                <div id="joystick-area">
+                    <div id="joystick-base">
+                        <div id="joystick-stick"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT THUMB CONTROLS (OVERLAY) -->
+            <div id="right-controls" class="mobile-only">
+                <div class="action-container">
+                    <div class="action-btn" id="btn-shoot">SPRAY</div>
+                    <div class="action-btn" id="btn-jump">JUMP</div>
+                </div>
+            </div>
             
             <div id="ui-layer">
                 <div class="hud-group">
@@ -236,14 +254,6 @@
                     <div class="blink" id="next-stage-btn" style="background: #2ecc71; border-color: #27ae60; padding: 10px 30px; margin-top: 0px; font-size: 20px;">LEAVE SALOON</div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- RIGHT THUMB CONTROLS -->
-    <div id="right-controls" class="mobile-only">
-        <div class="action-container">
-            <div class="action-btn" id="btn-shoot">SPRAY</div>
-            <div class="action-btn" id="btn-jump">JUMP</div>
         </div>
     </div>
 
@@ -568,6 +578,12 @@ document.addEventListener('mouseup', handleJoyEnd);
         if (gameState === 'START' || gameState === 'GAMEOVER') {
             if(e) e.stopPropagation();
             if(e && e.cancelable) e.preventDefault(); 
+            
+            // Auto trigger fullscreen on mobile
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.body.classList.contains('desktop-mode')) {
+                toggleFullscreen();
+            }
+
             startGame(); 
         }
     };
