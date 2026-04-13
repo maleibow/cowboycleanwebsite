@@ -393,8 +393,95 @@ const stageNames = ["", "DESERT SCRUB", "TOXIC JUNGLE", "NEO-SCRAP CITY", "NEW Y
 
 const keys = { Up: false, Down: false, Left: false, Right: false, Jump: false, Shoot: false };
 
+/** STORY & CUTSCENE SYSTEM **/
+const Story = {
+    intro: [
+        { s: 'Grime Overlord', t: "MWAHAHA! This world is far too clean! I'm taking over, and taking Miss Cowboy with me!" },
+        { s: 'Miss Cowboy', t: "Help me, Cowboy Clean! He's too filthy! Ahhhh!" },
+        { s: 'Cowboy Clean', t: "Hold on, little lady! I'll scrub this planet top to bottom to find you!" }
+    ],
+    stage2: [
+        { s: 'Cowboy Clean', t: "The desert is dusted. But this jungle is oozing with sludge!" },
+        { s: 'Grime Overlord', t: "You're too late, soap-slinger! The muck is already spreading!" }
+    ],
+    stage3: [
+        { s: 'Cowboy Clean', t: "A city made of trash... Disgusting. Time to shine up this scrap." }
+    ],
+    stage4: [
+        { s: 'Miss Cowboy', t: "*static*... Cowboy... the big city is covered in grime! Hurry!" },
+        { s: 'Cowboy Clean', t: "I'm on my way! Just gotta wipe down these dirty streets." }
+    ],
+    stage5: [
+        { s: 'Cowboy Clean', t: "Paris... the city of lights. More like the city of blights right now. Let's sanitize." }
+    ],
+    stage6: [
+        { s: 'Grime Overlord', t: "You persist, but you'll never survive the Grime Volcano!" },
+        { s: 'Cowboy Clean', t: "I'm bringing the bleach, Overlord. It ends here!" }
+    ],
+    ending: [
+        { s: 'Grime Overlord', t: "NOOO! My beautiful filth! Washed away completely!" },
+        { s: 'Miss Cowboy', t: "My hero! You made the world sparkle again!" },
+        { s: 'Cowboy Clean', t: "A cowboy's work is never truly done... but for now, we shine." }
+    ]
+};
+
+let cutsceneData = [];
+let cutsceneIndex = 0;
+let cutsceneCallback = null;
+let cutsceneTextProgress = 0;
+
+function startCutscene(id, callback) {
+    if (!Story[id]) {
+        if (callback) callback();
+        return;
+    }
+    cutsceneData = Story[id];
+    cutsceneIndex = 0;
+    cutsceneTextProgress = 0;
+    cutsceneCallback = callback;
+    gameState = 'CUTSCENE';
+}
+
+function advanceCutscene() {
+    if (gameState !== 'CUTSCENE') return;
+    
+    let currentLine = cutsceneData[cutsceneIndex];
+    if (cutsceneTextProgress < currentLine.t.length) {
+        cutsceneTextProgress = currentLine.t.length; // Skip to end of text
+    } else {
+        cutsceneIndex++;
+        cutsceneTextProgress = 0;
+        if (cutsceneIndex >= cutsceneData.length) {
+            if (cutsceneCallback) {
+                let cb = cutsceneCallback;
+                cutsceneCallback = null;
+                cb();
+            }
+        }
+    }
+}
+
+// Cutscene Input Bindings
+const cutsceneAdvanceFn = (e) => {
+    if (gameState === 'CUTSCENE') {
+        if (e && e.cancelable) e.preventDefault();
+        advanceCutscene();
+    }
+};
+document.addEventListener('touchstart', cutsceneAdvanceFn, {passive: false});
+document.addEventListener('mousedown', cutsceneAdvanceFn);
+
 function bindKey(code, keyRef) {
-    window.addEventListener('keydown', e => { if(e.code===code || e.key===code) { e.preventDefault(); keys[keyRef] = true; if(gameState==='START'||gameState==='GAMEOVER') startGame(); }});
+    window.addEventListener('keydown', e => { 
+        if(gameState === 'CUTSCENE' && (e.code === 'Space' || e.code === 'Enter' || e.code === 'ShiftLeft' || e.code === 'ShiftRight')) {
+            advanceCutscene();
+            return;
+        }
+        if(e.code===code || e.key===code) { 
+            e.preventDefault(); keys[keyRef] = true; 
+            if(gameState==='START'||gameState==='GAMEOVER') startGame(); 
+        }
+    });
     window.addEventListener('keyup', e => { if(e.code===code || e.key===code) { e.preventDefault(); keys[keyRef] = false; }});
 }
 bindKey('ArrowUp', 'Up'); bindKey('ArrowDown', 'Down'); bindKey('ArrowLeft', 'Left'); bindKey('ArrowRight', 'Right'); bindKey('Space', 'Jump'); bindKey('Shift', 'Shoot');
@@ -477,8 +564,14 @@ document.addEventListener('mouseup', handleJoyEnd);
 
 ['start-screen', 'game-over-screen'].forEach(id => {
     const el = document.getElementById(id);
-    const startFn = (e) => { if(e.cancelable) e.preventDefault(); startGame(); };
-    el.addEventListener('touchstart', startFn, {passive: false}); el.addEventListener('click', startFn);
+    const startFnWrap = (e) => { 
+        if (gameState === 'START' || gameState === 'GAMEOVER') {
+            if(e) e.stopPropagation();
+            if(e && e.cancelable) e.preventDefault(); 
+            startGame(); 
+        }
+    };
+    el.addEventListener('touchstart', startFnWrap, {passive: false}); el.addEventListener('click', startFnWrap);
 });
 
 // GAME LIFECYCLE FUNCTIONS
@@ -488,7 +581,14 @@ function startGame() {
     ui.store.classList.add('hidden');
     score = 0; coins = 0; currentStage = 1; stageLoop = 1; frames = 0;
     upgrades = { jump: 0, speed: 0, size: 0, laser: false, lasso: false, vehicle: false };
+    
     initLevel();
+
+    startCutscene('intro', () => {
+        gameState = 'PLAYING';
+    });
+    
+    // Ensure loop runs even if starting during cutscene
     if (!gameLoopStarted) { gameLoopStarted = true; gameLoop(); }
 }
 
@@ -538,11 +638,22 @@ document.getElementById('buy-laser').addEventListener('click', () => attemptBuy(
 document.getElementById('buy-vehicle').addEventListener('click', () => attemptBuy(800, 'vehicle', 1));
 
 const nxtStageFn = (e) => { 
-    if(e.cancelable) e.preventDefault(); 
+    if(e) e.stopPropagation();
+    if(e && e.cancelable) e.preventDefault(); 
     if (gameState === 'STORE') { 
         ui.store.classList.add('hidden'); 
         SaloonMusic.stop(); 
-        triggerStageTransition(); 
+        
+        let nextStageNum = currentStage + 1;
+        if (nextStageNum > 6) nextStageNum = 1;
+        let nextKeyTarget = 'stage' + nextStageNum;
+
+        // Play story on loop 1
+        if (Story[nextKeyTarget] && stageLoop === 1 && nextStageNum !== 1) {
+            startCutscene(nextKeyTarget, triggerStageTransition);
+        } else {
+            triggerStageTransition();
+        }
     } 
 };
 document.getElementById('next-stage-btn').addEventListener('click', nxtStageFn);
@@ -582,9 +693,69 @@ function drawCircle(ctx, x, y, r, fillColor, strokeColor = '#000', lineWidth = 3
     if (strokeColor && lineWidth > 0) { ctx.lineWidth = lineWidth; ctx.strokeStyle = strokeColor; ctx.stroke(); }
 }
 
+function wrapText(context, text, x, y, maxWidth, lineHeight) {
+    var words = text.split(' ');
+    var line = '';
+    for(var n = 0; n < words.length; n++) {
+        var testLine = line + words[n] + ' ';
+        var metrics = context.measureText(testLine);
+        var testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+            context.fillText(line, x, y);
+            line = words[n] + ' ';
+            y += lineHeight;
+        } else {
+            line = testLine;
+        }
+    }
+    context.fillText(line, x, y);
+}
+
+function drawPortrait(ctx, speaker) {
+    if (speaker === 'Cowboy Clean') {
+        ctx.fillStyle = '#ffccaa';
+        ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI*2); ctx.fill(); // Head
+        ctx.fillStyle = '#f5f5f5'; ctx.fillRect(-60, 10, 120, 60); // Mask
+        ctx.fillStyle = '#34495e'; ctx.fillRect(-50, -30, 100, 30); // Goggles base
+        ctx.fillStyle = '#34dbcc'; ctx.fillRect(-40, -25, 30, 20); ctx.fillRect(10, -25, 30, 20); // Goggle glass
+        ctx.fillStyle = '#f1c40f'; // Hat
+        ctx.beginPath(); ctx.ellipse(0, -40, 90, 20, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillRect(-45, -90, 90, 50);
+    } else if (speaker === 'Miss Cowboy') {
+        ctx.fillStyle = '#ffccaa';
+        ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI*2); ctx.fill(); // Head
+        ctx.fillStyle = '#f1c40f'; // Blonde hair
+        ctx.beginPath(); ctx.arc(0, 0, 65, Math.PI, Math.PI*2); ctx.fill();
+        ctx.fillRect(-65, 0, 130, 80);
+        ctx.fillStyle = '#fff'; // Eyes
+        ctx.beginPath(); ctx.arc(-20, -10, 12, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(20, -10, 12, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(-20, -10, 5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(20, -10, 5, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#e84393'; // Hat
+        ctx.beginPath(); ctx.ellipse(0, -50, 80, 20, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillRect(-40, -90, 80, 50);
+        ctx.beginPath(); ctx.moveTo(-30, 40); ctx.lineTo(30, 40); ctx.lineTo(0, 80); ctx.fill(); // Bandana
+    } else if (speaker === 'Grime Overlord') {
+        ctx.fillStyle = '#4b5320';
+        ctx.beginPath(); ctx.arc(0, 0, 100, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-50, 50, 60, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(50, 40, 70, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#e74c3c'; // Red eyes
+        ctx.beginPath(); ctx.arc(-30, -10, 15, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(30, -20, 20, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath(); ctx.arc(-30, -10, 5, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(30, -20, 8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#3e2723'; // Sludge drip
+        ctx.fillRect(-20, 20, 40, 60);
+    }
+}
+
 /** ENTITIES **/
 const GRAVITY = 0.8; const FRICTION = 0.82; const JUMP_FORCE = -16; const SPEED = 7; const FLOOR_Y = 460;
-let player, projectiles, enemyProjectiles, enemies, obstacles, powerups, particles, floatingTexts, droppedCoins;
+let player, projectiles = [], enemyProjectiles = [], enemies = [], obstacles = [], powerups = [], particles = [], floatingTexts = [], droppedCoins = [];
 let bgOffsets = [0,0,0,0];
 let nextBossScore = 1500;
 let spawnTimer = 0; let obstacleTimer = 0;
@@ -1307,7 +1478,7 @@ class Obstacle {
 }
 
 function spawnManager() {
-    if (gameState === 'TRANSITION' || gameState === 'STORE' || bossDefeated) return;
+    if (gameState === 'TRANSITION' || gameState === 'STORE' || gameState === 'CUTSCENE' || bossDefeated) return;
 
     if (score >= nextBossScore && !enemies.some(e => e.type.startsWith('boss'))) {
         let bossType = 'boss' + currentStage;
@@ -1410,7 +1581,13 @@ function checkCollisions() {
                     if (e.type.startsWith('boss')) {
                         nextBossScore = Infinity; 
                         bossDefeated = true; 
-                        setTimeout(() => openStore(), 2000);
+                        if (e.type === 'boss6' && stageLoop === 1) {
+                            setTimeout(() => {
+                                startCutscene('ending', openStore);
+                            }, 2000);
+                        } else {
+                            setTimeout(() => openStore(), 2000);
+                        }
                     }
                 }
                 if (!p.piercing) break; 
@@ -1466,6 +1643,10 @@ function checkCollisions() {
 
 function update() {
     if (gameState === 'STORE') return;
+    if (gameState === 'CUTSCENE') {
+        cutsceneTextProgress += 0.5; // Typewriter speed
+        return;
+    }
     if (gameState !== 'PLAYING' && gameState !== 'TRANSITION') return;
     
     if (gameState === 'TRANSITION') {
@@ -1675,6 +1856,56 @@ function drawSaloon() {
     ctx.beginPath(); ctx.moveTo(0, 400); ctx.lineTo(960, 400); ctx.stroke();
 }
 
+function drawCutscene() {
+    if (cutsceneIndex >= cutsceneData.length) return;
+    
+    let line = cutsceneData[cutsceneIndex];
+    let isEvil = line.s === 'Grime Overlord';
+
+    // Cinematic Overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Top and Bottom Letterboxes
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, 60);
+    ctx.fillRect(0, canvas.height - 60, canvas.width, 60);
+
+    // Draw Portrait
+    ctx.save();
+    let hover = Math.sin(frames * 0.05) * 5;
+    ctx.translate(isEvil ? canvas.width - 250 : 250, canvas.height / 2 - 50 + hover);
+    if (isEvil) ctx.scale(-1, 1);
+    drawPortrait(ctx, line.s);
+    ctx.restore();
+
+    // Dialogue Box
+    ctx.fillStyle = 'rgba(10, 15, 20, 0.95)';
+    ctx.strokeStyle = isEvil ? '#e74c3c' : (line.s === 'Miss Cowboy' ? '#e84393' : '#34dbcc');
+    ctx.lineWidth = 4;
+    ctx.fillRect(80, canvas.height - 180, canvas.width - 160, 100);
+    ctx.strokeRect(80, canvas.height - 180, canvas.width - 160, 100);
+
+    // Speaker Name
+    ctx.fillStyle = isEvil ? '#e74c3c' : (line.s === 'Miss Cowboy' ? '#ff9ff3' : '#f1c40f');
+    ctx.font = '28px Bangers';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(line.s, 100, canvas.height - 170);
+
+    // Typing Text
+    ctx.fillStyle = '#fff';
+    ctx.font = '14px "Press Start 2P"';
+    let displayStr = line.t.substring(0, Math.floor(cutsceneTextProgress));
+    wrapText(ctx, displayStr, 100, canvas.height - 130, canvas.width - 200, 24);
+
+    // Continue Prompt
+    if (cutsceneTextProgress >= line.t.length && Math.floor(frames / 20) % 2 === 0) {
+        ctx.fillStyle = '#f1c40f';
+        ctx.fillText("▼", canvas.width - 120, canvas.height - 110);
+    }
+}
+
 function drawDamageOverlay() {
     if (player.health >= 100) return;
     let int = (100 - player.health) / 100;
@@ -1697,13 +1928,13 @@ function draw() {
         drawBackground();
     }
 
-    if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'GAMEOVER' || gameState === 'STORE') {
+    if (gameState === 'PLAYING' || gameState === 'TRANSITION' || gameState === 'GAMEOVER' || gameState === 'STORE' || gameState === 'CUTSCENE') {
         if (gameState !== 'STORE') {
             obstacles.forEach(o => o && o.draw());
             droppedCoins.forEach(c => c && c.draw());
             powerups.forEach(p => p && p.draw());
             enemies.forEach(e => e && e.draw());
-            player.draw();
+            if (gameState !== 'CUTSCENE') player.draw();
             particles.forEach(p => p && p.draw());
             projectiles.forEach(p => p && p.draw());
             enemyProjectiles.forEach(p => p && p.draw());
@@ -1711,7 +1942,9 @@ function draw() {
         floatingTexts.forEach(t => t && t.draw());
     }
     ctx.restore();
-    if(gameState === 'PLAYING' || gameState === 'STORE') drawDamageOverlay();
+    
+    if (gameState === 'CUTSCENE') drawCutscene();
+    if (gameState === 'PLAYING' || gameState === 'STORE') drawDamageOverlay();
 }
 
 function gameLoop() {
