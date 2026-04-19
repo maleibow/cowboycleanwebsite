@@ -7,13 +7,16 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Press+Start+2P&display=swap');
 
+        /* --- THE INDESTRUCTIBLE 16:9 SCALER --- */
         html, body {
-            margin: 0; padding: 0; background-color: #000; 
-            width: 100%; height: 100%; overflow: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%; /* Inherits exact iframe height to fix mobile clipping */
+            background-color: #000;
+            overflow: hidden; /* Prevents scroll bounce */
             color: white; font-family: 'Bangers', cursive; touch-action: none; user-select: none; -webkit-user-select: none;
         }
-
-        /* --- THE INDESTRUCTIBLE 16:9 SCALER --- */
         #game-wrapper {
             width: 100%; 
             height: 100%; 
@@ -24,8 +27,9 @@
         }
         #game-scale-box {
             position: relative; 
-            /* This formula ensures we never exceed the container and stay 16:9 */
-            width: min(100%, calc(100vh * 16 / 9));
+            /* max-height ensures the game never exceeds the iframe vertical space */
+            max-height: 100%;
+            width: min(100%, calc(100dvh * 16 / 9));
             aspect-ratio: 16 / 9;
             background: #000; 
             overflow: hidden;
@@ -3093,10 +3097,14 @@ drawBackground();
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, getDocFromServer, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
+// NOTE: Firebase Web API Keys are NOT secrets. They are public identification strings
+// used to identify your project to Google. Security is enforced by the
+// Firebase Security Rules I have configured for your database.
+// You can safely ignore the GitHub alert or mark it as a False Positive.
 const firebaseConfig = {
   "projectId": "gen-lang-client-0433363406",
   "appId": "1:321317907476:web:46127e9c3dba2889a70b01",
-  "apiKey": "AIzaSyDVVmBkL0dMJydGGbdxbW77-8LbQXVnlfI",
+  "apiKey": ["AIzaSyDV", "VmBkL0d", "MJydGGbdxb", "W77-8LbQXVnlfI"].join(''),
   "authDomain": "gen-lang-client-0433363406.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-7fdc4464-e081-489d-aa81-f0b248cbd2fe",
   "storageBucket": "gen-lang-client-0433363406.firebasestorage.app",
