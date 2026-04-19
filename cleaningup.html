@@ -250,12 +250,25 @@
                 <p>The world is filthy. Use your trusty <strong>Spray Bottle</strong> to wash away the grime across the globe!</p>
                 <p style="color: #34dbcc;">ARROWS: Move & Aim<br>SHIFT: Spray<br>SPACE: Jump</p>
                 <div class="blink" id="start-btn">TAP TO CLEAN</div>
-                <div id="cheat-btn" style="margin-top: 30px; font-size: 14px; color: #95a5a6; cursor: pointer; pointer-events: auto; border: 1px dashed #95a5a6; padding: 5px 10px; border-radius: 5px;">[ ENTER SECRET CODE ]</div>
+                
+                <div id="leaderboard-section" style="margin-top: 15px; margin-bottom: 25px; font-size: 12px; color: #f1c40f; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 2px solid #34495e; width: 80%; max-width: 300px; z-index: 100;">
+                    <h3 style="margin: 0 0 10px 0; color: #f1c40f; text-shadow: 2px 2px 0 #000; font-size: 18px;">GLOBAL TOP 5</h3>
+                    <div id="leaderboard-list" style="color: #ecf0f1; font-family: 'Press Start 2P', cursive; font-size: 8px; line-height: 1.8;">Loading High Scores...</div>
+                </div>
+
+                <div id="cheat-btn" style="font-size: 14px; color: #95a5a6; cursor: pointer; pointer-events: auto; border: 1px dashed #95a5a6; padding: 5px 10px; border-radius: 5px;">[ ENTER SECRET CODE ]</div>
             </div>
 
             <div id="game-over-screen" class="hidden">
                 <h1 style="color: #e74c3c; text-shadow: 3px 3px 0 #000, 6px 6px 0 #c0392b;">GRIME OVERLOAD</h1>
                 <div id="final-score" class="hud-text" style="margin-bottom: 20px;">FINAL SCORE: 0</div>
+                
+                <div id="name-entry-section" style="margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: auto;">
+                    <input type="text" id="player-name-input" placeholder="ENTER NAME" maxlength="12" style="font-family: 'Press Start 2P', cursive; font-size: 16px; padding: 10px; text-transform: uppercase; text-align: center; border: 3px solid #34dbcc; background: #111; color: #fff; width: 220px; outline: none; border-radius: 8px;" autocomplete="off" spellcheck="false">
+                    <div class="blink" id="submit-score-btn" style="background: #3498db; border-color: #2980b9; margin-top: 5px; padding: 10px 20px; font-size: 18px;">POST SCORE</div>
+                </div>
+                <div id="score-submit-status" style="margin-bottom: 20px; font-size: 12px; font-family: 'Press Start 2P', cursive; color: #2ecc71;"></div>
+                
                 <div class="blink" id="retry-btn">TAP TO RETRY</div>
             </div>
 
@@ -628,7 +641,7 @@ function bindKey(code, keyRef) {
         }
         if(e.code===code || e.key===code) { 
             e.preventDefault(); keys[keyRef] = true; 
-            if(gameState==='START'||gameState==='GAMEOVER') startGame(); 
+            if(gameState==='START') startGame(); 
         }
     });
     window.addEventListener('keyup', e => { if(e.code===code || e.key===code) { e.preventDefault(); keys[keyRef] = false; }});
@@ -711,23 +724,38 @@ document.addEventListener('mousemove', handleJoyMove);
 document.addEventListener('mouseup', handleJoyEnd);
 
 
-['start-screen', 'game-over-screen'].forEach(id => {
-    const el = document.getElementById(id);
-    const startFnWrap = (e) => { 
-        if (gameState === 'START' || gameState === 'GAMEOVER') {
-            if(e) e.stopPropagation();
-            if(e && e.cancelable) e.preventDefault(); 
-            
-            // Auto trigger fullscreen on mobile
-            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.body.classList.contains('desktop-mode')) {
-                toggleFullscreen();
-            }
-
-            startGame(); 
+const startFnWrap = (e) => { 
+    if (gameState === 'START' || gameState === 'GAMEOVER') {
+        if(e) e.stopPropagation();
+        if(e && e.cancelable) e.preventDefault(); 
+        
+        // Auto trigger fullscreen on mobile
+        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.body.classList.contains('desktop-mode')) {
+            toggleFullscreen();
         }
-    };
-    el.addEventListener('touchstart', startFnWrap, {passive: false}); el.addEventListener('click', startFnWrap);
+
+        startGame(); 
+    }
+};
+
+document.getElementById('start-screen').addEventListener('touchstart', startFnWrap, {passive: false});
+document.getElementById('start-screen').addEventListener('click', startFnWrap);
+
+const retryBtn = document.getElementById('retry-btn');
+retryBtn.addEventListener('click', (e) => {
+    if (gameState === 'GAMEOVER') {
+        if(e) e.stopPropagation();
+        if(e && e.cancelable) e.preventDefault();
+        startGame();
+    }
 });
+retryBtn.addEventListener('touchstart', (e) => {
+    if (gameState === 'GAMEOVER') {
+        if(e) e.stopPropagation();
+        if(e && e.cancelable) e.preventDefault();
+        startGame();
+    }
+}, {passive: false});
 
 const openCheatMenu = (e) => {
     if(e) e.stopPropagation();
@@ -822,7 +850,32 @@ function gameOver() {
     ui.pauseBtn.classList.add('hidden');
     ui.over.classList.remove('hidden');
     document.getElementById('final-score').innerText = "FINAL SCORE: " + score;
+    document.getElementById('score-submit-status').innerText = "";
+    document.getElementById('name-entry-section').style.display = 'flex';
+    document.getElementById('player-name-input').value = '';
+    setTimeout(() => { document.getElementById('player-name-input').focus(); }, 100);
 }
+
+const submitScoreAction = (e) => {
+    if(e) { e.stopPropagation(); if(e.cancelable) e.preventDefault(); }
+    const nameInput = document.getElementById('player-name-input');
+    const playerName = (nameInput.value || "").trim().toUpperCase() || "COWBOY";
+    if (window.submitScore) {
+        window.submitScore(playerName, score, currentStage);
+    }
+};
+
+const submitScoreBtn = document.getElementById('submit-score-btn');
+submitScoreBtn.addEventListener('click', submitScoreAction);
+submitScoreBtn.addEventListener('touchstart', submitScoreAction, {passive: false});
+
+const nameInput = document.getElementById('player-name-input');
+nameInput.addEventListener('keydown', (e) => { 
+    e.stopPropagation(); 
+    if(e.key === 'Enter' || e.code === 'Enter') submitScoreAction();
+});
+nameInput.addEventListener('keyup', (e) => { e.stopPropagation(); });
+nameInput.addEventListener('keypress', (e) => { e.stopPropagation(); });
 
 function triggerStageTransition() {
     gameState = 'TRANSITION';
@@ -3002,5 +3055,101 @@ function gameLoop() {
 
 drawBackground();
 </script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, getDocFromServer, doc } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  "projectId": "gen-lang-client-0433363406",
+  "appId": "1:321317907476:web:46127e9c3dba2889a70b01",
+  "apiKey": "AIzaSyDVVmBkL0dMJydGGbdxbW77-8LbQXVnlfI",
+  "authDomain": "gen-lang-client-0433363406.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-7fdc4464-e081-489d-aa81-f0b248cbd2fe",
+  "storageBucket": "gen-lang-client-0433363406.firebasestorage.app",
+  "messagingSenderId": "321317907476",
+  "measurementId": ""
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+window.fetchLeaderboard = async () => {
+    const listDiv = document.getElementById('leaderboard-list');
+    listDiv.innerHTML = "Fetching scores...";
+    try {
+        const q = query(
+            collection(db, 'leaderboard'),
+            where('score', '>=', 0), // Complies with required list restriction
+            orderBy('score', 'desc'),
+            limit(5)
+        );
+        const querySnapshot = await getDocs(q);
+        let html = '';
+        let rank = 1;
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            let name = data.displayName || "Anonymous";
+            if (name.length > 12) name = name.substring(0, 10) + "...";
+            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>${rank}. ${name}</span>
+                        <span>${data.score}pt</span>
+                     </div>`;
+            rank++;
+        });
+        if (html === '') html = 'No scores posted yet!';
+        listDiv.innerHTML = html;
+    } catch (error) {
+        console.error("Leaderboard fetch error:", error);
+        if(error instanceof Error && error.message.includes('the client is offline')) {
+            listDiv.innerHTML = "You are offline.";
+        } else {
+            listDiv.innerHTML = "Could not load scores.";
+        }
+    }
+};
+
+window.submitScore = async (playerName, score, stage) => {
+    if (score <= 0) return; // don't submit 0 score
+    const statusDiv = document.getElementById('score-submit-status');
+    const entrySection = document.getElementById('name-entry-section');
+    
+    statusDiv.style.color = '#f1c40f';
+    statusDiv.innerText = "Saving score...";
+    entrySection.style.display = 'none';
+    
+    try {
+        await addDoc(collection(db, 'leaderboard'), {
+            displayName: playerName || 'COWBOY',
+            score: score,
+            stage: stage,
+            createdAt: serverTimestamp()
+        });
+        statusDiv.style.color = '#2ecc71';
+        statusDiv.innerText = "Score Saved To Leaderboard!";
+        window.fetchLeaderboard();
+    } catch(error) {
+        console.error("Error submitting score:", error);
+        statusDiv.style.color = '#e74c3c';
+        statusDiv.innerText = "Failed to save score.";
+        entrySection.style.display = 'flex';
+    }
+};
+
+// Load initially
+window.fetchLeaderboard();
+
+// Validate Connection to Firestore on Boot
+async function testConnection() {
+  try {
+    await getDocFromServer(doc(db, 'test', 'connection'));
+  } catch (error) {
+    if(error instanceof Error && error.message.includes('the client is offline')) {
+      console.error("Please check your Firebase configuration.");
+    }
+  }
+}
+testConnection();
+</script>
+
 </body>
 </html>
