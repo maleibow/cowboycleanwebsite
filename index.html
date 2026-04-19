@@ -482,8 +482,9 @@
             <!-- Game Section -->
             <section id="game" class="mb-12">
                 <h3 class="text-3xl font-bold mb-6 text-gray-50">Clean Up</h3>
-                <div class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-black flex justify-center">
-                    <iframe src="cleaningup.html" width="820" height="470" style="border: none; overflow: hidden; max-width: 100%;" title="Cowboy Clean Game"></iframe>
+                <!-- Updated container for responsive scaling -->
+                <div class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-black relative w-full aspect-video max-w-5xl mx-auto">
+                    <iframe src="cleaningup.html" class="absolute inset-0 w-full h-full" style="border: none;" allowfullscreen title="Cowboy Clean Game"></iframe>
                 </div>
             </section>
 
