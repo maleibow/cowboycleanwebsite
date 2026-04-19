@@ -386,7 +386,12 @@ const toggleFullscreen = (e) => {
         let success = false;
         try {
             if (elem.requestFullscreen) { 
-                elem.requestFullscreen().catch(err => {
+                elem.requestFullscreen().then(() => {
+                    // Attempt to lock screen to horizontal landscape mode
+                    if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
+                        window.screen.orientation.lock('landscape').catch(() => {});
+                    }
+                }).catch(err => {
                     console.warn("FS Blocked by iframe or browser, using fallback.");
                     document.body.classList.add('pseudo-fs');
                 }); 
