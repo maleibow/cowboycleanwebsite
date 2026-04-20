@@ -130,7 +130,6 @@
         @media (max-width: 651px), (max-height: 451px) {
             h1 { font-size: 22px !important; margin-bottom: 4px !important; letter-spacing: 1px !important; }
             p { font-size: 6px !important; line-height: 1.4 !important; margin-bottom: 8px !important; max-width: 95%; }
-            .mobile-hint { font-size: 8px !important; padding: 4px !important; margin-bottom: 8px !important; }
             .blink { font-size: 14px !important; padding: 8px 16px !important; margin-top: 8px !important; border-radius: 6px !important; }
             .hud-text { font-size: 10px !important; padding: 2px 6px !important; letter-spacing: 1px !important; border-radius: 4px !important; }
             #leaderboard-section { margin-top: 5px !important; padding: 5px !important; width: 90% !important; margin-bottom: 10px !important; }
@@ -146,48 +145,44 @@
         
         .hud-sub { font-size: 12px; color: #fff; text-shadow: 2px 2px 0px #000; text-align: center; margin-top: -2px; font-family: 'Bangers', cursive; letter-spacing: 1px; }
 
-        .mobile-hint { display: block; color: #f39c12; font-family: 'Press Start 2P', cursive; font-size: 10px; margin-bottom: 15px; animation: blinker 1s linear infinite; border: 2px dashed #f39c12; padding: 8px; background: rgba(243, 156, 18, 0.1); }
-        
-        /* High-visibility "Flip" screen for portrait mode */
-        body.force-portrait .mobile-hint {
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            margin: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-            background: #000 !important;
-            z-index: 9999 !important;
-            font-size: 32px !important;
-            color: #f1c40f !important;
-            border: 8px solid #f1c40f !important;
-            padding: 40px !important;
-            box-sizing: border-box !important;
-            text-align: center !important;
+        /* High-visibility "Rotate Device" overlay */
+        #rotate-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000;
+            z-index: 9999999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border: 8px solid #f1c40f;
+            box-sizing: border-box;
         }
-        body.force-portrait .mobile-hint::before {
-            content: "⟳";
-            font-size: 100px !important;
+        #rotate-overlay .icon {
+            font-size: 120px;
+            color: #f1c40f;
             margin-bottom: 20px;
-            display: block;
+            animation: spin 2s infinite linear;
         }
-        body.force-portrait .mobile-hint::after {
-            content: "\A ROTATE DEVICE\A TO PLAY";
-            white-space: pre !important;
-            font-size: 14px !important;
-            margin-top: 20px;
-            color: #fff;
+        #rotate-overlay .text {
             font-family: 'Press Start 2P', cursive;
-            line-height: 1.8;
+            font-size: 18px;
+            color: #fff;
+            line-height: 2;
         }
-        /* Hide the parent's other children when the hint is full-screen */
-        body.force-portrait #start-screen > *:not(.mobile-hint), 
-        body.force-portrait #game-over-screen > *:not(.mobile-hint), 
-        body.force-portrait #ui-layer > *:not(.mobile-hint) { visibility: hidden !important; }
+        @keyframes spin {
+            100% { transform: rotate(-360deg); }
+        }
+
+        /* Trigger on detection */
+        body.force-portrait #game-wrapper { display: none !important; }
+        body.force-portrait #rotate-overlay { display: flex !important; }
+
+        @media (orientation: portrait) {
+            body:not(.desktop-mode) #game-wrapper { display: none !important; }
+            body:not(.desktop-mode) #rotate-overlay { display: flex !important; }
+        }
 
         .blink { animation: blinker 0.6s linear infinite; color: #e74c3c; margin-top: 20px; font-size: 18px; cursor: pointer; border: 3px solid #000; background: #e74c3c; color: #fff; padding: 12px 24px; border-radius: 10px; box-shadow: 4px 4px 0 #000; transition: transform 0.1s; }
         @media (min-width: 600px) { .blink { font-size: 24px; } }
@@ -236,11 +231,10 @@
 
         /* --- DESKTOP OVERRIDES --- */
         @media (min-width: 1024px), (hover: hover) and (pointer: fine) {
-            .mobile-only { display: none !important; } .mobile-hint { display: none !important; }
+            .mobile-only { display: none !important; }
             #game-scale-box { border: 2px solid #2c3e50; }
         }
-        body.desktop-mode .mobile-only { display: none !important; } 
-        body.desktop-mode .mobile-hint { display: none !important; }
+        body.desktop-mode .mobile-only { display: none !important; }
         body.desktop-mode #game-scale-box { border: 2px solid #2c3e50; }
         
         /* --- DESKTOP ONLY --- */
@@ -260,6 +254,12 @@
     </style>
 </head>
 <body>
+
+    <!-- FULL SCREEN WARNING -->
+    <div id="rotate-overlay">
+        <div class="icon">⟳</div>
+        <div class="text">HORIZONTAL<br>PLAY ONLY<br><br>ROTATE<br>DEVICE</div>
+    </div>
 
     <!-- CENTER GAME SCREEN -->
     <div id="game-wrapper">
@@ -303,7 +303,6 @@
             </div>
 
             <div id="ui-layer">
-                <p class="mobile-hint">⟳ FLIP SIDEWAYS ⟳</p>
                 <div class="hud-group">
                     <div id="score-display" class="hud-text">SCORE: 000000</div>
                     <div id="coin-display" class="hud-text" style="color: #f1c40f;">COINS: 0</div>
@@ -327,7 +326,6 @@
 
             <div id="start-screen">
                 <h1>COWBOY CLEAN<br><span style="font-size:0.5em; color:#fff; text-shadow: 2px 2px 0 #000; -webkit-text-stroke: 0;">World Tour Edition</span></h1>
-                <p class="mobile-hint">⟳ FLIP SIDEWAYS ⟳</p>
                 <p>Use your <strong>Spray Bottle</strong> to wash away the grime!</p>
                 <p class="desktop-only" style="color: #34dbcc; font-size: 7px;">ARROWS: Move | SHIFT: Spray | SPACE: Jump</p>
                 <div class="blink" id="start-btn">TAP TO CLEAN</div>
@@ -341,7 +339,6 @@
             </div>
 
             <div id="game-over-screen" class="hidden">
-                <p class="mobile-hint">⟳ FLIP SIDEWAYS ⟳</p>
                 <h1 style="color: #e74c3c; text-shadow: 3px 3px 0 #000, 6px 6px 0 #c0392b;">GRIME OVERLOAD</h1>
                 <div id="final-score" class="hud-text" style="margin-bottom: 20px;">FINAL SCORE: 0</div>
                 
@@ -519,13 +516,15 @@ function checkPlatform() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
     let isPortrait = false;
-    if (window.screen && window.screen.orientation && window.screen.orientation.type) {
+    if (window.matchMedia("(orientation: portrait)").matches) {
+        isPortrait = true;
+    } else if (window.screen && window.screen.orientation && window.screen.orientation.type) {
         isPortrait = window.screen.orientation.type.startsWith('portrait');
     } else if (window.screen && window.screen.width && window.screen.height) {
         // Fallback for safari 
         isPortrait = window.screen.width < window.screen.height;
     } else {
-        isPortrait = window.innerHeight > window.innerWidth;
+        isPortrait = window.innerHeight > (window.innerWidth * 1.2);
     }
 
     if (hasMouse || isLargeScreen) {
