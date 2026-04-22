@@ -223,6 +223,8 @@
         #btn-jump.active { background: rgba(46, 204, 113, 0.6); }
         #btn-shoot { background: rgba(231, 76, 60, 0.3); border: 2px solid rgba(231, 76, 60, 0.6); color: rgba(255,255,255,0.9); } 
         #btn-shoot.active { background: rgba(231, 76, 60, 0.6); }
+        #btn-bomb { background: rgba(241, 196, 15, 0.3); border: 2px solid rgba(241, 196, 15, 0.6); color: rgba(255,255,255,0.9); } 
+        #btn-bomb.active { background: rgba(241, 196, 15, 0.6); }
 
         @media (max-width: 650px) {
             .mobile-only { width: 100px; min-width: 100px; }
@@ -294,6 +296,7 @@
             <!-- RIGHT THUMB CONTROLS (OVERLAY) -->
             <div id="right-controls" class="mobile-only">
                 <div class="action-container">
+                    <div class="action-btn" id="btn-bomb" style="width: 50px; height: 50px; font-size: 12px; margin-bottom: -10px;">BOMB</div>
                     <div class="action-btn" id="btn-shoot">SPRAY</div>
                     <div class="action-btn" id="btn-jump">JUMP</div>
                 </div>
@@ -309,6 +312,7 @@
                     <div id="score-display" class="hud-text">SCORE: 000000</div>
                     <div id="coin-display" class="hud-text" style="color: #f1c40f;">COINS: 0</div>
                     <div id="health-display" class="hud-text" style="color: #2ecc71;">HEALTH: 100%</div>
+                    <div id="bomb-display" class="hud-text" style="color: #e67e22;">BOMBS: 3</div>
                     <!-- HEAT BAR -->
                     <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.6); border: 2px solid #000; border-radius: 4px; overflow: hidden; margin-top: 5px;">
                         <div id="heat-bar" style="width: 0%; height: 100%; background: #f1c40f; transition: width 0.1s, background 0.1s;"></div>
@@ -329,7 +333,9 @@
             <div id="start-screen">
                 <h1>COWBOY CLEAN<br><span style="font-size:0.5em; color:#fff; text-shadow: 2px 2px 0 #000; -webkit-text-stroke: 0;">World Tour Edition</span></h1>
                 <p>Use your <strong>Spray Bottle</strong> to wash away the grime!</p>
-                <p class="desktop-only" style="color: #34dbcc; font-size: 7px;">ARROWS: Move | SHIFT: Spray | SPACE: Jump</p>
+                <div class="desktop-only" style="color: #fff; font-size: 14px; font-family: 'Press Start 2P', cursive; background: rgba(0,0,0,0.6); padding: 12px 20px; border-radius: 8px; border: 2px dashed #34dbcc; margin-bottom: 20px; text-shadow: 2px 2px 0 #000; line-height: 1.6;">
+                    <span style="color: #f1c40f;">[ARROWS]</span> MOVE &nbsp;&nbsp; <span style="color: #f1c40f;">[SPACE]</span> JUMP &nbsp;&nbsp; <span style="color: #f1c40f;">[SHIFT]</span> SPRAY &nbsp;&nbsp; <span style="color: #f1c40f;">[Z]</span> BOMB
+                </div>
                 <div class="blink" id="start-btn">TAP TO CLEAN</div>
                 
                 <div id="leaderboard-section" style="margin-top: 15px; margin-bottom: 25px; font-size: 12px; color: #f1c40f; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; border: 2px solid #34495e; width: 80%; max-width: 300px; z-index: 100;">
@@ -568,7 +574,7 @@ ctx.imageSmoothingEnabled = false;
 const ui = {
     start: document.getElementById('start-screen'), over: document.getElementById('game-over-screen'),
     score: document.getElementById('score-display'), health: document.getElementById('health-display'),
-    coin: document.getElementById('coin-display'),
+    coin: document.getElementById('coin-display'), bomb: document.getElementById('bomb-display'),
     heatBar: document.getElementById('heat-bar'), heatText: document.getElementById('heat-text'),
     pSuper: document.getElementById('powerup-super'), pSpread: document.getElementById('powerup-spread'),
     pFourway: document.getElementById('powerup-fourway'), pHoming: document.getElementById('powerup-homing'),
@@ -589,9 +595,10 @@ const ui = {
 // Global State
 let gameState = 'START'; 
 let score = 0; let frames = 0; let screenShake = 0;
+let bombs = 3;
 let coins = 0;
 let upgrades = { jump: 0, speed: 0, size: 0, laser: false, lasso: false, vehicle: false };
-let lastUIPulse = { score: -1, health: -1, stage: -1, coins: -1 }; 
+let lastUIPulse = { score: -1, health: -1, stage: -1, coins: -1, bombs: -1 }; 
 let gameLoopStarted = false; 
 
 let currentStage = 1; let stageLoop = 1; let transitionTimer = 0;
@@ -599,7 +606,7 @@ let stageStartScore = 0;
 let bossDefeated = false;
 const stageNames = ["", "DESERT SCRUB", "TOXIC JUNGLE", "NEO-SCRAP CITY", "NEW YORK CITY", "PARIS NIGHTS", "VOLCANO PEAK", "RAINBOW ISLAND", "CLOUD DREAM", "HAUNTED VILLAGE", "CHARCOAL STREETS"];
 
-const keys = { Up: false, Down: false, Left: false, Right: false, Jump: false, Shoot: false };
+const keys = { Up: false, Down: false, Left: false, Right: false, Jump: false, Shoot: false, Bomb: false };
 
 /** STORY & CUTSCENE SYSTEM **/
 const Story = {
@@ -760,7 +767,7 @@ function bindKey(code, keyRef) {
     });
     window.addEventListener('keyup', e => { if(e.code===code || e.key===code) { e.preventDefault(); keys[keyRef] = false; }});
 }
-bindKey('ArrowUp', 'Up'); bindKey('ArrowDown', 'Down'); bindKey('ArrowLeft', 'Left'); bindKey('ArrowRight', 'Right'); bindKey('Space', 'Jump'); bindKey('Shift', 'Shoot');
+bindKey('ArrowUp', 'Up'); bindKey('ArrowDown', 'Down'); bindKey('ArrowLeft', 'Left'); bindKey('ArrowRight', 'Right'); bindKey('Space', 'Jump'); bindKey('Shift', 'Shoot'); bindKey('KeyZ', 'Bomb'); bindKey('z', 'Bomb');
 
 // TOUCH CONTROLS (Joystick & Buttons)
 function setupTouchBtn(id, keyRef) {
@@ -771,7 +778,7 @@ function setupTouchBtn(id, keyRef) {
     el.addEventListener('touchcancel', off, {passive: false});
     el.addEventListener('mousedown', on); el.addEventListener('mouseup', off); el.addEventListener('mouseleave', off);
 }
-setupTouchBtn('btn-jump', 'Jump'); setupTouchBtn('btn-shoot', 'Shoot');
+setupTouchBtn('btn-jump', 'Jump'); setupTouchBtn('btn-shoot', 'Shoot'); setupTouchBtn('btn-bomb', 'Bomb');
 
 // VIRTUAL JOYSTICK LOGIC
 const joystickArea = document.getElementById('joystick-area');
@@ -928,7 +935,7 @@ function startGame(forceStage = 1) {
     ui.store.classList.add('hidden');
     ui.cheatModal.classList.add('hidden');
     ui.pauseBtn.classList.remove('hidden');
-    score = 0; coins = 0; currentStage = forceStage; stageLoop = 1; frames = 0;
+    score = 0; coins = 0; bombs = 3; currentStage = forceStage; stageLoop = 1; frames = 0;
     upgrades = { jump: 0, speed: 0, size: 0, laser: false, lasso: false, vehicle: false };
     
     initLevel();
@@ -943,6 +950,7 @@ function startGame(forceStage = 1) {
 }
 
 function initLevel() {
+    bombs = 3;
     player = new Player();
     projectiles = []; enemyProjectiles = []; enemies = []; obstacles = []; 
     powerups = []; particles = []; floatingTexts = []; droppedCoins = []; warps = [];
@@ -1459,6 +1467,7 @@ class Powerup {
         else if (this.type === 'homing') { color = '#9b59b6'; text = 'Ho'; }
         else if (this.type === 'grenade') { color = '#27ae60'; text = 'Gr'; }
         else if (this.type === 'spin') { color = '#f1c40f'; text = 'Sn'; }
+        else if (this.type === 'bomb_refill') { color = '#e67e22'; text = 'B'; }
 
         drawCircle(ctx, this.w/2, this.h/2, this.w/2, color, '#fff', 2);
         ctx.fillStyle = '#fff'; ctx.font = '14px Bangers'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -1471,7 +1480,7 @@ class Player {
     constructor() {
         this.w = 50; this.h = 85; this.x = 150; this.y = FLOOR_Y - this.h;
         this.vx = 0; this.vy = 0; this.grounded = false; this.facingRight = true; this.ducking = false;
-        this.health = 100; this.invuln = 0; this.shootCooldown = 0; this.runCycle = 0;
+        this.health = 100; this.invuln = 0; this.shootCooldown = 0; this.bombCooldown = 0; this.runCycle = 0;
         this.heat = 0; this.overheated = false;
         this.superTimer = 0; this.spreadTimer = 0; this.hasShield = false;
         this.lassoCooldown = 0;
@@ -1529,6 +1538,52 @@ class Player {
                 }
             }
             if (this.shootCooldown > 0) this.shootCooldown--;
+
+            if (keys.Bomb && this.bombCooldown <= 0 && bombs > 0) {
+                bombs--;
+                this.bombCooldown = 60;
+                screenShake = 30;
+                Sound.bombDrop();
+                spawnExplosion(this.x + this.w/2, this.y + this.h/2, '#f39c12', 30);
+                for (let i=0; i<10; i++) spawnExplosion(Math.random()*canvas.width, Math.random()*canvas.height, '#e74c3c', 20);
+                
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    let e = enemies[i];
+                    if (e.hp <= 0 || e.type === 'debris') continue;
+                    
+                    if (e.type.startsWith('boss')) { 
+                        e.hp -= 20; e.hitTimer = 5; 
+                    } else { 
+                        e.hp = 0; 
+                    }
+                    
+                    if (e.hp <= 0) {
+                        let pts = e.type.startsWith('boss') ? 2500 : 50;
+                        if (['dirty_ice','sludge','trash'].includes(e.type)) pts = 150;
+                        if (['rabbit','frog','rat'].includes(e.type)) pts = 100;
+                        
+                        score += pts; Sound.enemyDie(); screenShake = e.type.startsWith('boss') ? 20 : 5;
+                        floatingTexts.push(new FloatingText(e.x, e.y, `+${pts}`, '#f1c40f'));
+                        spawnExplosion(e.x + e.w/2, e.y + e.h/2, '#ecf0f1', 15, true); 
+                        
+                        let coinCount = e.type.startsWith('boss') ? 25 : Math.max(1, Math.floor(pts/25));
+                        for(let c=0; c<coinCount; c++) droppedCoins.push(new Coin(e.x + e.w/2, e.y + e.h/2));
+
+                        if (Math.random() > 0.85 || e.type.startsWith('boss')) {
+                            let pTypes = ['health', 'super', 'spread', 'shield', 'fourway', 'homing', 'grenade', 'spin', 'bomb_refill'];
+                            powerups.push(new Powerup(e.x, e.y, pTypes[Math.floor(Math.random() * pTypes.length)]));
+                        }
+                        enemies.splice(i, 1);
+                        if (e.type.startsWith('boss')) {
+                            nextBossScore = Infinity; 
+                            bossDefeated = true; 
+                            if (e.type === 'boss10' && stageLoop === 1) setTimeout(() => { startCutscene('ending', showVictoryScreen); }, 2000);
+                            else setTimeout(openStore, 2000);
+                        }
+                    }
+                }
+            }
+            if (this.bombCooldown > 0) this.bombCooldown--;
 
             if (upgrades.lasso) {
                 this.lassoCooldown--;
@@ -2474,51 +2529,132 @@ class Enemy {
 }
 
 class Obstacle {
-    constructor(type) {
-        this.type = type; this.w = 40; this.h = 70; this.x = canvas.width + 50; this.y = FLOOR_Y - this.h; this.vx = -SPEED; this.rot = 0;
-        if (type === 'tumbleweed') { this.w = 40; this.h = 40; this.vx = -(SPEED + 3); }
-        if (currentStage === 2) { if (type === 'cactus') this.type = 'thorn'; if (type === 'tumbleweed') this.type = 'log'; }
-        if (currentStage === 3) { if (type === 'cactus') this.type = 'pipe'; if (type === 'tumbleweed') this.type = 'barrel'; }
+    constructor(baseType) {
+        this.baseType = baseType; 
+        this.w = 40; this.h = 50; 
+        this.x = canvas.width + 50; 
+        this.vx = -(SPEED + 2); 
+        this.rot = 0;
+        
+        let s = currentStage;
+        if (s === 1) this.type = 'sand_pile';
+        else if (s === 2) this.type = 'log';
+        else if (s === 3) this.type = 'barrel';
+        else if (s === 4) this.type = 'trash_can';
+        else if (s === 5) this.type = 'cafe_chair';
+        else if (s === 6) this.type = 'ash_pile';
+        else if (s === 7) this.type = 'cloud_bump';
+        else if (s === 8) this.type = 'sleep_sheep';
+        else if (s === 9) this.type = 'gravestone';
+        else this.type = 'coal_pile';
+
+        this.y = FLOOR_Y - this.h;
     }
     update() {
         this.x += this.vx;
-        if (['tumbleweed', 'log', 'barrel'].includes(this.type)) {
-            this.rot -= 0.15;
-            if (this.type === 'tumbleweed') this.y = (FLOOR_Y - this.h) - Math.abs(Math.sin(frames*0.1)) * 100; 
-            else this.y = FLOOR_Y - this.h; 
-        }
+        if (['log', 'barrel', 'sand_pile'].includes(this.type)) this.rot -= 0.15;
     }
     draw() {
         ctx.save(); ctx.translate(this.x + this.w/2, this.y + this.h/2);
-        if (this.type === 'cactus') {
-            drawCircle(ctx, 0, this.h/2, 15, 'rgba(0,0,0,0.5)', null, 0);
-            drawPath(ctx, [[-12,-35], [12,-35], [12,35], [-12,35]], '#27ae60', '#000', 3);
-            drawPath(ctx, [[-12,0], [-25,0], [-25,-20], [-15,-20], [-15,-10], [-12,-10]], '#27ae60', '#000', 3);
-            drawPath(ctx, [[12,-10], [25,-10], [25,-30], [15,-30], [15,-20], [12,-20]], '#27ae60', '#000', 3);
-            ctx.fillStyle = '#f1c40f'; for(let i=0; i<4; i++) { ctx.fillRect(-15, -20+(i*15), 6, 2); ctx.fillRect(9, -20+(i*15), 6, 2); }
-        } else if (this.type === 'tumbleweed') {
-            drawCircle(ctx, 0, this.h/2 + 5, 10, 'rgba(0,0,0,0.5)', null, 0); ctx.rotate(this.rot);
-            ctx.strokeStyle = '#8d6e63'; ctx.lineWidth = 3; ctx.lineJoin='round'; ctx.beginPath();
-            for(let i=0; i<16; i++) { let a = (i/16) * Math.PI*2; let r = 20; ctx.moveTo(Math.cos(a)*r, Math.sin(a)*r); ctx.quadraticCurveTo(0,0, Math.cos(a+Math.PI/2)*(r-5), Math.sin(a+Math.PI/2)*(r-5)); }
-            ctx.stroke();
-        } else if (this.type === 'thorn') {
-            drawPath(ctx, [[-5,-35], [5,-35], [15,35], [-15,35]], '#5d4037', '#000', 3); 
-            ctx.strokeStyle = '#2ecc71'; ctx.lineWidth = 4;
-            drawPath(ctx, [[-10,10], [-25,-10], [-15,-30]]); drawPath(ctx, [[10,20], [25,0], [15,-20]]); 
-            ctx.fillStyle = '#c0392b'; drawCircle(ctx, -25, -10, 4); drawCircle(ctx, 25, 0, 4); 
-        } else if (this.type === 'log') {
-            ctx.rotate(this.rot); drawCircle(ctx, 0,0, 20, '#5d4037', '#000', 3);
-            drawCircle(ctx, 0,0, 15, '#795548', null, 0); drawCircle(ctx, 0,0, 5, '#3e2723', null, 0); 
-        } else if (this.type === 'pipe') {
-            drawPath(ctx, [[-15,-35], [15,-35], [15,35], [-15,35]], '#7f8c8d', '#000', 3); 
-            drawPath(ctx, [[-20,-10], [20,-10], [20,10], [-20,10]], '#95a5a6', '#000', 3); 
-            if (frames%20<10) drawPath(ctx, [[-5,-35], [0,-45], [5,-35]], '#2ecc71'); 
-        } else if (this.type === 'barrel') {
-            ctx.rotate(this.rot); 
-            drawPath(ctx, [[-20,-20], [20,-20], [20,20], [-20,20]], '#8e44ad', '#000', 3); 
-            drawPath(ctx, [[-20,-10], [20,-10]], null, '#000', 2); drawPath(ctx, [[-20,10], [20,10]], null, '#000', 2); 
-            drawPath(ctx, [[-5,-5], [5,-5], [0,5]], '#2ecc71'); 
+        
+        // Drop shadow for low obstacles
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(0, 20, this.w/2, 8, 0, 0, Math.PI*2); ctx.fill();
+
+        switch(this.type) {
+            case 'sand_pile':
+                drawPath(ctx, [[-25,25], [-15,-5], [5,-15], [20,-2], [25,25]], '#f1c40f', '#d35400', 3);
+                drawPath(ctx, [[-10,25], [0,5], [10,25]], '#f39c12', null, 0);
+                // Shading dots
+                ctx.fillStyle = '#d35400'; drawCircle(ctx, -15, 15, 2); drawCircle(ctx, 5, 10, 1.5); drawCircle(ctx, 15, 20, 2);
+                break;
+            case 'log':
+                ctx.rotate(this.rot); 
+                drawCircle(ctx, 0,0, 20, '#5d4037', '#3e2723', 4);
+                // Bark ridges
+                ctx.strokeStyle = '#3e2723'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,0, 15, 0, Math.PI); ctx.stroke();
+                ctx.beginPath(); ctx.arc(0,0, 10, Math.PI, Math.PI*2); ctx.stroke();
+                drawCircle(ctx, 0,0, 15, '#795548', null, 0); 
+                drawCircle(ctx, 0,0, 5, '#8d6e63', null, 0); // Core
+                break;
+            case 'barrel':
+                ctx.rotate(this.rot); 
+                drawPath(ctx, [[-18,-20], [18,-20], [22,0], [18,20], [-18,20], [-22,0]], '#8e44ad', '#5b2c6f', 4); // Barrel body
+                drawPath(ctx, [[-22,-10], [22,-10]], null, '#a569bd', 3); // Highlight bands
+                drawPath(ctx, [[-22,10], [22,10]], null, '#a569bd', 3); 
+                ctx.fillStyle = '#2ecc71'; drawCircle(ctx, 0, 0, 8, '#27ae60', 2); // Toxic symbol center
+                drawPath(ctx, [[-5,-5], [5,5]], null, '#27ae60', 3); drawPath(ctx, [[5,-5], [-5,5]], null, '#27ae60', 3);
+                break;
+            case 'trash_can':
+                drawPath(ctx, [[-15,-20], [15,-20], [12,25], [-12,25]], '#95a5a6', '#34495e', 3);
+                // Ribs
+                for(let i=-2; i<=2; i++) { drawPath(ctx, [[i*5,-18], [i*4,23]], null, '#7f8c8d', 2); }
+                // Lid
+                drawPath(ctx, [[-18,-20], [18,-20], [15,-30], [-15,-30]], '#bdc3c7', '#34495e', 2);
+                drawPath(ctx, [[-5,-30], [5,-30], [5,-35], [-5,-35]], '#7f8c8d');
+                break;
+            case 'cafe_chair':
+                ctx.strokeStyle = '#d35400'; ctx.lineWidth = 3; ctx.lineCap='round'; ctx.lineJoin='round';
+                // Legs
+                ctx.beginPath(); ctx.moveTo(-15,25); ctx.lineTo(-10,0); ctx.lineTo(10,0); ctx.lineTo(15,25); ctx.stroke(); // Front/seat
+                ctx.beginPath(); ctx.moveTo(-8,25); ctx.lineTo(-10,0); ctx.lineTo(-15,-20); ctx.stroke(); // Back left + leg
+                ctx.beginPath(); ctx.moveTo(8,25); ctx.lineTo(10,0); ctx.lineTo(15,-20); ctx.stroke(); // Back right + leg
+                // Chair back strips
+                ctx.beginPath(); ctx.moveTo(-12,-10); ctx.lineTo(12,-10); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-14,-15); ctx.lineTo(14,-15); ctx.stroke();
+                // Seat shadow
+                drawPath(ctx, [[-10,0], [10,0], [8,5], [-8,5]], '#e67e22');
+                break;
+            case 'ash_pile':
+                drawPath(ctx, [[-25,25], [-10,-5], [15,-10], [25,25]], '#7f8c8d', '#2c3e50', 3);
+                drawPath(ctx, [[-15,25], [-5,5], [10,25]], '#95a5a6', null, 0);
+                // Embers
+                ctx.fillStyle = '#e74c3c'; drawCircle(ctx, -10, 15, 2.5); drawCircle(ctx, 5, 8, 2); drawCircle(ctx, 15, 20, 2.5);
+                ctx.fillStyle = '#f1c40f'; drawCircle(ctx, -10, 15, 1); drawCircle(ctx, 5, 8, 1); drawCircle(ctx, 15, 20, 1);
+                break;
+            case 'cloud_bump':
+                ctx.fillStyle = '#ecf0f1'; ctx.strokeStyle = '#bdc3c7'; ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(-15, 15, 10, Math.PI, Math.PI*1.5);
+                ctx.arc(0, 0, 18, Math.PI*1.2, Math.PI*1.8);
+                ctx.arc(15, 15, 10, Math.PI*1.5, Math.PI*2);
+                ctx.lineTo(15, 25); ctx.lineTo(-15, 25); ctx.closePath();
+                ctx.fill(); ctx.stroke();
+                break;
+            case 'sleep_sheep':
+                // Wool body
+                ctx.fillStyle = '#ecf0f1'; ctx.strokeStyle = '#bdc3c7'; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(0, 5, 20, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                // Bumps
+                [-10, 0, 10].forEach(bx => { drawCircle(ctx, bx, -10, 10, '#ecf0f1', '#bdc3c7', 2); });
+                // Head
+                drawCircle(ctx, -15,-5, 12, '#34495e', '#2c3e50', 2);
+                // Closed Eye
+                ctx.strokeStyle = '#ecf0f1'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(-18, -5, 4, Math.PI*0.8, Math.PI*0.2, true); ctx.stroke();
+                // Zzz
+                if (frames%60 < 30) { ctx.fillStyle='#bdc3c7'; ctx.font='bold 10px sans-serif'; ctx.fillText('Z', -25, -20); ctx.fillText('z', -18, -25); }
+                break;
+            case 'gravestone':
+                drawPath(ctx, [[-15,25], [-15,-10], [15,-10], [15,25]], '#95a5a6', '#34495e', 3);
+                ctx.beginPath(); ctx.arc(0, -10, 15, Math.PI, Math.PI*2); ctx.fillStyle='#95a5a6'; ctx.fill(); ctx.stroke();
+                // Cross
+                drawPath(ctx, [[-2,10], [2,10], [2,15], [-2,15]], '#7f8c8d');
+                drawPath(ctx, [[-5,0], [5,0], [5,5], [-5,5]], '#7f8c8d');
+                drawPath(ctx, [[-2,-5], [2,-5], [2,0], [-2,0]], '#7f8c8d');
+                ctx.fillStyle='#34495e'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.fillText('RIP', 0, -5);
+                // Moss
+                drawPath(ctx, [[-15,25], [-8,15], [0,25]], '#27ae60', null, 0);
+                break;
+            case 'coal_pile':
+                drawPath(ctx, [[-20,25], [0,-5], [20,25]], '#2c3e50', '#1a252f', 3);
+                drawPath(ctx, [[-25,25], [-10,5], [5,25]], '#34495e', '#1a252f', 2);
+                // Highlights
+                drawPath(ctx, [[-5,10], [0,5], [5,10]], '#7f8c8d', null, 0);
+                drawPath(ctx, [[-15,18], [-10,12], [-5,18]], '#7f8c8d', null, 0);
+                break;
+            default:
+                ctx.rotate(this.rot); drawCircle(ctx, 0,0, 20, '#555', '#000', 3);
         }
+        
         ctx.restore();
     }
 }
@@ -2624,7 +2760,7 @@ function spawnManager() {
 
     obstacleTimer--;
     if (obstacleTimer <= 0) {
-        obstacles.push(new Obstacle(Math.random() > 0.5 ? 'cactus' : 'tumbleweed')); 
+        obstacles.push(new Obstacle('low')); 
         obstacleTimer = Math.random() * 200 + 120; 
     }
 
@@ -2676,7 +2812,7 @@ function checkCollisions() {
                     for(let c=0; c<coinCount; c++) droppedCoins.push(new Coin(e.x + e.w/2, e.y + e.h/2));
 
                     if (Math.random() > 0.85 || e.type.startsWith('boss')) {
-                        let pTypes = ['health', 'super', 'spread', 'shield', 'fourway', 'homing', 'grenade', 'spin'];
+                        let pTypes = ['health', 'super', 'spread', 'shield', 'fourway', 'homing', 'grenade', 'spin', 'bomb_refill'];
                         powerups.push(new Powerup(e.x, e.y, pTypes[Math.floor(Math.random() * pTypes.length)]));
                     }
                     enemies.splice(i, 1);
@@ -2722,7 +2858,12 @@ function checkCollisions() {
             hitPlayer(15); spawnExplosion(p.x, p.y, '#5d4037', 8, true); enemyProjectiles.splice(i, 1);
         }
     }
-    obstacles.forEach(o => { if (o && rectIntersect(player.x+15, player.y+15, player.w-30, player.h-30, o.x+5, o.y+5, o.w-10, o.h-10)) hitPlayer(15); });
+    obstacles.forEach(o => { 
+        if (o && rectIntersect(player.x+15, player.y+15, player.w-30, player.h-30, o.x+5, o.y+5, o.w-10, o.h-10)) {
+            player.x += o.vx;
+            if (player.x < 5) player.x = 5;
+        } 
+    });
 
     for (let i = powerups.length - 1; i >= 0; i--) {
         let p = powerups[i];
@@ -2736,6 +2877,7 @@ function checkCollisions() {
             else if (p.type === 'homing') player.homingTimer = 500;
             else if (p.type === 'grenade') player.grenadeTimer = 500;
             else if (p.type === 'spin') player.spinTimer = 500;
+            else if (p.type === 'bomb_refill') bombs++;
             powerups.splice(i, 1);
         }
     }
@@ -2812,6 +2954,7 @@ function update() {
 
     if (score !== lastUIPulse.score) { ui.score.innerText = "SCORE: " + score.toString().padStart(6, '0'); lastUIPulse.score = score; }
     if (coins !== lastUIPulse.coins) { ui.coin.innerText = "COINS: " + coins; lastUIPulse.coins = coins; }
+    if (bombs !== lastUIPulse.bombs) { if (ui.bomb) ui.bomb.innerText = "BOMBS: " + bombs; lastUIPulse.bombs = bombs; }
     if (player.health !== lastUIPulse.health) {
         ui.health.innerText = "HEALTH: " + player.health + "%";
         ui.health.style.color = player.health > 50 ? '#2ecc71' : player.health > 25 ? '#f1c40f' : '#e74c3c'; lastUIPulse.health = player.health;
