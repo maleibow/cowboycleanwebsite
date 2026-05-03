@@ -59,12 +59,12 @@
             
             // If they are in portrait mode (width < height)
             if (w < h) {
-                // Rotate 90 degrees clockwise
+                // Rotate 90 degrees clockwise without setting left off-screen (prevents clipping)
                 wrapper.style.width = h + 'px';
                 wrapper.style.height = w + 'px';
                 wrapper.style.top = '0px';
-                wrapper.style.left = w + 'px';
-                wrapper.style.transform = 'rotate(90deg)';
+                wrapper.style.left = '0px';
+                wrapper.style.transform = 'rotate(90deg) translateY(-100%)';
             } else {
                 // If they are in landscape mode, no need to rotate
                 wrapper.style.width = w + 'px';
