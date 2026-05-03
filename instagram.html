@@ -17,8 +17,8 @@
 
         #device-wrapper {
             position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
+            top: 0;
+            left: 0;
             z-index: 2147483647 !important; /* Max z-index to cover the rest of the website */
             transform-origin: 0 0;
             background: #000;
@@ -39,6 +39,21 @@
     <script>
         function resize() {
             var wrapper = document.getElementById('device-wrapper');
+            
+            // Force it to be a direct child of body to escape CMS wrappers
+            if (wrapper.parentNode && wrapper.parentNode !== document.body) {
+                document.body.appendChild(wrapper);
+            }
+            
+            // Hide all other direct body children (CMS headers/footers)
+            var children = document.body.children;
+            for (var i = 0; i < children.length; i++) {
+                var child = children[i];
+                if (child !== wrapper && child.tagName !== 'SCRIPT' && child.tagName !== 'STYLE') {
+                    child.style.display = 'none';
+                }
+            }
+
             var w = window.innerWidth;
             var h = window.innerHeight;
             
