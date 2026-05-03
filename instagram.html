@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cowboy Clean - Instagram Edition</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            touch-action: none;
+        }
+
+        #device-wrapper {
+            position: absolute;
+            transform-origin: 0 0;
+            background: #000;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="device-wrapper">
+        <iframe src="index.html" allowfullscreen></iframe>
+    </div>
+    <script>
+        function resize() {
+            var wrapper = document.getElementById('device-wrapper');
+            var w = window.innerWidth;
+            var h = window.innerHeight;
+            
+            // If they are in portrait mode (width < height)
+            if (w < h) {
+                // Rotate 90 degrees clockwise
+                wrapper.style.width = h + 'px';
+                wrapper.style.height = w + 'px';
+                wrapper.style.top = '0px';
+                wrapper.style.left = w + 'px';
+                wrapper.style.transform = 'rotate(90deg)';
+            } else {
+                // If they are in landscape mode, no need to rotate
+                wrapper.style.width = w + 'px';
+                wrapper.style.height = h + 'px';
+                wrapper.style.top = '0px';
+                wrapper.style.left = '0px';
+                wrapper.style.transform = 'none';
+            }
+        }
+        
+        window.addEventListener('resize', resize);
+        // Sometimes innerHeight changes after a slight delay on mobile
+        setTimeout(resize, 100);
+        setTimeout(resize, 500);
+        resize();
+    </script>
+</body>
+</html>
