@@ -8604,6 +8604,290 @@
       }
 
       drawBackground();
+      /* =====================================================================
+   COWBOY CLEAN: POLISH LAYER
+   Paste inside a new <script> tag directly AFTER the main game script
+   (before the Firebase <script type="module">). Touches no backend code.
+   ===================================================================== */
+(() => {
+  const W = 960, H = 540, STEP = 1000 / 60;
+  const Q = { bloom: true, ambient: true, ema: 0 };
+  let hitStop = 0, punch = 0, prevShake = 0, rings = [];
+  let combo = 0, comboT = 0, comboPulse = 0;
+
+  /* ---------- offscreen buffer for bloom ---------- */
+  const off = document.createElement("canvas");
+  off.width = 192; off.height = 108;
+  const octx = off.getContext("2d");
+  const hasFilter = typeof octx.filter === "string";
+
+  /* ---------- per-stage ambience + colour grade ---------- */
+  const AMB = {
+    1: { c: "255,200,120", vx: -0.6, vy: -0.05, s: [1, 2.5], a: 0.5, n: 50 },
+    2: { c: "150,255,150", vx: -0.2, vy: -0.5, s: [1.5, 3.5], a: 0.6, n: 45, glow: 1 },
+    3: { c: "0,255,204", vx: -1.5, vy: 3, s: [1, 2], a: 0.5, n: 70, streak: 1 },
+    4: { c: "255,255,255", vx: -0.5, vy: -0.3, s: [2, 5], a: 0.12, n: 25 },
+    5: { c: "255,220,120", vx: -0.3, vy: -0.15, s: [1, 2.5], a: 0.7, n: 35, glow: 1 },
+    6: { c: "255,120,30", vx: -0.5, vy: -1.4, s: [1, 3], a: 0.8, n: 70, glow: 1 },
+    7: { c: "255,255,255", vx: -0.4, vy: 0.1, s: [1, 3], a: 0.8, n: 50, twinkle: 1 },
+    8: { c: "255,255,255", vx: -0.8, vy: -0.05, s: [3, 7], a: 0.2, n: 25 },
+    9: { c: "180,200,220", vx: -0.5, vy: -0.05, s: [6, 14], a: 0.07, n: 22 },
+    10: { c: "220,30,60", vx: -0.3, vy: -0.9, s: [1, 3], a: 0.7, n: 60, glow: 1 },
+  };
+  const GRADE = {
+    1: "rgba(255,140,40,.10)", 2: "rgba(0,200,120,.10)", 3: "rgba(255,0,160,.10)",
+    4: "rgba(40,80,200,.12)", 5: "rgba(255,180,80,.08)", 6: "rgba(255,60,0,.14)",
+    7: "rgba(255,255,255,.04)", 8: "rgba(255,160,200,.06)", 9: "rgba(20,40,90,.18)",
+    10: "rgba(120,0,20,.18)",
+  };
+  let amb = [], ambStage = 0;
+  const cfgNow = () => AMB[currentStage] || AMB[1];
+
+  function seedAmb() {
+    const c = cfgNow();
+    ambStage = currentStage;
+    amb = [];
+    for (let i = 0; i < c.n; i++)
+      amb.push({
+        x: Math.random() * W, y: Math.random() * H,
+        z: 0.4 + Math.random() * 0.8,
+        s: c.s[0] + Math.random() * (c.s[1] - c.s[0]),
+        ph: Math.random() * 6.28,
+      });
+  }
+
+  function stepAmb() {
+    if (ambStage !== currentStage || !amb.length) seedAmb();
+    const c = cfgNow();
+    const boost = gameState === "TRANSITION" ? 6 : 1;
+    for (const p of amb) {
+      p.x += c.vx * p.z * boost; p.y += c.vy * p.z; p.ph += 0.05;
+      if (p.x < -20) p.x = W + 20; else if (p.x > W + 20) p.x = -20;
+      if (p.y < -20) p.y = H + 20; else if (p.y > H + 20) p.y = -20;
+    }
+  }
+
+  function drawAmb() {
+    const c = cfgNow();
+    ctx.save();
+    ctx.globalCompositeOperation = c.glow ? "lighter" : "source-over";
+    for (const p of amb) {
+      const a = c.a * (0.4 + (0.6 * p.z) / 1.2) * (c.twinkle ? 0.5 + 0.5 * Math.sin(p.ph * 3) : 1);
+      if (c.streak) {
+        ctx.strokeStyle = `rgba(${c.c},${a})`;
+        ctx.lineWidth = p.s * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x + c.vx * 4 * p.z, p.y + c.vy * 4 * p.z);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = `rgba(${c.c},${a})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.s * p.z, 0, 6.283);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  /* ---------- vignette (cached) ---------- */
+  let vig = null;
+  function drawVignette() {
+    if (!vig) {
+      vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 1.05);
+      vig.addColorStop(0, "rgba(0,0,0,0)");
+      vig.addColorStop(1, "rgba(0,0,0,.5)");
+    }
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, W, H);
+    if (player && gameState === "PLAYING" && player.health < 35) {
+      const k = ((35 - player.health) / 35) * 0.35 * (0.6 + 0.4 * Math.sin(frames * 0.15));
+      const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H);
+      g.addColorStop(0, "rgba(200,0,0,0)");
+      g.addColorStop(1, `rgba(200,0,0,${k})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  /* ---------- post-processing pass ---------- */
+  function post() {
+    ctx.save();
+    // shockwave rings
+    for (const r of rings) {
+      ctx.globalAlpha = Math.max(0, r.a);
+      ctx.strokeStyle = r.c;
+      ctx.lineWidth = 4 * r.a + 1;
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 6.283); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    if (Q.ambient) drawAmb();
+
+    // transition speed lines
+    if (gameState === "TRANSITION") {
+      ctx.strokeStyle = "rgba(255,255,255,.35)";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 26; i++) {
+        const y = Math.random() * H, x = Math.random() * W, l = 80 + Math.random() * 160;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - l, y); ctx.stroke();
+      }
+    }
+
+    // bloom: downsample bright areas and add them back softly
+    if (Q.bloom) {
+      octx.clearRect(0, 0, 192, 108);
+      if (hasFilter) octx.filter = "brightness(1.25) contrast(1.5) saturate(1.3)";
+      octx.drawImage(canvas, 0, 0, 192, 108);
+      if (hasFilter) octx.filter = "none";
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = hasFilter ? 0.4 : 0.1;
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(off, 0, 0, W, H);
+      ctx.imageSmoothingEnabled = false;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = "source-over";
+    }
+
+    // colour grade + vignette
+    ctx.globalCompositeOperation = "overlay";
+    ctx.fillStyle = GRADE[currentStage] || GRADE[1];
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over";
+    drawVignette();
+
+    // combo readout
+    if (combo >= 2 && comboT > 0) {
+      const s = 1 + comboPulse * 0.4;
+      ctx.translate(W / 2, 125);
+      ctx.scale(s, s);
+      ctx.font = "42px Bangers";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#000";
+      ctx.fillStyle = `hsl(${(frames * 6) % 360},90%,60%)`;
+      ctx.globalAlpha = Math.min(1, comboT / 30);
+      const txt = "COMBO x" + combo;
+      ctx.strokeText(txt, 0, 0);
+      ctx.fillText(txt, 0, 0);
+    }
+    ctx.restore();
+  }
+
+  /* ---------- wrap draw(): camera punch + post ---------- */
+  const _draw = draw;
+  draw = function () {
+    const t0 = performance.now();
+    punch *= 0.88;
+    ctx.save();
+    if (punch > 0.001) {
+      const z = 1 + punch;
+      ctx.translate(W / 2, H / 2); ctx.scale(z, z); ctx.translate(-W / 2, -H / 2);
+    }
+    _draw();
+    ctx.restore();
+    if (gameState !== "STORE" && gameState !== "VICTORY" && gameState !== "CUTSCENE") post();
+    // quality governor: shed effects if the device struggles
+    Q.ema = Q.ema * 0.95 + (performance.now() - t0) * 0.05;
+    if (Q.ema > 10) Q.bloom = false;
+    if (Q.ema > 14) Q.ambient = false;
+  };
+
+  /* ---------- player juice: squash/stretch, lean, dust ---------- */
+  const PU = Player.prototype.update, PD = Player.prototype.draw;
+  Player.prototype.update = function () {
+    const pg = this.grounded, pvy = this.vy;
+    PU.call(this);
+    this.land = (this.land || 0) * 0.8;
+    if (!pg && this.grounded && pvy > 6) {
+      this.land = Math.min(1, pvy / 16);
+      for (let i = 0; i < 8; i++)
+        particles.push(new Particle(this.x + this.w / 2, FLOOR_Y, "#d7ccc8",
+          (Math.random() - 0.5) * 7, -Math.random() * 2.5, 22, "normal", 2 + Math.random() * 2));
+    }
+    if (this.grounded && Math.abs(this.vx) > 3 && frames % 5 === 0 && gameState === "PLAYING")
+      particles.push(new Particle(this.x + this.w / 2 - Math.sign(this.vx) * 10, FLOOR_Y - 2,
+        "rgba(210,190,170,.8)", -this.vx * 0.15, -Math.random() * 1.2, 18, "normal", 2 + Math.random() * 2));
+  };
+  Player.prototype.draw = function () {
+    let sx = 1, sy = 1;
+    if (!this.grounded) { const s = Math.min(0.18, Math.abs(this.vy) * 0.011); sy = 1 + s; sx = 1 - s * 0.7; }
+    else if ((this.land || 0) > 0.02) { sy = 1 - 0.22 * this.land; sx = 1 + 0.18 * this.land; }
+    const lean = Math.max(-0.12, Math.min(0.12, this.vx * 0.015));
+    const cx = this.x + this.w / 2, fy = this.y + this.h;
+    ctx.save();
+    ctx.translate(cx, fy); ctx.rotate(lean); ctx.scale(sx, sy); ctx.translate(-cx, -fy);
+    PD.call(this);
+    ctx.restore();
+  };
+
+  /* ---------- projectile trails ---------- */
+  const TRAIL = { super: "#ff6b6b", laser: "#ff00cc", charcoal: "#dc143c", homing_player: "#e056fd",
+    grenade: "#2ecc71", spin: "#f1c40f", normal: "#aee9ff" };
+  const PRU = Projectile.prototype.update;
+  Projectile.prototype.update = function () {
+    PRU.call(this);
+    if (frames % 2 === 0 && particles.length < 350 && this.type !== "lasso")
+      particles.push(new Particle(this.x, this.y, TRAIL[this.type] || TRAIL.normal, 0, 0, 12, "normal", Math.max(1, this.size * 0.5)));
+  };
+
+  /* ---------- bigger kill explosions with shockwaves ---------- */
+  const SE = spawnExplosion;
+  spawnExplosion = function (x, y, color, count, isDebris) {
+    SE(x, y, color, count, isDebris);
+    if (isDebris && count >= 10) {
+      rings.push({ x, y, r: 6, a: 0.9, c: color });
+      for (let i = 0; i < count / 2; i++)
+        particles.push(new Particle(x, y, "#fff", (Math.random() - 0.5) * 14,
+          (Math.random() - 0.5) * 14 - 2, 26, "debris", 1.5 + Math.random() * 2));
+    }
+  };
+
+  /* ---------- combo counter (visual only, never changes score) ---------- */
+  const ED = Sound.enemyDie;
+  Sound.enemyDie = function () {
+    ED();
+    combo = comboT > 0 ? combo + 1 : 1;
+    comboT = 120; comboPulse = 1;
+    hitStop = Math.max(hitStop, 1);
+  };
+
+  /* ---------- per-tick extras ---------- */
+  function afterStep() {
+    if (gameState === "PAUSED" || gameState === "STORE") return;
+    stepAmb();
+    for (const r of rings) { r.r += 7; r.a -= 0.05; }
+    rings = rings.filter((r) => r.a > 0);
+    if (comboT > 0) comboT--; else combo = 0;
+    comboPulse *= 0.85;
+    if (screenShake > prevShake + 8) {
+      punch = Math.min(0.05, screenShake * 0.0018);
+      if (screenShake >= 19) hitStop = Math.max(hitStop, 4);
+    }
+    prevShake = screenShake;
+  }
+
+  /* ---------- fixed 60Hz timestep: same speed on 60/120/144Hz screens ---------- */
+  let acc = 0, lastT = 0;
+  function tick(t) {
+    acc += Math.min(100, t - lastT);
+    lastT = t;
+    let n = 0;
+    while (acc >= STEP && n < 4) {
+      acc -= STEP; n++;
+      if (hitStop > 0) { hitStop--; frames++; continue; }
+      try { update(); afterStep(); } catch (e) { console.error(e); }
+      frames++;
+    }
+    if (n === 4) acc = 0;
+    try { draw(); } catch (e) { console.error(e); }
+    requestAnimationFrame(tick);
+  }
+  gameLoop = function () {
+    lastT = performance.now();
+    requestAnimationFrame(tick);
+  };
+})();
     </script>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
