@@ -273,56 +273,8 @@
             <section id="music" class="mb-12">
                 <h3 class="text-3xl font-bold mb-6 text-gray-50">Music</h3>
                 <!-- Removed p-4 from this container and added relative/overflow-hidden to keep iframes tight -->
-                <div id="music-frame" class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-gray-900 relative w-full max-w-2xl mx-auto" style="height: 352px;">
-                    <!-- Song Carousel Container -->
-                    <div id="music-carousel" class="w-full h-full relative">
-                        <!-- Spotify: official artist embed -->
-                        <div class="song-slide w-full h-full flex justify-center absolute top-0 left-0" data-index="0">
-                            <iframe src="https://open.spotify.com/embed/artist/6uiAnXipuNymu9Bd9ZYLN0" width="100%" height="352" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-                        </div>
-                        <!-- Song 1: Charcoal -->
-                        <div class="song-slide hidden w-full h-full flex justify-center absolute top-0 left-0" data-index="1">
-                            <iframe style="border: 0; width: 100%; height: 100%;" src="https://bandcamp.com/EmbeddedPlayer/track=4265563340/size=large/bgcol=333333/linkcol=f43f5e/tracklist=false/artwork=small/transparent=true/fgcol=ffffff/" seamless loading="lazy" title="Charcoal by Cowboy Clean"><a href="https://cowboyclean.bandcamp.com/track/charcoal">Charcoal by Cowboy Clean</a></iframe>
-                        </div>
-                        <!-- Song 2: Leaning On The Exit -->
-                        <div class="song-slide hidden w-full h-full flex justify-center absolute top-0 left-0" data-index="2">
-                            <iframe style="border: 0; width: 100%; height: 100%;" src="https://bandcamp.com/EmbeddedPlayer/track=156944338/size=large/bgcol=333333/linkcol=f43f5e/tracklist=false/artwork=small/transparent=true/fgcol=ffffff/" seamless loading="lazy" title="Leaning On The Exit by Cowboy Clean"><a href="https://cowboyclean.bandcamp.com/track/leaning-on-the-exit">Leaning On The Exit by Cowboy Clean</a></iframe>
-                        </div>
-                        <!-- Song 3: Grendel (UPDATED TRACK ID) -->
-                        <div class="song-slide hidden w-full h-full flex justify-center absolute top-0 left-0" data-index="3">
-                            <iframe style="border: 0; width: 100%; height: 100%;" src="https://bandcamp.com/EmbeddedPlayer/track=3223128681/size=large/bgcol=333333/linkcol=f43f5e/tracklist=false/artwork=small/transparent=true/fgcol=ffffff/" seamless loading="lazy" title="Grendel by Cowboy Clean"><a href="https://cowboyclean.bandcamp.com/track/grendel">Grendel by Cowboy Clean</a></iframe>
-                        </div>
-                        <!-- Song 4: Coins -->
-                        <div class="song-slide hidden w-full h-full flex justify-center absolute top-0 left-0" data-index="4">
-                            <iframe style="border: 0; width: 100%; height: 100%;" src="https://bandcamp.com/EmbeddedPlayer/track=438171101/size=large/bgcol=333333/linkcol=f43f5e/tracklist=false/artwork=small/transparent=true/fgcol=ffffff/" seamless loading="lazy" title="Coins by Cowboy Clean"><a href="https://cowboyclean.bandcamp.com/track/coins">Coins by Cowboy Clean</a></iframe>
-                        </div>
-                        <!-- Song 5: Rubber Knife (Track 1) -->
-                        <div class="song-slide hidden w-full h-full flex justify-center absolute top-0 left-0" data-index="5">
-                            <iframe style="border: 0; width: 100%; height: 100%;" src="https://bandcamp.com/EmbeddedPlayer/album=485482051/size=large/bgcol=333333/linkcol=f43f5e/tracklist=false/artwork=small/track=992418072/transparent=true/fgcol=ffffff/" seamless loading="lazy" title="Rubber Knife by Cowboy Clean"><a href="https://cowboyclean.bandcamp.com/album/rubber-knife">Rubber Knife by Cowboy Clean</a></iframe>
-                        </div>
-                        <!-- Song 6: Rubber Knife (Track 2) -->
-                        <div class="song-slide hidden w-full h-full flex justify-center absolute top-0 left-0" data-index="6">
-                            <iframe style="border: 0; width: 100%; height: 100%;" src="https://bandcamp.com/EmbeddedPlayer/album=485482051/size=large/bgcol=333333/linkcol=f43f5e/tracklist=false/artwork=small/track=2009962786/transparent=true/fgcol=ffffff/" seamless loading="lazy" title="Rubber Knife by Cowboy Clean"><a href="https://cowboyclean.bandcamp.com/album/rubber-knife">Rubber Knife by Cowboy Clean</a></iframe>
-                        </div>
-                        <!-- Song 7: Rubber Knife (Track 3) -->
-                        <div class="song-slide hidden w-full h-full flex justify-center absolute top-0 left-0" data-index="7">
-                            <iframe style="border: 0; width: 100%; height: 100%;" src="https://bandcamp.com/EmbeddedPlayer/album=485482051/size=large/bgcol=333333/linkcol=f43f5e/tracklist=false/artwork=small/track=2592870567/transparent=true/fgcol=ffffff/" seamless loading="lazy" title="Rubber Knife by Cowboy Clean"><a href="https://cowboyclean.bandcamp.com/album/rubber-knife">Rubber Knife by Cowboy Clean</a></iframe>
-                        </div>
-                    </div>
-                </div>
-                 <!-- Navigation Controls -->
-                <div class="flex justify-between items-center p-4 bg-gray-900 border-t border-gray-800 rounded-b-xl border-x border-b -mt-1 relative z-20 max-w-2xl mx-auto">
-                    <button id="prev-song" class="text-gray-400 hover:text-rose-500 transition-colors focus:outline-none" aria-label="Previous Song">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-                    <span id="song-indicator" class="text-sm text-gray-500 font-[Bebas Neue] tracking-widest">1 / 8</span>
-                    <button id="next-song" class="text-gray-400 hover:text-rose-500 transition-colors focus:outline-none" aria-label="Next Song">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
+                <div class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-gray-900 relative w-full max-w-2xl mx-auto" style="height: 352px;">
+                    <iframe src="https://open.spotify.com/embed/artist/6uiAnXipuNymu9Bd9ZYLN0" width="100%" height="352" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
                 </div>
             </section>
 
@@ -810,35 +762,6 @@
 
         fetchYouTubeVideos();
 
-        // Music Player Carousel Logic
-        const slides = document.querySelectorAll('.song-slide');
-        const prevBtn = document.getElementById('prev-song');
-        const nextBtn = document.getElementById('next-song');
-        const indicator = document.getElementById('song-indicator');
-        let currentSongIndex = 0;
-
-        function updatePlayer() {
-            slides.forEach((slide, index) => {
-                if (index === currentSongIndex) {
-                    slide.classList.remove('hidden');
-                } else {
-                    slide.classList.add('hidden');
-                }
-            });
-            indicator.innerText = `${currentSongIndex + 1} / ${slides.length}`;
-            const isSpotify = slides[currentSongIndex].querySelector('iframe').src.includes('open.spotify.com');
-            document.getElementById('music-frame').style.height = isSpotify ? '352px' : '120px';
-        }
-
-        prevBtn.addEventListener('click', () => {
-            currentSongIndex = (currentSongIndex > 0) ? currentSongIndex - 1 : slides.length - 1;
-            updatePlayer();
-        });
-
-        nextBtn.addEventListener('click', () => {
-            currentSongIndex = (currentSongIndex < slides.length - 1) ? currentSongIndex + 1 : 0;
-            updatePlayer();
-        });
     </script>
 </body>
 </html>
