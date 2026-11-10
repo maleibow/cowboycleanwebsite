@@ -766,6 +766,24 @@
 
         fetchYouTubeVideos();
 
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest && e.target.closest('a[href]');
+            if (!link || typeof gtag !== 'function') return;
+            const href = link.href;
+            let name = null;
+            if (href.includes('open.spotify.com')) name = 'spotify_click';
+            else if (href.includes('cowboyclean.bandcamp.com')) name = 'bandcamp_click';
+            else if (link.closest('#shows')) name = 'ticket_click';
+            if (name) gtag('event', name, { link_url: href });
+        });
+
+        const newsletterForm = document.querySelector('form.ml-block-form');
+        if (newsletterForm) {
+            newsletterForm.addEventListener('submit', () => {
+                if (typeof gtag === 'function') gtag('event', 'newsletter_signup');
+            });
+        }
+
     </script>
 </body>
 </html>
