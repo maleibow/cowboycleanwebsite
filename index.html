@@ -273,7 +273,7 @@
             <section id="music" class="mb-12">
                 <h3 class="text-3xl font-bold mb-6 text-gray-50">Music</h3>
                 <!-- Removed p-4 from this container and added relative/overflow-hidden to keep iframes tight -->
-                <div class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-gray-900 relative w-full max-w-2xl mx-auto" style="height: 120px;">
+                <div id="music-frame" class="rounded-xl overflow-hidden shadow-lg border border-gray-800 bg-gray-900 relative w-full max-w-2xl mx-auto" style="height: 352px;">
                     <!-- Song Carousel Container -->
                     <div id="music-carousel" class="w-full h-full relative">
                         <!-- Spotify: official artist embed -->
@@ -826,6 +826,8 @@
                 }
             });
             indicator.innerText = `${currentSongIndex + 1} / ${slides.length}`;
+            const isSpotify = slides[currentSongIndex].querySelector('iframe').src.includes('open.spotify.com');
+            document.getElementById('music-frame').style.height = isSpotify ? '352px' : '120px';
         }
 
         prevBtn.addEventListener('click', () => {
