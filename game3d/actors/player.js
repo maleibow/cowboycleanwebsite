@@ -23,7 +23,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     body: b, seg: track.segmentAt(startS), progress: startS, // furthest s reached: the camera never goes back past it
     coyote: 0, jumpBuf: 0, jumping: false, sliding: false, slideT: 0, slideCd: 0, ducking: false, slidePrev: false,
     invuln: 0, respawns: 0, pitFalls: 0, deaths: 0, checkpointIdx: -1, safe: { s: startS, x: 0, y: 0 },
-    respawnPoint: { s: startS, x: 0, y: 0 }, reachedGate: false, time: 0,
+    respawnPoint: { s: startS, x: 0, y: 0 }, reachedGate: false, time: 0, dead: false, intentS: 0, intentX: 0,
   };
 
   p.maxSpeed = () => PHYS.speed + PHYS.speedPerUpgrade * run.upgrades.speed + (run.upgrades.vehicle ? PHYS.vehicleBonus : 0);
@@ -51,9 +51,12 @@ export function createPlayer(track, { startS = 4 } = {}) {
     if (run.health <= 0) { p.die(); return; }
     p.place(p.safe); p.invuln = PHYS.pitInvuln;
   };
-  p.die = () => { // placeholder until the GAMEOVER state exists: restart from the last checkpoint
-    p.deaths++; run.health = 100; events.emit('playerDied', p);
-    p.place(p.respawnPoint); p.invuln = PHYS.pitInvuln;
+  p.die = () => { // health 0: the game flow (GAMEOVER state) takes over; the level stops simulating while `dead`
+    if (p.dead) return; p.dead = true; p.deaths++; run.health = 0; events.emit('playerDied', p);
+  };
+  p.revive = (pt) => { // Retry stage: full health, back at `pt`, checkpoints and gate reset
+    p.dead = false; p.checkpointIdx = -1; p.reachedGate = false; p.pitFalls = 0;
+    p.respawnPoint = { s: pt.s, x: 0, y: pt.y }; p.safe = { ...pt }; p.place(pt); p.respawns--; p.invuln = PHYS.pitInvuln;
   };
   p.teleport = (s, x = 0) => {
     const top = track.heightUnder(s, x); const pt = { s, x, y: top === -Infinity ? 0 : top };
@@ -74,6 +77,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     if (view.towardW > 0.5) xIn = -xIn;
     if (view.sideW > 0.5 && Math.abs(sIn) < 0.2) { sIn = xIn; xIn = 0; }
     if (seg.lockX) xIn = 0;
+    p.intentS = sIn; p.intentX = xIn; // read by the weapon to set the facing
     const max = p.maxSpeed();
 
     // ---- slide / duck
