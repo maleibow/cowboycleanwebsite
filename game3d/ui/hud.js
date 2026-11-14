@@ -4,7 +4,7 @@ import { events } from '../core/events.js';
 import { POWERUPS, PROJ } from '../data/weapons.js';
 
 // In-game HUD (DOM): score, coins, bombs, health, heat, stage/act, active powerups, combo, floating text,
-// boss bar (unused until the boss prompts), toast and a placeholder game-over card.
+// boss bar, toast. (Game over lives in ui/gameOver.js.)
 // Everything is created once; per-frame work only touches elements whose value changed.
 const FONT = 'Bangers,cursive';
 const TIMED = ['super', 'spread', 'fourway', 'homing', 'grenade', 'spin'];
@@ -14,7 +14,7 @@ const hex = (n) => '#' + n.toString(16).padStart(6, '0');
 const TEXT = `font:20px/1.2 ${FONT};color:#fff;letter-spacing:1px;text-shadow:2px 2px 0 #000;`;
 
 export function createHud(root) {
-  const h = { track: null, camera: null, level: null, onRetry: null };
+  const h = { track: null, camera: null, level: null };
   const panel = div(root, `position:absolute;left:12px;top:10px;${TEXT}`);
   const rowScore = div(panel, 'font-size:30px;color:#ffd84a'), rowInfo = div(panel, 'font-size:18px;opacity:.95');
   const bombs = div(panel, 'font-size:22px;color:#ff8c1a;margin-top:2px;letter-spacing:3px');
@@ -43,12 +43,6 @@ export function createHud(root) {
   mute.addEventListener('pointerdown', (e) => { e.stopPropagation(); events.emit('toggleMute'); });
   events.on('muteChanged', (m) => { mute.textContent = m ? '🔇' : '🔊'; mute.style.opacity = m ? 0.7 : 1; });
   const dbg = div(root, 'position:absolute;right:8px;bottom:62px;font:12px monospace;color:#7CFC7C;white-space:pre;text-align:right;display:none');
-  const over = div(root, `position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(10,0,0,.7);pointer-events:auto;${TEXT}`);
-  div(over, `font-size:88px;color:#e74c3c;letter-spacing:4px`, 'GAME OVER'); const overScore = div(over, 'font-size:34px;color:#ffd84a');
-  const retry = div(over, 'font-size:28px;padding:6px 22px;border:3px solid #fff;border-radius:8px;cursor:pointer', 'RETRY STAGE  [Enter]');
-  retry.addEventListener('click', () => h.onRetry?.());
-  div(over, 'font-size:16px;opacity:.7', 'placeholder screen: name entry + leaderboard come with the game-flow prompt');
-
   // ---- floating text pool (world position -> screen each frame)
   const FT = Array.from({ length: 28 }, () => ({ el: div(root, `position:absolute;left:0;top:0;${TEXT}white-space:nowrap;display:none;will-change:transform`), on: false, t: 0, max: 1, v: new THREE.Vector3(), size: 1 }));
   let ftCursor = 0; const _v = new THREE.Vector3();
@@ -61,8 +55,6 @@ export function createHud(root) {
   h.toast = (text, color = 0xffffff) => { toast.textContent = text; toast.style.color = hex(color); toast.style.opacity = 1; toastT = 1.1; };
   h.showBoss = (name, hpNow, hpMax) => { bossBar.style.display = 'block'; bossName.textContent = name; bossFill.style.width = Math.max(0, (100 * hpNow) / hpMax) + '%'; };
   h.hideBoss = () => { bossBar.style.display = 'none'; };
-  h.showGameOver = (score) => { overScore.textContent = 'SCORE ' + score; over.style.display = 'flex'; };
-  h.hideGameOver = () => { over.style.display = 'none'; };
   h.flashHurt = () => { hurt.style.opacity = 1; setTimeout(() => (hurt.style.opacity = 0), 60); };
   h.attach = (level, camera) => { h.level = level; h.track = level.track; h.camera = camera; };
 
@@ -104,6 +96,6 @@ export function createHud(root) {
       f.el.style.transform = `translate(${((_v.x * 0.5 + 0.5) * W).toFixed(0)}px,${((-_v.y * 0.5 + 0.5) * H).toFixed(0)}px) translate(-50%,-100%)`;
     }
   };
-  h.reset = () => { for (const f of FT) { f.on = false; f.el.style.display = 'none'; } h.hideGameOver(); h.hideBoss(); };
+  h.reset = () => { for (const f of FT) { f.on = false; f.el.style.display = 'none'; } h.hideBoss(); };
   return h;
 }

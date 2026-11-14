@@ -5,6 +5,9 @@ import { TEMPLATES, JUMP_MAX_GAP } from './segments.js';
 import { POWERUP_TYPES } from '../data/stages.js';
 
 export const stageSeed = (stage, loop = 1) => stage * 1000 + loop;
+// The casino side-door is rare: only this share of stages get one (decided from the seed, so it consumes no rng values).
+export const DOOR_STAGE_CHANCE = 0.3;
+const hasDoor = (seed) => (Math.imul(seed ^ 0x9e3779b9, 2654435761) >>> 0) / 4294967296 < DOOR_STAGE_CHANCE;
 const isGap = (name) => name && TEMPLATES[name].cls === 'gap';
 
 function instantiate(name, s0, act, c, flags = {}) {
@@ -29,13 +32,13 @@ function instantiate(name, s0, act, c, flags = {}) {
 }
 
 export function generateStage(stageData, seed) {
-  const rng = createRng(seed);
+  const rng = createRng(seed), doorOk = hasDoor(seed);
   const total = stageData.length || 1100, w = stageData.trackWidth || 8;
   const segs = [], acts = [];
   let s = 0, act = 1, doorDone = false, specialDone = false;
 
   const add = (name, flags) => {
-    const c = { rng, w, stage: stageData, door: act === 2 && !doorDone && name === 'flat' && rng.chance(0.45) };
+    const c = { rng, w, stage: stageData, door: act === 2 && !doorDone && name === 'flat' && rng.chance(0.45) && doorOk };
     const seg = instantiate(name, s, act, c, flags);
     if (seg.slots.some((sl) => sl.kind === 'door')) doorDone = true;
     segs.push(seg); s = seg.s1; return seg;

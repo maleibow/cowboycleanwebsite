@@ -20,6 +20,7 @@
 //   checkpoints           names shown on the checkpoint toasts, one per act boundary
 //   palette               grey-box fallback colours for the track builder (the theme overrides them)
 // ===========================================================================================================
+import { standIn } from './standIns.js';
 export const POWERUP_TYPES = ['health', 'super', 'spread', 'shield', 'fourway', 'homing', 'grenade', 'spin', 'bomb_refill'];
 
 const STAGE1 = {
@@ -46,7 +47,7 @@ const STAGE1 = {
 export const STAGES = [STAGE1];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
-// Stages with no data yet fall back to a renamed copy of stage 1 so the engine can still load them.
+// Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).
 export function getStage(n) {
-  return STAGES.find((s) => s.id === n) || { ...STAGE1, id: n, name: `Stage ${n} (not built yet)` };
+  return STAGES.find((s) => s.id === n) || standIn(STAGE1, n);
 }

@@ -48,13 +48,16 @@ export function initSfx() {
     bomb: { dur: 0.8, pv: 0.02, gap: 0.2, prio: 2, fn: (k) => { S.tone({ f: 400 * k, f2: 100, type: 'triangle', dur: 0.5, vol: 0.1 }); S.tone({ f: 80, f2: 30, type: 'sine', dur: 0.6, vol: 0.3, at: 0.05 }); S.noise({ dur: 0.7, vol: 0.28, filter: 'lowpass', f: 1500, f2: 150, at: 0.05 }); } },
     stageClear: { dur: 1.7, pv: 0, gap: 1, prio: 2, fn: () => { arp([523, 659, 784, 1047], 0.13, 'square', 0.2, 0.09, 1); [523, 659, 784, 1047].forEach((f) => S.tone({ f, type: 'triangle', dur: 1.0, vol: 0.07, at: 0.6 })); } },
     playerDied: { dur: 1.0, pv: 0, gap: 1, prio: 2, fn: () => { S.tone({ f: 330, f2: 50, type: 'sawtooth', dur: 0.9, vol: 0.18 }); S.tone({ f: 165, f2: 35, type: 'square', dur: 0.9, vol: 0.08 }); } },
+    // game-flow screens: typewriter blip per speaker (cutscenes), reel stop uses the original `hit`
+    blip: { dur: 0.06, pv: 0.08, gap: 0.035, fn: (k, who) => S.tone({ f: (BLIP[who] || 300) * k, type: 'square', dur: 0.05, vol: 0.035 }) },
     shootSuper: P(520, 'sawtooth', 0.12, 0.12, 70, { pv: 0.05 }),
     shootLaser: P(1500, 'square', 0.12, 0.07, 260, { pv: 0.04 }),
     shootHoming: P(900, 'triangle', 0.18, 0.1, 380),
     shootGrenade: P(220, 'triangle', 0.16, 0.14, 80),
     shootSpin: P(700, 'sine', 0.14, 0.1, 480),
   };
-  const SHOOT = { super: 'shootSuper', charcoal: 'shootSuper', laser: 'shootLaser', homing: 'shootHoming', grenade: 'shootGrenade', spin: 'shootSpin' };
+  const BLIP = { 'Cowboy Clean': 220, 'Miss Cowboy': 420, 'Grime Overlord': 95, Ghost: 160 };
+const SHOOT = { super: 'shootSuper', charcoal: 'shootSuper', laser: 'shootLaser', homing: 'shootHoming', grenade: 'shootGrenade', spin: 'shootSpin' };
 
   const play = (name, arg) => {
     const r = SOUNDS[name]; if (!r || !S.ready) return;
@@ -71,6 +74,8 @@ export function initSfx() {
     gateWhoosh: () => play('gateWhoosh'), pitFall: () => play('pitFall'), checkpoint: () => play('checkpoint'),
     bossIntro: () => play('bossSpawn'), bossRage: () => play('bossSpawn'), bossSlam: () => play('bossSlam'), shockwave: () => play('shockwave'),
     stageCleared: () => play('stageClear'), playerDied: () => play('playerDied'), warp: () => play('warp'), buy: () => play('buy'), error: () => play('error'),
+    typeTick: (who) => play('blip', who), reelStop: () => play('hit'),
+    jackpot: () => { play('coin'); setTimeout(() => play('coin'), 100); setTimeout(() => play('powerup'), 200); },   // original checkCasinoWin
   };
   for (const [ev, fn] of Object.entries(MAP)) events.on(ev, fn);
 
