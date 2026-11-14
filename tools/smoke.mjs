@@ -38,7 +38,7 @@ page.on('console', (m) => {
 page.on('pageerror', (e) => fail('page error: ' + e.message));
 page.on('requestfailed', (r) => { if (!isExternal(r.url())) fail('request failed: ' + r.url()); });
 
-await page.goto(`http://127.0.0.1:${port}/cleaningup3d.html?debug=1&seed=1&god=1`, { waitUntil: 'load' });
+await page.goto(`http://127.0.0.1:${port}/cleaningup3d.html?debug=1&seed=1&god=1&title=0`, { waitUntil: 'load' });
 await page.waitForFunction(() => window.__game && window.__game.ready, null, { timeout: 15000 }).catch(() => fail('__game never became ready'));
 
 const f0 = await page.evaluate(() => window.__game.frames);

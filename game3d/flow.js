@@ -1,0 +1,140 @@
+import { run, newRun } from './core/state.js';
+import { events } from './core/events.js';
+import { setStageLook } from './render/materials.js';
+import { storyIdFor, Story } from './data/story.js';
+import { getStage } from './data/stages.js';
+import { createBustStage } from './scenes/bustStage.js';
+import { createSaloon } from './scenes/saloon.js';
+import { createSlotRoom } from './scenes/slotRoom.js';
+import { createTitleFly } from './scenes/titleFly.js';
+import { createSaloonMusic } from './audio/saloon.js';
+import { createCutscene } from './ui/cutscene.js';
+import { createTitle } from './ui/title.js';
+import { createStore } from './ui/store.js';
+import { createCasino } from './ui/casino.js';
+import { createPauseMenu } from './ui/pauseMenu.js';
+import { createGameOver } from './ui/gameOver.js';
+import { createVictory } from './ui/victory.js';
+import { testConnection } from './services/leaderboard.js';
+
+// The game-flow state machine (PLAN 10, prompt 5):
+//   TITLE -> CUTSCENE(intro) -> INTRO -> PLAYING -> STAGECLEAR -> STORE -> CUTSCENE(stageN, loop 1 only) -> INTRO -> PLAYING ...
+//   after stage 10: STAGECLEAR -> CUTSCENE(ending) -> VICTORY -> STORE -> stage 1 with stageLoop + 1.
+//   PLAYING <-> PAUSED, PLAYING <-> CASINO (the side-door), PLAYING -> GAMEOVER -> (retry stage | TITLE).
+// env = { gfx, input, hud, cards, sfx, ui (DOM root), makeWorld(opts?) -> level, debug }.
+const LAST_STAGE = 10;
+const HUD_STATES = new Set(['INTRO', 'PLAYING', 'PAUSED', 'STAGECLEAR', 'GAMEOVER']);   // states that show the in-game HUD
+const IDLE = { moveX: 0, moveY: 0, jump: false, spray: false, bomb: false, slide: false, pause: false, jumpPressed: false, bombPressed: false, pausePressed: false, anyPressed: false, keys: new Set() };
+
+export function createFlow(env) {
+  const { gfx, input, hud, cards, sfx, makeWorld } = env, hudEl = document.getElementById('hud');
+  const G = { world: null, fly: null, stats: null, overAge: 0, door: null, then: null };
+  const fsm = { name: null, current: null };
+
+  // ---- scenes and screens (built once, lazily where they are heavy)
+  const bust = createBustStage(), cutscene = createCutscene(env.ui, bust);
+  const lazy = {}, once = (k, f) => lazy[k] || (lazy[k] = f());
+  const saloon = () => once('saloon', createSaloon), slotRoom = () => once('slot', createSlotRoom), music = () => once('music', () => createSaloonMusic(sfx.synth));
+  let store, casino;
+  const title = createTitle(env.ui, { onStart: () => startRun(1), onCheat: (c) => startRun(c.stage, c.vehicle) });
+  const pauseMenu = createPauseMenu(env.ui, { onResume: () => fsm.name === 'PAUSED' && go('PLAYING'), onRestart: () => { G.world.restart(); hud.reset(); cards.reset(); go('PLAYING'); }, onQuit: () => toTitle() });
+  const gameOver = createGameOver(env.ui, { onRetry: () => retry(), onQuit: () => toTitle() });
+  const victory = createVictory(env.ui, { onContinue: () => go('STORE') });
+
+  const disposeWorld = () => { if (G.fly) { G.fly.dispose(); G.fly = null; } if (G.world) { G.world.dispose?.(); G.world = null; } hud.reset(); cards.reset(); };
+  const loadStage = (opts) => { disposeWorld(); G.world = makeWorld(opts); env.onWorld?.(G.world); };
+  const restoreLook = () => { const w = G.world; if (w) { setStageLook(w.theme.look); gfx.post.setStage(w.theme.grade); w.camera.aspect = gfx.width / gfx.height; w.camera.updateProjectionMatrix(); } };
+
+  // ---- transitions
+  function startRun(stage = 1, vehicle = false) {            // startGame(forceStage): fresh run, then the stage's cutscene
+    newRun(stage); if (vehicle) run.upgrades.vehicle = true;
+    loadStage(); go('CUTSCENE', { id: storyIdFor(stage), then: 'INTRO' });
+  }
+  function toTitle() { newRun(1); input.keys.clear(); go('TITLE'); }
+  function retry() { gameOver.hide(); input.keys.clear(); hud.reset(); cards.reset(); G.world.restart(); go('PLAYING'); }
+  // After the saloon: next stage (stage 10 wraps to stage 1 of the next loop). Story plays only on loop 1 (original nxtStageFn).
+  function leaveStore() {
+    music().stop();
+    const wrap = run.stage >= LAST_STAGE, next = wrap ? 1 : run.stage + 1, id = 'stage' + next;
+    const story = !wrap && run.stageLoop === 1 && Story[id];
+    if (wrap) run.stageLoop += 1;
+    run.stage = next; loadStage();
+    go('CUTSCENE', { id: story ? id : null, then: 'INTRO' });
+  }
+  function afterClear() { run.stage >= LAST_STAGE ? go('CUTSCENE', { id: 'ending', then: 'VICTORY' }) : go('STORE'); }
+
+  const idle = (dt) => G.world.update(dt, IDLE);
+  const worldView = () => G.world;
+  const states = {
+    BOOT: { enter() { if (env.skipTitle) { loadStage(); go(env.skipIntro ? 'PLAYING' : 'INTRO'); } else go('TITLE'); } },   // dev params (?stage, ?intro=0, ?boss=1, ?lookdev=1) start straight on a stage
+    TITLE: {
+      enter() { loadStage({ foes: false }); G.fly = createTitleFly(G.world, env.ui, gfx); G.world.camera.aspect = gfx.width / gfx.height; title.show(); },
+      exit() { title.hide(); },
+      update(dt) { G.fly.update(dt); }, render() { G.fly.render(); }, view: worldView,
+    },
+    CUTSCENE: {
+      enter({ id, then }) { bust.enter(gfx); G.then = then; cutscene.start(id, () => go(G.then)); },
+      exit() { cutscene.ui.hide(); },
+      update(dt) { cutscene.update(dt, input); bust.update(dt); }, view: () => bust,
+    },
+    INTRO: {
+      enter() { G.world.camera.aspect = gfx.width / gfx.height; cards.showIntro(getStage(run.stage), () => go('PLAYING')); },
+      update(dt) { cards.pollPad(input); idle(dt); }, render(a) { G.world.render(a); }, view: worldView,
+    },
+    PLAYING: {
+      enter() { G.world.camera.aspect = gfx.width / gfx.height; },
+      update(dt) { G.world.update(dt, input); if (input.pausePressed) go('PAUSED'); },
+      render(a) { G.world.render(a); env.afterRender?.(); }, view: worldView,
+    },
+    PAUSED: {
+      enter() { events.emit('pause', true); pauseMenu.show(); }, exit() { events.emit('pause', false); pauseMenu.hide(); },
+      update() { if (input.pausePressed) go('PLAYING'); }, view: worldView,
+    },
+    STAGECLEAR: {
+      enter() { cards.showClear(getStage(run.stage), G.stats, afterClear); },
+      exit() { cards.hideClear(); }, update: idle, render(a) { G.world.render(a); }, view: worldView,
+    },
+    STORE: {
+      enter() { disposeWorld(); const s = saloon(); s.enter(gfx); store ||= createStore(env.ui, run, s); music().start(); store.show(leaveStore); },
+      exit() { store.hide(); music().stop(); }, update(dt) { saloon().update(dt); }, view: () => saloon(),
+    },
+    CASINO: {
+      enter() { const r = slotRoom(); r.enter(gfx); casino ||= createCasino(env.ui, run, r, () => G.world.weapon); casino.show(() => { G.door && (G.door.used = true); go('PLAYING'); }); },
+      exit() { casino.ui.hide(); restoreLook(); }, update(dt) { slotRoom().update(dt); casino.update(dt); }, view: () => slotRoom(),
+    },
+    VICTORY: {
+      enter() { bust.enter(gfx); bust.lineup(); victory.show(); },
+      exit() { victory.hide(); bust.cheer = false; bust.clear(); }, update(dt) { bust.update(dt); }, view: () => bust,
+    },
+    GAMEOVER: {
+      enter() { G.overAge = 0; gameOver.show(); },
+      exit() { gameOver.hide(); input.keys.clear(); },
+      update(dt) { G.overAge += dt; G.world.update(dt, input); if (G.overAge > 0.6 && (input.jumpPressed || input.bombPressed) && !gameOver.typing) retry(); },
+      render(a) { G.world.render(a); }, view: worldView,
+    },
+  };
+
+  function go(name, arg) {
+    if (!states[name]) throw new Error('unknown state ' + name);
+    fsm.current?.exit?.();
+    fsm.name = name; fsm.current = states[name];
+    hudEl.style.visibility = HUD_STATES.has(name) ? 'visible' : 'hidden';
+    events.emit('state', name);
+    fsm.current.enter?.(arg);
+  }
+
+  // ---- events from the game
+  events.on('stageCleared', (stats) => { G.stats = stats; go('STAGECLEAR'); });
+  events.on('playerDied', () => go('GAMEOVER'));
+  events.on('casinoDoor', (door) => { if (fsm.name === 'PLAYING') { G.door = door; go('CASINO'); } });
+  addEventListener('keydown', (e) => { if (fsm.name === 'GAMEOVER' && G.overAge > 0.15 && (e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) retry(); });   // event-driven: a quick tap must not be missed
+  testConnection();    // original: validate the Firestore connection on boot (warns in the console only)
+
+  return {
+    fsm, go, startRun, toTitle, retry, G, title, cutscene, get store() { return store; }, get casino() { return casino; }, gameOver, victory, pauseMenu, bust,
+    get name() { return fsm.name; },
+    update(dt) { input.update(); fsm.current.update?.(dt); },
+    render(alpha) { fsm.current.render?.(alpha); const v = fsm.current.view?.() ?? G.world; if (v) gfx.render(v.scene, v.camera); },
+    dispose() { disposeWorld(); },
+  };
+}

@@ -25,6 +25,7 @@ import { createObstacles } from '../actors/obstacles.js';
 import { createCombat } from '../actors/combat.js';
 import { createWeapon } from '../actors/weapon.js';
 import { createSpawner } from '../actors/spawner.js';
+import { createCasinoDoors } from '../actors/casinoDoor.js';
 
 // Wires a generated, themed stage into a playable scene: sky + lights + look from the theme, the track builder
 // window, scenery chunks, player, camera, the chase hazard, combat actors, checkpoints, and the boss arena.
@@ -73,6 +74,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   ctx.weapon = createWeapon(ctx);
   ctx.spawner = createSpawner(ctx); ctx.spawner.enabled = foes;
   ctx.enemies.preload([...stageData.roster.flat(), 'dirt']);
+  ctx.doors = createCasinoDoors(ctx, scene, track);
   const arena = createArena(ctx);
 
   // ---- the chase hazard: a giant angry dust ball that rolls up behind the player inside a `chase` segment
@@ -95,7 +97,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   const level = {
     scene, camera: rig.camera, rig, track, layout, player, builder, scenery, arena, particles, sky, stageData, theme, seed: usedSeed, hazard,
     fx: ctx.fx, projectiles: ctx.projectiles, enemies: ctx.enemies, pickups: ctx.pickups, obstacles: ctx.obstacles,
-    combat: ctx.combat, weapon: ctx.weapon, spawner: ctx.spawner,
+    combat: ctx.combat, weapon: ctx.weapon, spawner: ctx.spawner, doors: ctx.doors,
     finished: false, time: 0, runTime: 0, coinsAtStart: run.coins,
     update(dt, input) {
       level.time += dt;
@@ -107,7 +109,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
       ctx.weapon.update(dt, input);
       ctx.spawner.update(dt); ctx.enemies.update(dt); ctx.projectiles.update(dt); ctx.combat.step(dt);
       ctx.pickups.update(dt); ctx.obstacles.update(dt); ctx.fx.update(dt);
-      arena.update(dt);
+      arena.update(dt); ctx.doors.update(dt);
       if (arena.state !== 'sealed') for (const e of ctx.enemies.list) if (!e.ctrl) arena.confine(e, 0.8);   // minions stay in the disc
       // chase hazard
       if (seg.chase && !hazard.active && b.s >= seg.s0) startHazard(seg);
@@ -135,7 +137,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
     render(alpha) {
       player.render(alpha); ctx.weapon.render(); rig.render(alpha);
       ctx.enemies.render(alpha); ctx.projectiles.render(); ctx.pickups.render(); ctx.obstacles.render(alpha); ctx.fx.render();
-      arena.render(level.time); hud?.render();
+      arena.render(level.time); ctx.doors.render(level.time); hud?.render();
       if (hazard.active) ball.place(track, hazard.s, level.time, particles);
       const pp = player.mesh.position; sun.target.position.copy(pp); sun.position.set(pp.x + L.sunOffset[0], pp.y + L.sunOffset[1], pp.z + L.sunOffset[2]);
       sun.target.updateMatrixWorld();
@@ -149,12 +151,12 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
     restart() {
       run.score = run.stageStartScore; run.health = 100; run.bombs = BOMB.perStage;
       for (const a of [ctx.enemies, ctx.projectiles, ctx.pickups, ctx.obstacles, ctx.fx]) a.clear();
-      ctx.weapon.reset(); ctx.combat.reset(); ctx.spawner.reset(); hazard.active = false; ball.group.visible = false; arena.reset();
+      ctx.weapon.reset(); ctx.combat.reset(); ctx.spawner.reset(); hazard.active = false; ball.group.visible = false; arena.reset(); ctx.doors.reset();
       level.finished = false; level.gateTime = undefined; level.runTime = 0; level.coinsAtStart = run.coins;
       player.revive({ s: layout.startS, x: 0, y: 0 }); rig.reset(player.body); builder.update(player.body.s); hud?.reset();
       scenery.passed.clear(); for (const d of scenery.dressed.values()) d.reset?.();
     },
-    dispose() { offs.forEach((f) => f?.()); arena.dispose(); scenery.dispose(); builder.dispose(); ctx.enemies.models.dispose(); scene.remove(ball.group); },
+    dispose() { offs.forEach((f) => f?.()); ctx.doors.dispose(); arena.dispose(); scenery.dispose(); builder.dispose(); ctx.enemies.models.dispose(); scene.remove(ball.group); },
     // Debug helpers (?debug=1 keys 1-5, and window.__game.world.debug in tests)
     debug: {
       spawnEnemies: (n = 10) => ctx.spawner.spawnDebug(n),
