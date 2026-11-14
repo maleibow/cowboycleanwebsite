@@ -118,9 +118,12 @@ const fresh = async (q) => { if (!/quality=/.test(q)) q += '&quality=low';   // 
   console.log('tally: ' + tally.state);
   if (tally.state !== 'STAGECLEAR' || !/STAGE CLEAN/.test(tally.text) || !/SCORE/.test(tally.text) || !/COINS/.test(tally.text) || !/TIME/.test(tally.text)) fail('stage-clear tally not shown: ' + tally.state);
   await pg.waitForFunction(() => [...document.querySelectorAll('#hud div')].some((d) => d.textContent.startsWith('CONTINUE') && d.style.opacity === '1'), null, { timeout: 40000 }).catch(() => fail('tally never finished counting'));
-  await pg.keyboard.press('Enter'); await pg.waitForTimeout(500);
-  const after = await pg.evaluate(() => ({ state: window.__game.state, loop: window.__game.run.stageLoop, stage: window.__game.run.stage, boss: window.__game.world.arena.boss }));
-  if (!(after.state === 'INTRO' && after.loop === 2 && after.stage === 1 && !after.boss)) fail('Enter on the tally should start the next stage (loop 2): ' + JSON.stringify(after));
+  await pg.keyboard.down('Enter'); await pg.waitForTimeout(150); await pg.keyboard.up('Enter'); await pg.waitForFunction(() => window.__game.state === 'STORE', null, { timeout: 20000 }).catch(() => {});
+  const inStore = await pg.evaluate(() => window.__game.state);
+  if (inStore !== 'STORE') fail('Enter on the tally should open the saloon store, state ' + inStore);
+  await pg.evaluate(() => window.__game.flow.store.leave()); await pg.waitForTimeout(500);
+  const after = await pg.evaluate(() => ({ state: window.__game.state, loop: window.__game.run.stageLoop, stage: window.__game.run.stage, boss: !!window.__game.world.arena.boss }));
+  if (!(after.state === 'CUTSCENE' && after.loop === 1 && after.stage === 2 && !after.boss)) fail('leaving the saloon should start the stage 2 cutscene: ' + JSON.stringify(after));
   await pg.close();
 }
 

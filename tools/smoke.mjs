@@ -279,7 +279,8 @@ for (const sd of [1, 2, 3, null]) { // 5. a scripted player can finish the whole
     return out;
   });
   { const n0 = await pg.evaluate(() => window.__game.simSteps); await pg.waitForFunction((n) => window.__game.simSteps > n + 20, n0, { timeout: 30000 }); }   // Enter is only accepted 0.15 s of simulation time after the card shows; headless runs at ~5 fps
-  const overlay = await pg.evaluate(() => [...document.querySelectorAll('#hud div')].some((d) => d.textContent === 'GAME OVER' && getComputedStyle(d.parentElement).display !== 'none'));
+  const overlay = await pg.evaluate(() => /GRIME OVERLOAD/.test(document.getElementById('ui').innerText) && /RETRY STAGE/.test(document.getElementById('ui').innerText));
+  await pg.evaluate(() => document.activeElement?.blur());   // the name field has focus on the game-over screen; Enter there posts the score
   await pg.keyboard.press('Enter'); await pg.waitForTimeout(400);
   const after = await pg.evaluate(() => ({ state: window.__game.state, dead: window.__game.world.player.dead, hp: window.__game.run.health, score: window.__game.run.score, bombs: window.__game.run.bombs, s: window.__game.world.player.body.s }));
   console.log('enemies/gameover: ' + JSON.stringify({ r, overlay, after }));
