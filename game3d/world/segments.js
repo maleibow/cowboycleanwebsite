@@ -151,22 +151,41 @@ export const TEMPLATES = {
   chase: { // player runs toward the camera, a dust-ball hazard rolls up behind
     cls: 'special', mode: 'toward',
     build(c) {
-      const { w } = c, len = 80;
+      const { w } = c, len = 80, sp = c.stage?.setPiece || { speed: 8, lag: 16, damage: 15 };
       const spans = [ground(0, 30, w), ground(33.5, 56, w), ground(59.5, len, w)];
       const slots = [...arc(30, 3.5, 0), ...arc(56, 3.5, 0), coin(10, 0), coin(12, 0), coin(14, 0), item(45, 0),
         slot('obstacle', 20, 1.5, 0, { rolling: true }), slot('obstacle', 48, -1.5, 0, { rolling: true }), slot('obstacle', 70, 0, 0, { rolling: true })];
-      return { len, mode: 'toward', spans, gaps: [{ s0: 30, s1: 33.5 }, { s0: 56, s1: 59.5 }], slots, chase: { speed: 8, lag: 16 } };
+      return { len, mode: 'toward', spans, gaps: [{ s0: 30, s1: 33.5 }, { s0: 56, s1: 59.5 }], slots, chase: { speed: sp.speed, lag: sp.lag, damage: sp.damage } };
+    },
+  },
+  quicksand: { // a patch of sand that drags (half speed) with a firm lane down one side: steer round it or hop across
+    cls: 'easy',
+    build(c) {
+      const { rng, w } = c, a = r1(rng.range(10, 12)), pl = r1(rng.range(14, 18)), len = a + pl + r1(rng.range(12, 15));
+      const lane = rng.sign(), laneW = 2.4, sandX = lane > 0 ? [-w / 2, w / 2 - laneW] : [-w / 2 + laneW, w / 2];
+      const laneX = lane > 0 ? [w / 2 - laneW, w / 2] : [-w / 2, -w / 2 + laneW];
+      const spans = [ground(0, a, w), ground(a + pl, len, w),
+        { s0: a, s1: a + pl, x0: sandX[0], x1: sandX[1], top: -0.25, depth: 3, kind: 'quicksand' },
+        { s0: a, s1: a + pl, x0: laneX[0], x1: laneX[1], top: 0, depth: 3, kind: 'ground' }];
+      const lx = (laneX[0] + laneX[1]) / 2, slots = [item(a - 3, 0), foe(len - 5, rng.range(-0.3, 0.3) * w), foe(4, rng.range(-0.3, 0.3) * w)];
+      for (let i = 0; i < 6; i++) slots.push(coin(a + 2 + i * (pl - 4) / 5, lx));
+      for (let i = 0; i < 3; i++) slots.push(coin(a + pl / 2 - 1.5 + i * 1.5, -lane * 1.2, 0.7));
+      return { len, spans, slots, patches: [{ s0: a, s1: a + pl, x0: sandX[0], x1: sandX[1] }] };
+    },
+  },
+  arena: { // the boss arena: a corridor from the gate leads into a disc of radius R (world/arena.js owns the rules)
+    cls: 'special', mode: 'arena',
+    build(c) {
+      const R = c.stage?.boss?.arena?.radius ?? 15, mouth = 6, len = mouth + 2 * R + 6;
+      const spans = [ground(0, mouth + 1, 8), ground(mouth, len, 2 * R + 2, 0, 'hidden')];
+      return { len, mode: 'arena', spans, slots: [], arena: { s: mouth + R, x: 0, r: R, mouth } };
     },
   },
   checkpoint: {
     cls: 'easy',
     build(c) {
       const w = c.w, len = 14, spans = [ground(0, len, w)];
-      const deco = [
-        { s0: 6.8, s1: 7.2, x0: -w / 2 + 0.2, x1: -w / 2 + 0.6, y0: 0, y1: 3.6, color: 0xeeeeee },
-        { s0: 6.9, s1: 7.1, x0: -w / 2 + 0.6, x1: -w / 2 + 2.0, y0: 2.4, y1: 3.4, color: 0x3dd16f },
-      ];
-      return { len, spans, deco, checkpoint: 7, slots: [coin(10, 0), coin(11, 0)] };
+      return { len, spans, checkpoint: 7, slots: [coin(10, 0), coin(11, 0)] };
     },
   },
   rest: {
@@ -183,12 +202,7 @@ export const TEMPLATES = {
     build(c) {
       const w = c.w, len = 40, spans = [ground(0, len, w)];
       const solids = [{ s0: 38.6, s1: 40, x0: -w / 2 - 1, x1: w / 2 + 1, y0: 0, y1: 7, kind: 'wall' }];
-      const deco = [
-        { s0: 36, s1: 37.6, x0: -w / 2 - 1, x1: -w / 2 + 0.6, y0: 0, y1: 6.5, color: 0x4a3a58 },
-        { s0: 36, s1: 37.6, x0: w / 2 - 0.6, x1: w / 2 + 1, y0: 0, y1: 6.5, color: 0x4a3a58 },
-        { s0: 36, s1: 37.6, x0: -w / 2 - 1, x1: w / 2 + 1, y0: 6.5, y1: 7.5, color: 0x7a2f2f },
-      ];
-      return { len, spans, solids, deco, gate: 36, slots: [] };
+      return { len, spans, solids, gate: 36, slots: [] };
     },
   },
 };

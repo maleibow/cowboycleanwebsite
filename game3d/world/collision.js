@@ -34,6 +34,7 @@ export function moveBody(b, boxes, dt, stepUp = 0.35) {
   for (let i = 0; i < boxes.length; i++) {
     const o = boxes[i];
     if (!hits(b, o)) continue;
+    if (o.y1 - b.y <= stepUp && o.kind !== 'barrier' && o.kind !== 'wall') { b.y = o.y1; continue; }
     const pushRight = b.vx > 0 || (b.vx === 0 && b.x < (o.x0 + o.x1) / 2);
     b.x = pushRight ? o.x0 - b.hx : o.x1 + b.hx;
     b.hitX = pushRight ? 1 : -1; b.vx = 0;

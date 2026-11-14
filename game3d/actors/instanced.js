@@ -16,7 +16,8 @@ export function createBatch(scene, track, geometry, material, cap) {
     mesh, cap,
     begin() { n = 0; },
     // Upright instance at (s,x,y), scaled, optionally spun about the up axis by `spin` radians.
-    put(s, x, y, sx, sy, sz, color, spin = 0) {
+    // `pitch` rocks it about its lateral axis (a lump sliding or rolling toward you).
+    put(s, x, y, sx, sy, sz, color, spin = 0, pitch = 0) {
       if (n >= cap) return;
       const f = track.frameAt(s);
       _p.copy(f.p).addScaledVector(f.r, x).addScaledVector(f.u, y);
@@ -24,7 +25,9 @@ export function createBatch(scene, track, geometry, material, cap) {
       _z.copy(f.t).negate();                                         // local +Z points back down the track
       _x.copy(f.r).multiplyScalar(c).addScaledVector(_z, sn);
       _z.multiplyScalar(c).addScaledVector(f.r, -sn);
-      _m.makeBasis(_x.multiplyScalar(sx), _y.copy(f.u).multiplyScalar(sy), _z.multiplyScalar(sz)).setPosition(_p);
+      _y.copy(f.u);
+      if (pitch) { const cp = Math.cos(pitch), sp = Math.sin(pitch); _d.copy(_y).multiplyScalar(cp).addScaledVector(_z, sp); _z.multiplyScalar(cp).addScaledVector(_y, -sp); _y.copy(_d); }
+      _m.makeBasis(_x.multiplyScalar(sx), _y.multiplyScalar(sy), _z.multiplyScalar(sz)).setPosition(_p);
       mesh.setMatrixAt(n, _m); mesh.setColorAt(n, _c.setHex(color)); n++;
     },
     // Instance whose long (Y) axis follows a track-space velocity: bolts, lasers, lassos.

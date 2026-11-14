@@ -6,6 +6,8 @@ import { events } from './core/events.js';
 import { createRenderer } from './render/renderer.js';
 import { createLevel } from './world/level.js';
 import { createLookdev } from './world/lookdev.js';
+import { createStageCards } from './ui/stageCards.js';
+import { getStage, IMPLEMENTED } from './data/stages.js';
 import { createHud } from './ui/hud.js';
 import { createDebugPanel, createFreeCam } from './core/debug.js';
 
@@ -26,15 +28,26 @@ const hud = createHud(document.getElementById('hud'));
 const foes = params.get('foes') !== '0'; // ?foes=0: no enemies/obstacles (pure platformer, used by the platformer tests)
 // ?lookdev=1 shows the art-kit stage 1 scene (new toon look + animated hero) instead of the grey-box level.
 const lookdev = params.get('lookdev') === '1';
-const world = lookdev ? createLookdev(quality, gfx, input, params) : createLevel(quality, { stage: startStage, seed, debug, hud, foes });
+const cards = createStageCards(document.getElementById('hud'));
+const skipIntro = params.get('intro') === '0' || bossJump || lookdev;
+const makeWorld = () => (lookdev ? createLookdev(quality, gfx, input, params) : createLevel(quality, { stage: run.stage, seed, debug, hud, foes, gfx, cards }));
+let world = makeWorld();
 if (bossJump && world.jumpToGate) world.jumpToGate();
 const debugPanel = debug ? createDebugPanel(gfx, quality) : null;
-const freeCam = debug ? createFreeCam(world.camera, input, canvas) : null;
+let freeCam = debug ? createFreeCam(world.camera, input, canvas) : null;
 
 // ---- State machine. Only PLAYING is implemented; the rest are stubs that fall through. ----
 const stub = (name) => ({ enter() { console.info(`[state] ${name} not implemented`); }, update() {}, render() {} });
 const states = {
-  BOOT: { enter() { fsm.go('PLAYING'); }, update() {}, render() {} }, // TITLE etc. come later
+  BOOT: { enter() { fsm.go(skipIntro ? 'PLAYING' : 'INTRO'); }, update() {}, render() {} }, // TITLE etc. come later
+  INTRO: { // stage intro card over the first view of the stage; any key skips
+    enter() { world.camera.aspect = gfx.width / gfx.height; cards.showIntro(getStage(run.stage), () => fsm.go('PLAYING')); },
+    update(dt) { cards.pollPad(input); world.update(dt, idleInput); }, render(alpha) { world.render(alpha); },
+  },
+  STAGECLEAR: { // tally card; the world keeps animating behind it (the clean wave, bubbles)
+    enter() { cards.showClear(getStage(run.stage), clearStats, nextStage); },
+    update(dt) { world.update(dt, idleInput); }, render(alpha) { world.render(alpha); },
+  },
   TITLE: stub('TITLE'), CUTSCENE: stub('CUTSCENE'), BOSS: stub('BOSS'), STORE: stub('STORE'),
   CASINO: stub('CASINO'), VICTORY: stub('VICTORY'),
   GAMEOVER: { // placeholder: name entry + leaderboard arrive with the game-flow prompt
@@ -60,8 +73,19 @@ const states = {
     render() {},
   },
 };
-let overAge = 0;
-const retry = () => { hud.hideGameOver(); world.restart(); fsm.go('PLAYING'); };
+let overAge = 0, clearStats = null;
+const idleInput = { moveX: 0, moveY: 0, jump: false, spray: false, bomb: false, slide: false, pause: false, jumpPressed: false, bombPressed: false, pausePressed: false, anyPressed: false, keys: new Set() };
+events.on('stageCleared', (stats) => { clearStats = stats; fsm.go('STAGECLEAR'); });
+// Continue after the tally: the next implemented stage, otherwise the stage loop (PLAN 3.3: after the last stage, stage 1 again, harder).
+function nextStage() {
+  const next = IMPLEMENTED.has(run.stage + 1) ? run.stage + 1 : 1;
+  if (next === 1 && run.stage >= 1) run.stageLoop += 1;
+  run.stage = next; run.health = Math.max(run.health, 50);
+  world.dispose?.(); hud.reset(); cards.reset(); world = makeWorld(); window.__game.world = world;
+  if (freeCam) freeCam = createFreeCam(world.camera, input, canvas);
+  fsm.go('INTRO');
+}
+const retry = () => { hud.hideGameOver(); cards.reset(); world.restart(); fsm.go('PLAYING'); };
 hud.onRetry = retry;
 events.on('playerDied', () => fsm.go('GAMEOVER'));
 addEventListener('keydown', (e) => { if (fsm.name === 'GAMEOVER' && overAge > 0.15 && (e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat) retry(); }); // event-driven: a quick tap must not be missed

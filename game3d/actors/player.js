@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { moveBody, fits } from '../world/collision.js';
 import { run } from '../core/state.js';
 import { events } from '../core/events.js';
+import { createPlayerModel } from './playerModel.js';
 
 // Player controller in track space (PLAN 3.1 / 3.4). A capsule stands in for the model.
 export const PHYS = {
@@ -11,7 +12,7 @@ export const PHYS = {
   accelGround: 55, accelAir: 28, frictionGround: 60, frictionAir: 8, turnBoost: 1.5,
   height: 1.8, duckHeight: 1.0, slideHeight: 0.7, halfS: 0.4, halfX: 0.4,
   slideTime: 0.7, slideBoost: 1.3, slideCooldown: 0.25, slideMinSpeed: 2.5, duckSpeed: 0.35,
-  stepUp: 0.35, pitY: -8, pitDamage: 20, pitInvuln: 1.5, hitInvuln: 1.0, backroom: 3,
+  stepUp: 0.35, sandDrag: 0.5, pitY: -8, pitDamage: 20, pitInvuln: 1.5, hitInvuln: 1.0, backroom: 3,
 };
 const approach = (v, t, d) => (v < t ? Math.min(v + d, t) : Math.max(v - d, t));
 
@@ -35,7 +36,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
   p.hurt = (amount, invuln = PHYS.hitInvuln) => {
     if (p.invuln > 0 || run.cheats.god) return false;
     run.health = Math.max(0, run.health - amount); p.invuln = invuln;
-    events.emit('hurt', amount);
+    p.model.anim.hurt(); events.emit('hurt', amount);
     if (run.health <= 0) p.die();
     return true;
   };
@@ -78,7 +79,8 @@ export function createPlayer(track, { startS = 4 } = {}) {
     if (view.sideW > 0.5 && Math.abs(sIn) < 0.2) { sIn = xIn; xIn = 0; }
     if (seg.lockX) xIn = 0;
     p.intentS = sIn; p.intentX = xIn; // read by the weapon to set the facing
-    const max = p.maxSpeed();
+    p.inSand = b.grounded && b.ground?.kind === 'quicksand';   // quicksand drags: half speed (the lane at the side is firm)
+    const max = p.maxSpeed() * (p.inSand ? PHYS.sandDrag : 1);
 
     // ---- slide / duck
     const slidePressed = input.slide && !p.slidePrev; p.slidePrev = input.slide;
@@ -99,7 +101,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     if (p.jumpBuf > 0 && (b.grounded || p.coyote > 0) && (!low || fits(b, boxes, PHYS.height))) {
       if (low) { stand(); p.slideCd = PHYS.slideCooldown; }
       b.vy = p.jumpSpeed(); p.jumpBuf = 0; p.coyote = 0; p.jumping = true; b.grounded = false;
-      events.emit('jump', p);
+      p.model.anim.jump(); events.emit('jump', p);
     }
     if (p.jumping && !input.jump && b.vy > p.jumpSpeed() * PHYS.jumpCut) b.vy = p.jumpSpeed() * PHYS.jumpCut;
     if (p.jumping && (b.vy <= 0 || b.grounded)) p.jumping = false;
@@ -122,7 +124,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     // ---- move + collide
     const wasGrounded = b.grounded, vyBefore = b.vy;
     moveBody(b, query(), dt, PHYS.stepUp);
-    if (b.grounded && !wasGrounded && vyBefore < -4) events.emit('land', -vyBefore);
+    if (b.grounded && !wasGrounded && vyBefore < -4) { p.model.anim.land(-vyBefore); events.emit('land', -vyBefore); }
     if (b.s < p.progress - PHYS.backroom) { b.s = p.progress - PHYS.backroom; if (b.vs < 0) b.vs = 0; }
     p.progress = Math.max(p.progress, b.s);
 
@@ -135,23 +137,22 @@ export function createPlayer(track, { startS = 4 } = {}) {
     }
     if (!p.reachedGate && b.s >= track.gateS) { p.reachedGate = true; events.emit('bossGate', p); }
     if (b.y < PHYS.pitY) p.fall();
+    p.animate(dt);
   };
 
-  // ---- visuals: a capsule with a hat, standing in for the model
-  const group = new THREE.Group(), body = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: 0xff9a2e, roughness: 0.6 });
-  const cap = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.0, 4, 10), mat); cap.position.y = 0.9; cap.castShadow = true;
-  const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.08, 14), new THREE.MeshStandardMaterial({ color: 0x5a3a1c })); hat.position.y = 1.62;
-  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.3), new THREE.MeshStandardMaterial({ color: 0xffffff })); nose.position.set(0, 1.25, -0.4);
-  body.add(cap, hat, nose); group.add(body);
-  p.mesh = group;
+  // ---- visuals: the animated hero (playerModel.js). He faces +s; sliding/ducking, spraying and the vehicle feed the animator.
+  const model = createPlayerModel(), group = model.group;
+  p.model = model; p.mesh = group; p.shooting = false;
   const fr = { p: new THREE.Vector3(), t: new THREE.Vector3(), r: new THREE.Vector3(), u: new THREE.Vector3() }, m4 = new THREE.Matrix4(), ref = new THREE.Vector3();
+  p.animate = (dt) => { // once per simulation step, after the physics
+    if (model.vehicle !== !!run.upgrades.vehicle) model.setVehicle(!!run.upgrades.vehicle);
+    model.anim.update(dt, { speed: b.vs, grounded: b.grounded, vy: b.vy, sliding: p.sliding || p.ducking, shooting: p.shooting, moveX: p.intentX, vehicle: model.vehicle });
+  };
   p.render = (alpha) => {
-    const s = prev.s + (b.s - prev.s) * alpha, x = prev.x + (b.x - prev.x) * alpha, y = prev.y + (b.y - prev.y) * alpha;
+    const s = prev.s + (b.s - prev.s) * alpha, x = prev.x + (b.x - prev.x) * alpha, y = prev.y + (b.y - prev.y) * alpha - (p.inSand ? 0.12 : 0);
     track.frameAt(s, fr);
     group.position.copy(fr.p).addScaledVector(fr.r, x).addScaledVector(fr.u, y);
     ref.copy(fr.t).negate(); m4.makeBasis(fr.r, fr.u, ref); group.quaternion.setFromRotationMatrix(m4);
-    body.scale.y = (prev.h + (b.h - prev.h) * alpha) / PHYS.height;
     group.visible = p.invuln <= 0 || Math.floor(p.time * 18) % 2 === 0;
   };
   p.interp = (alpha, out = {}) => { out.s = prev.s + (b.s - prev.s) * alpha; out.x = prev.x + (b.x - prev.x) * alpha; out.y = prev.y + (b.y - prev.y) * alpha; return out; };

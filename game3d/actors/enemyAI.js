@@ -101,7 +101,7 @@ function floater(e, c, dt) {
   e.y += clamp(P.y + e.alt + bob - e.y, -3, 3) * Math.min(1, dt * 3);
 }
 
-const THINK = { walker: (e, c, dt) => walker(e, c, dt, false), heavy: (e, c, dt) => walker(e, c, dt, true), crawler, hopper, flyer, floater };
+const THINK = { boss: (e, c, dt) => e.ctrl.update(e, c, dt), walker: (e, c, dt) => walker(e, c, dt, false), heavy: (e, c, dt) => walker(e, c, dt, true), crawler, hopper, flyer, floater };
 
 // Enemy shots: aimed at the player, or dropped straight down when the player is under the shooter.
 function shoot(e, c, dt) {
@@ -132,5 +132,5 @@ export function think(e, c, dt) {
     }
   }
   THINK[e.arch](e, c, dt);
-  if (e.def.fire && e.state !== 'climb') shoot(e, c, dt);
+  if (e.def.fire && e.state !== 'climb' && !e.ctrl) shoot(e, c, dt);
 }

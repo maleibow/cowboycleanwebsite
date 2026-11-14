@@ -99,14 +99,14 @@ const { getStage } = await import('../game3d/data/stages.js');
   console.log(`layout: 300 seeds validated (${bad} bad), seed 1 vs 2 differ: ${sig(1) !== sig(2)}`);
 }
 
-const url = (q) => `http://127.0.0.1:${port}/cleaningup3d.html?${q}`;
+const url = (q) => `http://127.0.0.1:${port}/cleaningup3d.html?${q}&intro=0&quality=low`;   // intro=0: the stage intro card has its own test below
 const fresh = async (q, init) => {
   const pg = await browser.newPage({ viewport: { width: 960, height: 540 } });
   pg.on('console', (m) => { if (m.type() === 'error' && !isExternal(m.location().url)) fail('console error: ' + m.text()); });
   pg.on('pageerror', (e) => fail('page error: ' + e.message));
   if (init) await pg.addInitScript(init);
-  await pg.goto(url(q), { waitUntil: 'load' });
-  await pg.waitForFunction(() => window.__game && window.__game.ready, null, { timeout: 15000 });
+  await pg.goto(url(q), { waitUntil: 'domcontentloaded', timeout: 90000 });
+  await pg.waitForFunction(() => window.__game && window.__game.ready, null, { timeout: 60000 });
   await pg.addScriptTag({ path: path.join(root, 'tools/smokeBot.js') });
   return pg;
 };
@@ -329,5 +329,7 @@ for (const sd of [1, 2]) { // 9. a spraying scripted player clears stage 1: all 
 }
 
 await browser.close(); server.close();
+// Stage 1 vertical slice (intro card, boss fight, stage clear, quicksand, enemy models...): its own script.
+{ const { spawnSync } = await import('node:child_process'); const r = spawnSync(process.execPath, [path.join(root, 'tools/smokeStage1.mjs')], { stdio: 'inherit' }); if (r.status) fail('tools/smokeStage1.mjs failed'); }
 if (failures.length) { console.error(`\nSMOKE FAILED (${failures.length})`); process.exit(1); }
 console.log('SMOKE PASSED');

@@ -3,6 +3,7 @@ import { run } from '../core/state.js';
 import { POWERUPS, POWERUP_LIST, DROPS } from '../data/weapons.js';
 import { createBatch, shapes } from './instanced.js';
 import { groundAt } from './enemyAI.js';
+import { coinGeo, crateGeo, coinMaterial, pickupMaterial } from './propModels.js';
 
 // Coins (magnet to the player), the nine powerups, and breakable soap crates that hold coins or a powerup.
 // Original: coin pickup +5, powerup drop 15%/kill, dropped powerups hop and last 400 frames (3041-3108, 7435-7490).
@@ -14,9 +15,8 @@ export function createPickups(ctx, scene, track) {
   const coins = Array.from({ length: 256 }, () => ({ on: false, s: 0, x: 0, y: 0, vs: 0, vx: 0, vy: 0, ph: 0, t: 0, fixed: false, pull: 0, rest: false }));
   const pows = Array.from({ length: 48 }, () => ({ on: false, type: 'health', s: 0, x: 0, y: 0, vs: 0, vx: 0, vy: 0, t: 0, drop: false, ph: 0 }));
   const crates = Array.from({ length: 48 }, () => ({ on: false, s: 0, x: 0, y: 0, hitT: 0, loot: '', coinsN: 0 }));
-  const cg = new THREE.CylinderGeometry(0.26, 0.26, 0.07, 12).rotateZ(Math.PI / 2), pg = new THREE.SphereGeometry(0.5, 10, 8);
-  const basic = new THREE.MeshBasicMaterial({ color: 0xffffff }), lit = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  const cb = createBatch(scene, track, cg, basic, 256), pb = createBatch(scene, track, pg, basic, 96), xb = createBatch(scene, track, shapes.box(), lit, 48);
+  const pg = new THREE.SphereGeometry(0.5, 14, 10), basic = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const cb = createBatch(scene, track, coinGeo(), coinMaterial(), 256), pb = createBatch(scene, track, pg, basic, 96), xb = createBatch(scene, track, crateGeo(), pickupMaterial(), 48);
   const api = { coins, powerups: pows, crates };
   let time = 0, coinAcc = 0, coinTimer = 0;
   const P = () => ctx.player.body;
@@ -108,7 +108,7 @@ export function createPickups(ctx, scene, track) {
 
   api.render = () => {
     cb.begin();
-    for (const c of coins) if (c.on) cb.put(c.s, c.x, c.y + Math.sin(time * 3 + c.ph) * (c.fixed ? 0.08 : 0), 1, 1, 1, 0xffcc22, time * 4 + c.ph);
+    for (const c of coins) if (c.on) cb.put(c.s, c.x, c.y + Math.sin(time * 3 + c.ph) * (c.fixed ? 0.08 : 0), 1, 1, 1, 0xffffff, time * 4 + c.ph);
     cb.end();
     pb.begin();
     for (const p of pows) if (p.on) {
@@ -120,7 +120,7 @@ export function createPickups(ctx, scene, track) {
     for (const c of crates) if (c.on && c.loot) pb.put(c.s, c.x, c.y + 1.25 + Math.sin(time * 3 + c.s) * 0.08, 0.28, 0.28, 0.28, POWERUPS[c.loot].color); // what is inside
     pb.end();
     xb.begin();
-    for (const c of crates) if (c.on) xb.put(c.s, c.x, c.y, 0.9, 0.9, 0.9, c.hitT > 0 ? 0xffffff : 0xa8ecff, 0.3);
+    for (const c of crates) if (c.on) xb.put(c.s, c.x, c.y, 0.9 + c.hitT * 0.4, 0.9 - c.hitT * 0.3, 0.9 + c.hitT * 0.4, 0xffffff, 0.3 + Math.sin(c.hitT * 60) * 0.2 * c.hitT);
     xb.end();
   };
   api.clear = () => { for (const a of [coins, pows, crates]) for (const o of a) o.on = false; coinAcc = 0; };

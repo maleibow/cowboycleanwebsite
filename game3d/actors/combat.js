@@ -29,6 +29,7 @@ export function createCombat(ctx) {
   };
 
   api.killEnemy = (e) => {
+    if (e.ctrl?.dying) return;                                  // a boss already dying
     const def = e.def, pts = def.pts, boss = e.type.startsWith('boss');
     run.score += pts; api.kills++;
     combo.n++; combo.t = COMBO.window; combo.best = Math.max(combo.best, combo.n);
@@ -38,6 +39,7 @@ export function createCombat(ctx) {
     ctx.pickups.dropCoins(e.s, e.x, e.y + e.h * 0.4, boss ? DROPS.bossCoins : DROPS.coinsPerKill(pts));
     if (Math.random() > 1 - DROPS.powerupChance || boss) ctx.pickups.spawnPowerup(ctx.pickups.randomPowerup(), e.s, e.x, e.y + e.h * 0.5, { drop: true });
     api.shake(boss ? 0.6 : 0.12);
+    if (e.ctrl?.beginDefeat) { e.ctrl.beginDefeat(e); events.emit('enemyKilled', e); return; }   // bosses play their defeat animation, then remove themselves
     ctx.enemies.remove(e);
     events.emit('enemyKilled', e);
   };
@@ -70,7 +72,7 @@ export function createCombat(ctx) {
     const pl = ctx.player, b = pl.body; if (pl.dead || pl.invuln > 0) return;
     const list = ctx.enemies.list;
     for (let i = 0; i < list.length; i++) { // contact: player rect inset like the original (15 px)
-      const e = list[i];
+      const e = list[i]; if (e.ctrl?.passive) continue;
       if (Math.abs(e.s - b.s) < e.hs + b.hs - 0.08 && Math.abs(e.x - b.x) < e.hx + b.hx - 0.08 && e.y < b.y + b.h - 0.15 && e.y + e.h > b.y + 0.12) {
         api.damagePlayer(HIT.contact); break;
       }
