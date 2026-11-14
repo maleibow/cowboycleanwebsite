@@ -189,6 +189,7 @@ const fresh = async (q) => { if (!/quality=/.test(q)) q += '&quality=low';   // 
     return out;
   });
   await pg.waitForTimeout(500);
+  await pg.evaluate(() => document.activeElement?.blur());   // the name field has focus on the game-over screen
   await pg.keyboard.press('Enter'); await pg.waitForTimeout(600);
   const a = await pg.evaluate(() => {
     const g = window.__game, W = g.world, A = W.arena, K = g.input.keys, step = (n) => window.__bot.step(n), out = { state: g.state, arena: A.state, boss: !!A.boss, bossEnemy: W.enemies.list.some((e) => e.ctrl),  s: W.player.body.s, hp: g.run.health, gateOpen: W.scenery.gateOpen,
