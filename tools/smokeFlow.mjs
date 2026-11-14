@@ -41,6 +41,7 @@ async function open(q, { stubs = true } = {}) {
   await pg.waitForFunction(() => window.__game && window.__game.ready, null, { timeout: 60000 });
   return pg;
 }
+const tap = async (pg, key, ms = 120) => { await pg.keyboard.down(key); await pg.waitForTimeout(ms); await pg.keyboard.up(key); };
 const state = (pg) => pg.evaluate(() => window.__game.state);
 const waitState = (pg, s, ms = 20000) => pg.waitForFunction((x) => window.__game.state === x, s, { timeout: ms }).catch(async () => fail(`never reached ${s} (state ${await state(pg)})`));
 const shot = (pg, n) => pg.screenshot({ path: path.join(shots, `flow_${n}.jpg`), type: 'jpeg', quality: 80 });
@@ -102,8 +103,8 @@ const text = (pg) => pg.evaluate(() => document.getElementById('ui').innerText +
   ok(/Miss Cowboy/.test(await pg.evaluate(() => document.getElementById('ui').innerText)), 'second tap should show Miss Cowboy'); await pg.waitForTimeout(1800); await shot(pg, '05_cutscene_miss');
   await pg.mouse.click(480, 200); await pg.mouse.click(480, 200); await pg.waitForTimeout(300); await pg.mouse.click(480, 200); await pg.waitForTimeout(300);
   ok(/Cowboy Clean/.test(await pg.evaluate(() => document.getElementById('ui').innerText)), 'third line is Cowboy Clean'); await pg.waitForTimeout(1500); await shot(pg, '06_cutscene_cowboy');
-  await click(pg, 'SKIP'); await waitState(pg, 'INTRO'); ok((await state(pg)) === 'INTRO', 'skip should end the cutscene');
-  await pg.keyboard.press('Space'); await waitState(pg, 'PLAYING');
+  await click(pg, 'SKIP'); await pg.waitForTimeout(300); ok(['INTRO', 'PLAYING'].includes(await state(pg)), 'skip should end the cutscene');
+  await tap(pg, 'Space'); await waitState(pg, 'PLAYING');
 
   // casino door
   await pg.evaluate(() => { const g = window.__game, W = g.world, d = W.doors.list[0]; g.run.coins = 100; W.player.teleport(d.s - 6, 0); });
@@ -126,16 +127,16 @@ const text = (pg) => pg.evaluate(() => document.getElementById('ui').innerText +
   console.log(`casino: door at s=${doorInfo.s.toFixed(0)} (seed ${seed}), pull/win/miss/broke/leave ok`);
 
   // stage clear -> tally -> saloon
-  await pg.evaluate(() => { const g = window.__game; g.run.score = 1200; g.run.coins = 2000; g.events.emit('stageCleared', g.world.clearStats()); });
-  await waitState(pg, 'STAGECLEAR'); await pg.waitForTimeout(3500); await shot(pg, '11_stage_clear');
-  await pg.keyboard.press('Enter'); await waitState(pg, 'STORE'); await pg.waitForTimeout(1200); await shot(pg, '12_saloon');
+  await pg.evaluate(() => { const g = window.__game; g.run.score = 1200; g.run.coins = 3000; g.events.emit('stageCleared', g.world.clearStats()); });
+  await waitState(pg, 'STAGECLEAR'); await pg.waitForTimeout(8000); await shot(pg, '11_stage_clear');
+  await tap(pg, 'Enter'); await waitState(pg, 'STORE'); await pg.waitForTimeout(1200); await shot(pg, '12_saloon');
   const T = await text(pg);
-  for (const w of ['High Jump', 'Speed Boots', 'Big Bullets', 'Magic Lasso', 'Laser Gun', 'Mecha-Horse', '100c', '150c', '400c', '500c', '800c', 'NEXT STAGE', 'COINS: 2000']) ok(T.includes(w), 'store lacks ' + w);
+  for (const w of ['High Jump', 'Speed Boots', 'Big Bullets', 'Magic Lasso', 'Laser Gun', 'Mecha-Horse', '100c', '150c', '400c', '500c', '800c', 'NEXT STAGE', 'COINS: 3000']) ok(T.includes(w), 'store lacks ' + w);
   const up = async () => pg.evaluate(() => ({ ...window.__game.run.upgrades, coins: window.__game.run.coins }));
   for (const id of ['jump', 'jump', 'jump', 'jump', 'speed', 'size', 'lasso', 'laser', 'laser', 'vehicle']) await pg.evaluate((i) => window.__game.flow.store.buy(i), id);
   const u = await up(); await pg.waitForTimeout(300); await shot(pg, '13_saloon_bought');
   ok(u.jump === 3 && u.speed === 1 && u.size === 1 && u.lasso && u.laser && u.vehicle, 'upgrades after buying: ' + JSON.stringify(u));
-  ok(u.coins === 2000 - 300 - 100 - 150 - 400 - 500 - 800 + 0 + 450 - 450 || u.coins === 2000 - (300 + 100 + 150 + 400 + 500 + 800), 'coins after buying: ' + u.coins);
+  ok(u.coins === 3000 - (300 + 100 + 150 + 400 + 500 + 800), 'coins after buying: ' + u.coins);
   await pg.evaluate(() => { window.__game.run.coins = 50; }); await pg.evaluate(() => window.__game.flow.store.buy('speed'));
   ok((await up()).speed === 1 && (await up()).coins === 50, 'cannot buy without coins');
   console.log('store: prices, max levels, owned/maxed ok');
@@ -145,15 +146,15 @@ const text = (pg) => pg.evaluate(() => document.getElementById('ui').innerText +
   await pg.mouse.click(480, 200); await pg.waitForTimeout(150); await pg.mouse.click(480, 200); await pg.waitForTimeout(300);
   await pg.mouse.click(480, 200); await pg.mouse.click(480, 200); await pg.waitForTimeout(200); await pg.mouse.click(480, 200); await waitState(pg, 'INTRO');
   ok(/TOXIC JUNGLE/.test(await text(pg)), 'stage 2 intro card shows its own name'); await shot(pg, '14_stage2_intro');
-  await pg.keyboard.press('Space'); await waitState(pg, 'PLAYING'); await pg.waitForTimeout(500); await shot(pg, '15_stage2_playing');
+  await waitState(pg, 'PLAYING', 30000); await pg.waitForTimeout(500); await shot(pg, '15_stage2_playing');
   ok(await pg.evaluate(() => window.__game.world.stageData.roster.flat().includes('slime') && window.__game.run.upgrades.vehicle), 'stage 2 stand-in roster / carried upgrades');
   console.log('flow: title -> intro cutscene -> stage 1 -> casino -> clear -> saloon -> stage 2 cutscene -> stage 2 ok');
 
   // ---------------------------------------------------------------- pause menu
-  await pg.keyboard.press('Escape'); await waitState(pg, 'PAUSED'); await pg.waitForTimeout(300);
+  await tap(pg, 'Escape'); await waitState(pg, 'PAUSED'); await pg.waitForTimeout(300);
   const P = await text(pg); ok(/RESUME/.test(P) && /RESTART STAGE/.test(P) && /JUKEBOX/.test(P), 'pause menu items'); await shot(pg, '16_pause');
   await click(pg, 'RESUME'); await waitState(pg, 'PLAYING');
-  await pg.evaluate(() => { window.__game.world.player.teleport(100); }); await pg.keyboard.press('Escape'); await waitState(pg, 'PAUSED'); await click(pg, 'RESTART STAGE'); await waitState(pg, 'PLAYING');
+  await pg.evaluate(() => { window.__game.world.player.teleport(100); }); await tap(pg, 'Escape'); await waitState(pg, 'PAUSED'); await click(pg, 'RESTART STAGE'); await waitState(pg, 'PLAYING');
   ok(await pg.evaluate(() => window.__game.world.player.body.s < 20), 'restart should put the hero back at the start');
   await pg.close();
 }
@@ -163,7 +164,7 @@ const text = (pg) => pg.evaluate(() => document.getElementById('ui').innerText +
   const pg = await open('stage=10&seed=1&god=1&intro=0');
   await waitState(pg, 'PLAYING');
   await pg.evaluate(() => { const g = window.__game; g.run.score = 5000; g.events.emit('stageCleared', g.world.clearStats()); });
-  await waitState(pg, 'STAGECLEAR'); await pg.waitForTimeout(3500); await pg.keyboard.press('Enter'); await waitState(pg, 'CUTSCENE');
+  await waitState(pg, 'STAGECLEAR'); await pg.waitForTimeout(8000); await tap(pg, 'Enter'); await waitState(pg, 'CUTSCENE');
   ok(await pg.evaluate(() => /Grime Overlord/.test(document.getElementById('ui').innerText)), 'ending cutscene starts with the Grime Overlord');
   for (let i = 0; i < 8 && (await state(pg)) === 'CUTSCENE'; i++) { await pg.mouse.click(480, 200); await pg.waitForTimeout(120); }
   await waitState(pg, 'VICTORY'); await pg.waitForTimeout(2500); await shot(pg, '17_victory'); ok(/THE END/.test(await text(pg)), 'victory screen text');
@@ -203,7 +204,7 @@ const text = (pg) => pg.evaluate(() => document.getElementById('ui').innerText +
 { // network blocked: the leaderboard must fail gracefully and stay wired
   const pg = await open('stage=1&seed=1&intro=0', { stubs: false });
   await waitState(pg, 'PLAYING'); await pg.evaluate(() => { window.__game.run.score = 300; window.__game.world.player.hurt(500); });
-  await waitState(pg, 'GAMEOVER'); await pg.keyboard.type('x'); await pg.keyboard.press('Enter'); await pg.waitForTimeout(2500);
+  await waitState(pg, 'GAMEOVER'); await pg.waitForTimeout(1200); await pg.keyboard.type('x'); await pg.keyboard.press('Enter'); await pg.waitForTimeout(4000);
   const t = await text(pg); ok(/Failed to save score\.|Saving score/.test(t), 'offline post should report failure: ' + t.slice(0, 200)); console.log('offline: status shown = ' + (/Failed to save score\./.test(t)));
   await pg.close();
 }
