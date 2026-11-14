@@ -2,7 +2,6 @@
 // name, tagline and enemy roster (PLAN section 6; tiers 1 -> 2 -> 3 on each act) so the whole loop can be tested.
 const R = (a, b, c) => [a, b, c];
 export const STAND_INS = {
-  2:  { name: 'Toxic Jungle',     tagline: 'The jungle is oozing. Hose it down.',                roster: R(['slime', 'bloom'], ['bat'], ['frog', 'sludge', 'centipede']), boss: 'BIG SLUDGE' },
   3:  { name: 'Neo-Scrap City',   tagline: 'A city made of trash needs a very big mop.',          roster: R(['smog', 'slag'], ['drone'], ['rat', 'trash', 'roach']), boss: 'TRASH KING' },
   4:  { name: 'New York City',    tagline: 'The city that never sleeps is also never clean.',     roster: R(['pizza', 'rat'], ['pigeon'], ['police']), boss: 'PIZZA RAT' },
   5:  { name: 'Paris Nights',     tagline: 'The city of lights, in need of a polish.',            roster: R(['mime'], ['gargoyle'], ['bat']), boss: 'THE MIME' },

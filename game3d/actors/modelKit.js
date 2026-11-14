@@ -25,7 +25,7 @@ const hash = (x, y, z) => { const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7)
 
 export class Builder {
   // boxSeg: subdivisions per box face (3 = softly rounded corners; 1 = plain, for background scenery that must stay cheap)
-  constructor({ boxSeg = 3 } = {}) { this.parts = []; this.boxSeg = boxSeg; this.m = new THREE.Matrix4(); this.q = new THREE.Quaternion(); this.e = new THREE.Euler(); }
+  constructor({ boxSeg = 3, ico = false } = {}) { this.parts = []; this.boxSeg = boxSeg; this.ico = ico; this.m = new THREE.Matrix4(); this.q = new THREE.Quaternion(); this.e = new THREE.Euler(); }
   // geo: BufferGeometry. opts: p position, r euler, s scale, jitter (vertex noise, metres), ao (bottom darkening 0..1)
   add(geo, color, o = {}) {
     let g = geo.index ? geo.toNonIndexed() : geo.clone();
@@ -48,7 +48,8 @@ export class Builder {
     return this;
   }
   box(w, h, d, color, o = {}) { return this.add(roundedBox(w, h, d, o.radius ?? Math.min(w, h, d) * 0.28, o.seg ?? this.boxSeg), color, o); }
-  sphere(r, color, o = {}) { return this.add(sphere(r), color, o); }
+  // ico: scenery builders use icosahedra for spheres (20-80 triangles instead of 216), small ones the cheapest
+  sphere(r, color, o = {}) { return this.add(this.ico ? new THREE.IcosahedronGeometry(r, r < 0.3 ? 0 : 1) : sphere(r), color, o); }
   cyl(rt, rb, h, color, o = {}) { return this.add(cyl(rt, rb, h, o.seg ?? 10), color, o); }
   capsule(r, len, color, o = {}) { return this.add(capsule(r, len), color, o); }
   cone(r, h, color, o = {}) { return this.add(cone(r, h, o.seg ?? 8), color, o); }

@@ -70,6 +70,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     p.time += dt; p.seg = track.segmentAt(b.s);
     const seg = p.seg;
     p.invuln = Math.max(0, p.invuln - dt); p.slideCd = Math.max(0, p.slideCd - dt);
+    if (p.hold) { p.hold.step(dt, input); p.progress = Math.max(p.progress, b.s); p.animate(dt); return; }   // a vine swing carries the body (world/hazVine.js)
     p.coyote = b.grounded ? PHYS.coyote : Math.max(0, p.coyote - dt);
     p.jumpBuf = input.jumpPressed ? PHYS.buffer : Math.max(0, p.jumpBuf - dt);
 
@@ -126,6 +127,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     const wasGrounded = b.grounded, vyBefore = b.vy;
     moveBody(b, query(), dt, PHYS.stepUp);
     if (b.grounded && !wasGrounded && vyBefore < -4) { p.model.anim.land(-vyBefore); events.emit('land', -vyBefore); }
+    if (b.grounded && b.ground?.belt && !p.sliding) b.s += b.ground.belt * dt;   // a conveyor belt (stage 3) drags whatever stands on it
     for (let i = 0; i < boxes.length; i++) { const o = boxes[i]; if (o.kind === 'barrier' && b.grounded && b.s > o.s0 - 0.4 && b.s < o.s1 + 0.4 && b.y + b.h <= o.y0 + 0.02 && p.lastGate !== o) { p.lastGate = o; events.emit('gateWhoosh', o); } }   // slid under a gate
     // The "no going back" ratchet is for the corridor only: in the boss arena the player roams the whole disc
     // (world/arena.js keeps him inside it), so moving up-screen must not lock him out of moving back down.

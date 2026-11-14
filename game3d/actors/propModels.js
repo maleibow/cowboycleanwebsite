@@ -30,4 +30,19 @@ export const sandPile = {
   },
   rock: 0.32, dust: true,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile };
+
+// Log (original: a #5d4037 end-on circle with bark ridges and a #795548 core): a fat mossy log lying across the path, rolled end over end.
+// Authored on the same unit extents as the sand pile (0.9 half-length, 0.9 tall) and scaled by the obstacle's hit box, so it ends up 2.4 m wide, 1 m tall.
+export const log = {
+  build: () => {
+    const g = new THREE.CylinderGeometry(0.9, 0.9, 1.8, 14).rotateZ(Math.PI / 2);
+    const b = new Builder().add(g, 0x5d4037, { p: [0, 0.45, 0], s: [1, 0.5, 1], jitter: 0.02, ao: 0.12 });
+    for (const s of [-1, 1]) b.add(new THREE.CylinderGeometry(0.88, 0.88, 0.06, 14).rotateZ(Math.PI / 2), 0xc9a672, { p: [s * 0.9, 0.45, 0], s: [1, 0.5, 1], ao: 0 }).add(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 12).rotateZ(Math.PI / 2), 0x8d6e63, { p: [s * 0.92, 0.45, 0], s: [1, 0.5, 1], ao: 0 });   // cut ends with rings
+    for (const x of [-0.45, 0.1, 0.55]) b.add(new THREE.TorusGeometry(0.9, 0.04, 4, 14).rotateY(Math.PI / 2), 0x3e2723, { p: [x, 0.45, 0], s: [1, 0.5, 1], ao: 0 });        // bark ridges
+    b.sphere(0.4, 0x3f8a44, { p: [-0.3, 0.88, 0.1], s: [1.4, 0.35, 1.1], ao: 0, jitter: 0.04 }).sphere(0.3, 0x58d27a, { p: [0.4, 0.84, -0.15], s: [1.3, 0.3, 1], ao: 0, jitter: 0.04 });   // moss
+    for (const [x, z] of [[0.2, 0.3], [-0.6, -0.2]]) b.cyl(0.03, 0.05, 0.2, 0xe9f6d4, { p: [x, 0.95, z], seg: 4, ao: 0 });
+    return b.build();
+  },
+  rock: 0.1, dust: false,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log };

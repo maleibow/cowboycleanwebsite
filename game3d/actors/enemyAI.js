@@ -1,5 +1,6 @@
 import { ARCH } from '../data/enemies.js';
 import { pxs } from '../data/weapons.js';
+import { events } from '../core/events.js';
 
 // The six archetype behaviours (PLAN 7), in track space. Each `think` moves one enemy for one step.
 // Quirks from the type's data (`fire`, `weave`, `dive`, `climb`, `erratic`, `hop`) layer on top.
@@ -62,6 +63,7 @@ function hopper(e, c, dt) {
     if (e.t2 <= 0) {
       const T = (2 * e.def.hop) / G_HOP;
       e.vs = clamp((P.s - e.s) / T, -v * 1.8, v * 1.8); e.vx = clamp((P.x - e.x) / T, -v * 1.8, v * 1.8); e.vy = e.def.hop; e.grounded = false;
+      if (Math.hypot(P.s - e.s, P.x - e.x) < 26) events.emit('enemyHop', e.type);
     } else { e.vs = 0; e.vx = 0; settle(e, c.track, dt); }
     return;
   }
@@ -89,7 +91,7 @@ function flyer(e, c, dt) {
   if (e.state === 'recover' && Math.abs(hoverY - e.y) < 0.4) e.state = 'approach';
   e.t2 -= dt;
   if (d.dive && e.state === 'approach' && e.t2 <= 0 && Math.abs(P.s - e.s) < 16) {
-    e.state = 'dive'; e.diveT = 1.8; e.aimS = P.s; e.aimX = P.x; e.aimY = P.y + 0.9;
+    e.state = 'dive'; e.diveT = 1.8; e.aimS = P.s; e.aimX = P.x; e.aimY = P.y + 0.9; events.emit('enemyDive', e.type);
   }
 }
 

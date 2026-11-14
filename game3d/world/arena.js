@@ -17,7 +17,7 @@ const HEAL = 25, WASH_TIME = 3.2, CLEAR_DELAY = 4.2, OPEN_TIME = 1.7;
 export function createArena(ctx) {
   const L = ctx.layout, A = L.arena, seg = L.arenaSeg, gateSeg = L.segments.find((g) => g.name === 'bossGate');
   const center = { s: A.s, x: A.x, r: A.r }, track = ctx.track, stageBoss = ctx.stageData.boss;
-  const bossFx = createBossFx(ctx.scene, track); ctx.bossFx = bossFx;
+  const bossFx = createBossFx(ctx.scene, track, ctx); ctx.bossFx = bossFx;
   const api = { state: 'sealed', center, seg, boss: null, wash: 0, t: 0, won: false, bossTime: 0, fightT: 0, bossFx };
 
   // The gate wall leaves the track's static boxes; it becomes a dynamic box so it can be removed when the doors open.

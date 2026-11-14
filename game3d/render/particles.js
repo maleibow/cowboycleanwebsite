@@ -18,6 +18,7 @@ export const PRESETS = {
   hitSpark:  { n: 9,  life: [0.12, 0.26], speed: [3, 8], up: 0.5, spread: 1, grav: 0, drag: 5, size: [0.12, 0.3], grow: -1.2, shape: 'star', colors: ['#ffffff', '#fff2a0', '#ffb347'], alpha: 1, add: 1, hdr: 3, spin: 8 },
   trail:     { n: 1,  life: [0.12, 0.2], speed: [0, 0.2], up: 0, spread: 0.3, grav: 0, drag: 5, size: [0.12, 0.2], grow: -0.9, shape: 'soft', colors: ['#ffffff'], alpha: 0.85, add: 1, hdr: 1.5 },
   mote:      { n: 1,  life: [4, 7], speed: [0.1, 0.4], up: 0.1, spread: 1, grav: 0.0, drag: 0.5, size: [0.03, 0.07], grow: 0, shape: 'soft', colors: ['#ffd9a0', '#ffe9c0'], alpha: 0.7, add: 1, hdr: 1.4, wobble: 0.6 },
+  spore:     { n: 1,  life: [5, 9], speed: [0.1, 0.35], up: 0.35, spread: 1, grav: 0.0, drag: 0.4, size: [0.06, 0.15], grow: 0, shape: 'soft', colors: ['#9dffb8', '#d6ffa0', '#7dffd0'], alpha: 0.8, add: 1, hdr: 1.9, wobble: 0.9 },
   coinBurst: { n: 14, life: [0.5, 0.9], speed: [2.5, 5.5], up: 4, spread: 1, grav: -10, drag: 0.6, size: [0.12, 0.24], grow: -0.1, shape: 'star', colors: ['#ffd23a', '#fff2a0', '#ffb800'], alpha: 1, add: 1, hdr: 2.4, spin: 6 },
 };
 

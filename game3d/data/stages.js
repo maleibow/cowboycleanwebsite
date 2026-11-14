@@ -43,7 +43,26 @@ const STAGE1 = {
   palette: { ground: 0xc9a066, platform: 0xe0b872, ledge: 0xb88a4e, beam: 0x9a6b43, barrier: 0xd94a3d, wall: 0x6b5b7a, quicksand: 0xd7a05a },
 };
 
-export const STAGES = [STAGE1];
+const STAGE2 = {
+  id: 2, name: 'Toxic Jungle', tagline: 'The jungle is oozing. Hose it down.',
+  theme: 'stage02',
+  length: 1100, trackWidth: 8,
+  obstacle: 'log',              // rolling obstacle (original: a log)
+  roster: [['slime', 'bloom'], ['bat'], ['frog', 'sludge', 'centipede']],   // PLAN 6: slime, bloom -> bat -> frog, sludge, centipede
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',      // act 3 holds the stage's own set-piece instead of the dust-ball chase
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, quicksand: 2, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 3, beam: 2, barrier: 2, quicksand: 2 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, quicksand: 1.5 },
+  ],
+  setPiece: { id: 'vineSwing', template: 'vines', name: 'SWING!', warning: 'VINES! JUMP AND GRAB ON!', color: '#7dff9a' },
+  boss: { id: 'boss2', name: 'BIG SLUDGE', intro: 'The slimiest thing in the jungle', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['SLUDGE RIVER', 'TEMPLE RUINS'],
+  palette: { ground: 0x6f9a52, platform: 0x7a5a38, ledge: 0x5d4037, beam: 0x5d4037, barrier: 0x6a4a2e, wall: 0x6f8a6a, quicksand: 0x6f8a2b },
+};
+
+export const STAGES = [STAGE1, STAGE2];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).

@@ -14,4 +14,17 @@ export const BOSS_PATTERNS = {
     slamRadius: 2.6,                                             // the marker radius: standing in it when the boss lands is a 25-damage stomp
     stompDamage: 25,
   },
+  // Original boss2 "SLIME - Bouncing Acid Rain" (cleaningup.html 4586-4620): bounces across the arena, lobbing two acid globs at every landing.
+  // 3D: hops at the player in series (each landing marked on the floor for the whole windup + flight), then rears back and rains acid on marked circles.
+  boss2: {
+    name: 'BIG SLUDGE', color: 0x1e8449, size: { hs: 1.8, hx: 1.8, h: 2.7 },
+    intro: { emerge: 1.8, roar: 1.4 },
+    walkSpeed: 1.5, hopRange: 9.5,
+    p1: { idle: [0.5, 0.9], windup: 1.0, air: 0.8, peak: 4.2, hops: [2, 3], rest: 2.0,
+          rain: { count: 4, r: 1.9, delay: [1.1, 1.4], gap: 0.4, windup: 1.2, damage: 20 } },
+    p2: { idle: [0.3, 0.6], windup: 0.7, air: 0.7, peak: 4.8, hops: [2, 3], rest: 1.4, minions: 2,
+          ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20, count: 1 },
+          rain: { count: 6, r: 1.9, delay: [0.95, 1.25], gap: 0.3, windup: 0.9, damage: 20 } },
+    rage: { time: 1.5 }, splatR: 2.8, stompDamage: 25,
+  },
 };
