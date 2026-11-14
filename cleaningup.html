@@ -2279,6 +2279,9 @@
         }, 100);
       }
 
+      const MAILERLITE_FORM_URL =
+        "https://assets.mailerlite.com/jsonp/2119029/forms/179598963155928272/subscribe";
+
       const claimPrizeAction = async (e) => {
         if (e) {
           e.stopPropagation();
@@ -2299,18 +2302,17 @@
         status.style.color = "#f1c40f";
 
         try {
-          const response = await fetch(
-            "https://connect.mailerlite.com/api/subscribers",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-                Authorization: `Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiI0IiwianRpIjoiNWU4OGM1MzhmZDA3NDQ5NmE5YjI5NTcxNThmMDk2YTAzNjcyNTBhZDcwYmNlMzBjY2EwYjc3ZWJhZTE0M2E4MTcyMmQxZDdhZWNhNmM1YjEiLCJpYXQiOjE3NzY3MDkwMjMuMTM2NDYsIm5iZiI6MTc3NjcwOTAyMy4xMzY0NjQsImV4cCI6NDkzMjM4MjYyMy4xMjkyMzYsInN1YiI6IjIxMzc3OTUiLCJzY29wZXMiOltdfQ.m_2fmj3kPRQrm5dHcvGr2fwQqRv76tUOKmNIPR7LQQwI3u0O_8IEYb_5cisIY9Q4d3wqsrQ9nYRz-CtDWgX0Z2KwTiskxPDlgrzZoNmByRC9vzEm3wAkk29wjQ3hVH6-WDaWDxxFX9JRtnLFmoc5VKvTHtgSeL4pY3O5l1bX3lal7nscOCTvYd_2oqBxN5esuWDgdZHu4SAx9t3yUdaMijuYcFCvnDESfaDeE71gn8-6J_Rs8vEube8gRdPjmwEaF6l_VC1R99xHw0tq6FvYUuzzYZb51JfKDKloYdsnS7v9I_tpoRSM7US59XR5DwE6q5Z6zJBGgLB8_0aKTPCckQfTvpSpNDzv1Z9UBjZYYzz1agfO24PtNnfByvzmPSK7kETR0uB5Guo-cdiQGhywTjh90wFVjGYEmZgzg9KrxvECBnqnZj7skviQ6KUjLZa3xdZkMWz13AJRrc11WxPBu7RQvx7Ps3fDVNNsAcN_-wtH0o_NGyozquwfQsz5VqkkoRw6pwx0_Fdy3JX7lnDpNuQUOThdkkARxuCQkWs_1oMBqY3aboJb0Rwp1N4AFcIp1u75BUIDkNMrky3LbJAs5zSoccW-dZQGW2PTGjHs6DN7k0oRYmrVYdys-fwEa1RKtafyE9VZdDyr67qPGyWC7PVUvJyQE4g9D5vuodQuBJs`,
-              },
-              body: JSON.stringify({ email: email }),
-            },
-          );
+          // Public MailerLite embedded-form endpoint (same form as index.html).
+          // No API token is needed or allowed in client-side code.
+          const formData = new FormData();
+          formData.append("fields[email]", email);
+          formData.append("ml-submit", "1");
+          formData.append("anticsrf", "true");
+          await fetch(MAILERLITE_FORM_URL, {
+            method: "POST",
+            mode: "no-cors",
+            body: formData,
+          });
 
           showRewards();
         } catch (e) {
