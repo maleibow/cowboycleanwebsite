@@ -127,8 +127,12 @@ export function createPlayer(track, { startS = 4 } = {}) {
     moveBody(b, query(), dt, PHYS.stepUp);
     if (b.grounded && !wasGrounded && vyBefore < -4) { p.model.anim.land(-vyBefore); events.emit('land', -vyBefore); }
     for (let i = 0; i < boxes.length; i++) { const o = boxes[i]; if (o.kind === 'barrier' && b.grounded && b.s > o.s0 - 0.4 && b.s < o.s1 + 0.4 && b.y + b.h <= o.y0 + 0.02 && p.lastGate !== o) { p.lastGate = o; events.emit('gateWhoosh', o); } }   // slid under a gate
-    if (b.s < p.progress - PHYS.backroom) { b.s = p.progress - PHYS.backroom; if (b.vs < 0) b.vs = 0; }
-    p.progress = Math.max(p.progress, b.s);
+    // The "no going back" ratchet is for the corridor only: in the boss arena the player roams the whole disc
+    // (world/arena.js keeps him inside it), so moving up-screen must not lock him out of moving back down.
+    if (seg.mode !== 'arena') {
+      if (b.s < p.progress - PHYS.backroom) { b.s = p.progress - PHYS.backroom; if (b.vs < 0) b.vs = 0; }
+      p.progress = Math.max(p.progress, b.s);
+    }
 
     // ---- bookkeeping: safe ground, checkpoints, gate, pit
     if (b.grounded && !low && track.supported(b.s, b.x, b.y)) { p.safe.s = b.s; p.safe.x = b.x; p.safe.y = b.y; }
