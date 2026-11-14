@@ -26,6 +26,7 @@ const fresh = async (q) => { if (!/quality=/.test(q)) q += '&quality=low';   // 
 { // 1. the intro card: stage name, track credit, any key starts the stage
   const pg = await fresh('stage=1&seed=1&god=1');
   const a = await pg.evaluate(() => ({ state: window.__game.state, text: document.getElementById('hud').innerText }));
+  await pg.waitForTimeout(500);   // the card only listens for keys after 350 ms (so a stray tap cannot skip it): wait that out
   await pg.keyboard.press('KeyW'); await pg.waitForTimeout(700);
   const b = await pg.evaluate(() => window.__game.state);
   console.log(`intro: state ${a.state} -> ${b}`);

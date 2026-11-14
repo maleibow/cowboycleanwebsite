@@ -52,7 +52,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   const particles = createParticles(); scene.add(particles.mesh);
 
   const pathMat = createToon({ vertexColors: true });
-  const builder = createTrackBuilder(track, scene, { palette: theme.pathPalette || stageData.palette, showSlots: /slots=1/.test(location.search), shadows: !!quality.tier.shadowMap, material: pathMat, style: theme.path });
+  const builder = createTrackBuilder(track, scene, { palette: theme.pathPalette || stageData.palette, showSlots: /slots=1/.test(location.search), shadows: !!quality.tier.shadowMap, material: pathMat, style: theme.path, theme, seed: usedSeed });
   const scenery = createScenery(track, theme, { quality, scene, seed: usedSeed });
   const player = createPlayer(track, { startS: layout.startS });
   const rig = createCameraRig(track);
@@ -86,7 +86,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
     const p = player.mesh.position; particles.emit('sparkle', p.x, p.y + 1.6, p.z, { count: 3, scale: 1.2 }); particles.emit('confetti', p.x, p.y + 1.5, p.z, { count: 0.6 });
     hud?.toast('CHECKPOINT  ·  ' + (stageData.checkpoints?.[i] || i + 1), 0x6dffb0);
   }));
-  player.model.anim.onFootstep = () => { if (Math.abs(player.body.vs) > 4) { const p = player.mesh.position; particles.emit('dust', p.x, p.y + 0.05, p.z, { count: 0.45, scale: player.inSand ? 1.1 : 0.7 }); } };
+  player.model.anim.onFootstep = () => { if (Math.abs(player.body.vs) > 4) { events.emit('footstep'); const p = player.mesh.position; particles.emit('dust', p.x, p.y + 0.05, p.z, { count: 0.45, scale: player.inSand ? 1.1 : 0.7 }); } };
   player.model.anim.onLand = (imp) => { const p = player.mesh.position; particles.emit('dust', p.x, p.y + 0.05, p.z, { count: 1.4, scale: 0.8 + Math.min(1, imp / 14) }); };
   offs.push(events.on('bossIntro', (o) => cards?.showBoss(o.name, o.line)), events.on('bossRage', () => cards?.shout('IT\'S FURIOUS!', '#ff7a3a', 1400)));
   offs.push(events.on('slide', () => { const p = player.mesh.position; particles.emit('dust', p.x, p.y + 0.05, p.z, { count: 1, scale: 1 }); }));
@@ -120,7 +120,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
       }
       if (player.reachedGate && !level.finished) { level.finished = true; level.gateTime = level.time; }
       rig.update(dt, player);
-      builder.update(b.s); scenery.update(b.s, level.time, rig.camera.position, dt);
+      builder.update(b.s, level.time); scenery.update(b.s, level.time, rig.camera.position, dt);
       if (Math.random() < dt * theme.ambient.rate) { const p = player.mesh.position; particles.emit(theme.ambient.preset, p.x + (Math.random() - 0.5) * 16, p.y + 0.5 + Math.random() * 5, p.z + (Math.random() - 0.5) * 16, { count: 1 }); }
       particles.update(dt, rig.camera);
       level.wave();

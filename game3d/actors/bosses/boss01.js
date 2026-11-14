@@ -43,6 +43,7 @@ export function spawnBoss01(ctx, arena, stageBoss = {}) {
   const slam = () => {
     const p = K.pattern(), r = p.ring;
     e.s = K.to.s; e.x = K.to.x; e.y = 0; e.grounded = true; ctx.combat.shake(0.75); ctx.rig.kickFov(2.5); dust(e.s, e.x, 22);
+    events.emit('bossSlam');
     for (let i = 0; i < r.count; i++) fx.shock(e.s, e.x, 0, { speed: r.speed, thick: r.thick, height: r.height, damage: r.damage, delay: i * (r.gap || 0), maxR: A.r * 2.1 });
     minions(p.minions); go('stun');
   };

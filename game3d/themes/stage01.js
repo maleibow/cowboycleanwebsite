@@ -1,5 +1,7 @@
 import * as P from './stage01Props.js';
 import * as T from './stage01Town.js';
+import { buildBarrier } from './stage01Gates.js';
+import { buildSolid } from './stage01Solids.js';
 import { smooth } from '../world/scenery.js';
 import * as THREE from 'three';
 
@@ -56,6 +58,8 @@ export const stage01 = {
   edge: { build: (C) => ({ post: P.fencePost(C), lamp: P.lantern() }), spacing: 25, offset: 1.6, lampHeight: 1.5 },   // fence posts + glowing lanterns
   far: { build: P.farRing },                                                                                     // three parallax rings of peaks and mesas
   tumble: { count: 9, build: P.tumbleweed },
+  // themed solids (world/themedSolids.js): slide-under gates and the walkable ledges, logs and pillars; the plain box is the fallback
+  buildBarrier, buildSolid,
   dress: { side: T.ghostTown, checkpoint: T.checkpointFlag, bossGate: T.bossGate, arena: T.arenaDress, quicksand: T.quicksandPatch },
 };
 const _c = new THREE.Color();

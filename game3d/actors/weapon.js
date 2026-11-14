@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { run } from '../core/state.js';
+import { events } from '../core/events.js';
 import { PROJ, GUN, BOMB, LASSO, POWERUPS, px } from '../data/weapons.js';
 
 // The player's gun: heat/overheat, rate of fire, every powerup variant, aim-assist, bombs, shield and the
 // lasso upgrade. Heat numbers are the original's (cleaningup.html 3330-3350, 3399-3460). ctx = { player,
 // projectiles, enemies, combat, hud, rig }.
 const EPS = 1e-5, TIMED = ['super', 'spread', 'fourway', 'homing', 'grenade', 'spin'];
-const GUN_COLOR = { normal: 0x8c96a0, super: 0xff3a2a, laser: 0xff2bd6, charcoal: 0xdc143c, homing: 0xe056fd, grenade: 0x2ecc71, spin: 0xf1c40f };
+const GUN_COLOR = { normal: 0x3498db, super: 0xff3a2a, laser: 0xff2bd6, charcoal: 0xdc143c, homing: 0xe056fd, grenade: 0x2ecc71, spin: 0xf1c40f };
 
 export function createWeapon(ctx) {
   const w = {
@@ -16,17 +17,11 @@ export function createWeapon(ctx) {
   };
   const T = w.timers, F = w.face;
 
-  // ---- visuals: a gun on the player that changes with the powerup, plus the shield bubble
-  const mesh = new THREE.Group(), gm = new THREE.MeshStandardMaterial({ color: GUN_COLOR.normal, roughness: 0.4, emissive: 0x000000 });
-  const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.7), gm); barrel.position.set(0, 0, -0.45);
-  const side = [-1, 1].map((k) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.5), gm); m.position.set(k * 0.2, 0, -0.4); m.visible = false; return m; });
-  const rear = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.1), gm); rear.position.set(0, 0, -0.5); rear.visible = false;
-  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff })); tip.position.set(0, 0, -0.85);
+  // ---- visuals: the hero's own hand-held spray gun (playerModel.js) changes colour with the powerup and glows with heat; plus the shield bubble
+  const gm = ctx.player.model.mats.gun, glow = ctx.player.model.mats.glow;
   const bubble = new THREE.Mesh(new THREE.SphereGeometry(1.15, 16, 12), new THREE.MeshBasicMaterial({ color: 0x66ccff, transparent: true, opacity: 0.25, depthWrite: false }));
   bubble.position.y = 0.9; bubble.visible = false;
-  mesh.add(barrel, ...side, rear, tip); mesh.position.set(0, 1.1, 0);
-  ctx.player.mesh.add(mesh, bubble);
-  w.mesh = mesh;
+  ctx.player.mesh.add(bubble);
 
   w.kind = () => {
     let k = run.stage === 10 ? 'charcoal' : 'normal';
@@ -64,7 +59,9 @@ export function createWeapon(ctx) {
   const emit = (kind, ds, dx, dy, sp, ms, mx, my, bonus) => {
     const n = Math.hypot(ds, dx, dy) || 1, k = sp / n;
     if (kind === 'spin') { const p = ctx.projectiles.fire('spin', ms, mx, my, 0, 0, 0, bonus); if (p) p.ang = Math.atan2(dx, ds); return !!p; } // spirals out from the facing
-    return !!ctx.projectiles.fire(kind, ms, mx, my, ds * k, dx * k, dy * k, bonus);
+    const p = ctx.projectiles.fire(kind, ms, mx, my, ds * k, dx * k, dy * k, bonus);
+    if (p && T.spread > 0) p.variant = 'spread';       // drawn as small pellets
+    return !!p;
   };
   const rot = (ds, dx, a) => [ds * Math.cos(a) - dx * Math.sin(a), ds * Math.sin(a) + dx * Math.cos(a)];
 
@@ -90,7 +87,7 @@ export function createWeapon(ctx) {
       for (let q = 1; q < 4; q++) { const [rs, rx] = rot(F.s, F.x, q * Math.PI / 2); emit(kind, rs, rx, 0, s4, b.s + rs * 0.7, b.x + rx * 0.7, my, bonus); }
     } else emit(kind, ds, dx, dy, sp, ms, mx, my, bonus);
     if (kind === 'super' && !b.grounded) { b.vs -= F.s * GUN.superRecoil; b.vx -= F.x * GUN.superRecoil; }
-    w.shots++; w.lastKind = kind;
+    w.shots++; w.lastKind = kind; events.emit('shoot', kind);
     return kind;
   };
 
@@ -117,7 +114,7 @@ export function createWeapon(ctx) {
     if (input.spray && w.cd <= EPS && !w.overheated) {
       w.shoot(); w.cd = rate;
       w.heat += sup ? GUN.heatShot.super : GUN.heatShot.normal;
-      if (w.heat >= GUN.maxHeat) { w.heat = GUN.maxHeat; w.overheated = true; ctx.hud?.toast('OVERHEAT', 0xff5a3a); ctx.rig?.addTrauma(0.15); }
+      if (w.heat >= GUN.maxHeat) { w.heat = GUN.maxHeat; w.overheated = true; events.emit('overheat'); ctx.hud?.toast('OVERHEAT', 0xff5a3a); ctx.rig?.addTrauma(0.15); }
     } else {
       w.heat -= (w.overheated ? GUN.coolOverheated : GUN.coolPerSec) * dt;
       if (w.heat <= 0) { w.heat = 0; w.overheated = false; }
@@ -133,12 +130,8 @@ export function createWeapon(ctx) {
   w.render = () => {
     const kind = w.kind(); gm.color.setHex(GUN_COLOR[kind]);
     if (w.overheated) { gm.emissive.setHex(0xff2000); gm.emissiveIntensity = 0.6 + 0.4 * Math.sin(w.time * 25); gm.color.setHex(0x992211); }
-    else { const h = w.heat / 100; gm.emissive.setRGB(0.3 + 0.7 * h, 0.3 - 0.2 * h, 0.3 - 0.3 * h); gm.emissiveIntensity = 1; } // glows toward red as it heats
-    tip.material.color.setHex(PROJ[kind].color);
-    mesh.scale.set(kind === 'super' ? 1.5 : 1, kind === 'super' ? 1.5 : 1, kind === 'laser' ? 1.4 : 1);
-    side[0].visible = side[1].visible = T.spread > 0; rear.visible = T.fourway > 0;
-    mesh.rotation.y = Math.atan2(-F.x, F.s); // local -z is +s
-    if (kind === 'spin') mesh.rotation.z = w.time * 8; else mesh.rotation.z = 0;
+    else { const h = w.heat / 100; gm.emissive.setRGB(0.3 * h + (kind === 'normal' ? 0 : 0.6), 0.1 * (1 - h) * (kind === 'normal' ? 0 : 1), 0.1 * (1 - h) * (kind === 'normal' ? 0 : 1)); gm.emissiveIntensity = 0.4 + 1.2 * h; }   // glows toward red as it heats
+    glow.color.setHex(PROJ[kind].color); glow.emissive.setHex(PROJ[kind].color);
     bubble.visible = w.shield; if (w.shield) bubble.material.opacity = 0.2 + 0.08 * Math.sin(w.time * 5);
   };
   return w;

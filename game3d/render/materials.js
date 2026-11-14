@@ -67,7 +67,7 @@ const VERT_BODY = /* glsl */`
 `;
 const FRAG_PARS = /* glsl */`
 varying vec3 vGrimeW;
-uniform vec3 uShadowTint; uniform vec3 uRimColor; uniform float uRimStrength; uniform float uSunLuma;
+uniform vec3 uShadowTint; uniform vec3 uRimColor; uniform float uRimStrength; uniform float uSunLuma; uniform float uRimBoost;
 uniform float uGrimeFront; uniform float uGrimeBand; uniform float uGrimeAmount;
 uniform vec3 uGrimeDir; uniform vec3 uGrimeOrigin; uniform vec3 uGrimeTint; uniform float uGrimeGlow;
 `;
@@ -82,7 +82,7 @@ const FRAG_BODY = /* glsl */`
   #endif
   #ifdef TOON_RIM
     float rim = pow( 1.0 - clamp( dot( normalize( normal ), normalize( vViewPosition ) ), 0.0, 1.0 ), 2.6 );
-    base += uRimColor * rim * uRimStrength;
+    base += uRimColor * rim * uRimStrength * uRimBoost;
   #endif
   #ifdef TOON_GRIME
     float gs = dot( vGrimeW - uGrimeOrigin, uGrimeDir );
@@ -101,7 +101,7 @@ const FRAG_BODY = /* glsl */`
 `;
 
 // opts: color, vertexColors, emissive, emissiveIntensity, map, side, transparent, opacity,
-//       alphaTest, grime (default true), rim (default true), tint (default true), fog (true)
+//       alphaTest, grime (default true), rim (default true), tint (default true), fog (true), rimBoost (x the stage rim strength)
 export function createToon(opts = {}) {
   const useGrime = opts.grime !== false, useRim = opts.rim !== false, useTint = opts.tint !== false;
   const m = new THREE.MeshToonMaterial({
@@ -111,11 +111,12 @@ export function createToon(opts = {}) {
     side: opts.side ?? THREE.FrontSide, transparent: !!opts.transparent, opacity: opts.opacity ?? 1,
     alphaTest: opts.alphaTest ?? 0, fog: opts.fog !== false,
   });
-  const key = `toon${useGrime ? 'G' : ''}${useRim ? 'R' : ''}${useTint ? 'T' : ''}`;
+  const key = `toon${useGrime ? 'G' : ''}${useRim ? 'R' : ''}${useTint ? 'T' : ''}`, rimBoost = { value: opts.rimBoost ?? 1 };
+  m.userData.rimBoost = rimBoost;
   m.customProgramCacheKey = () => key;
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, {
-      uShadowTint: look.shadowTint, uRimColor: look.rimColor, uRimStrength: look.rimStrength, uSunLuma: look.sunLuma,
+      uRimBoost: rimBoost, uShadowTint: look.shadowTint, uRimColor: look.rimColor, uRimStrength: look.rimStrength, uSunLuma: look.sunLuma,
       uGrimeFront: grime.front, uGrimeBand: grime.band, uGrimeAmount: grime.amount, uGrimeDir: grime.dir,
       uGrimeOrigin: grime.origin, uGrimeTint: grime.tint, uGrimeGlow: grime.glow,
     });

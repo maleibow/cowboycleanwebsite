@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { run } from '../core/state.js';
+import { events } from '../core/events.js';
 import { POWERUPS, POWERUP_LIST, DROPS } from '../data/weapons.js';
 import { createBatch, shapes } from './instanced.js';
 import { groundAt } from './enemyAI.js';
@@ -45,7 +46,7 @@ export function createPickups(ctx, scene, track) {
     return c;
   };
   api.breakCrate = (c) => {
-    if (!c.on) return; c.on = false;
+    if (!c.on) return; c.on = false; events.emit('crateBreak', c);
     ctx.fx.burst(c.s, c.x, c.y + 0.5, 0xd6f6ff, 14, 4, 0.16, true);
     if (c.loot) api.spawnPowerup(c.loot, c.s, c.x, c.y + 0.7); else api.dropCoins(c.s, c.x, c.y, c.coinsN);
     ctx.combat.shake(0.12);
@@ -77,7 +78,7 @@ export function createPickups(ctx, scene, track) {
         if (c.y < -10) c.on = false;
       }
       if (d < 0.75 + b.hs && c.y > b.y - 0.4 && c.y < b.y + b.h + 0.4) {
-        c.on = false; run.coins += DROPS.coinValue; coinAcc += DROPS.coinValue; ctx.combat.onCoin?.(c);
+        c.on = false; run.coins += DROPS.coinValue; coinAcc += DROPS.coinValue; ctx.combat.onCoin?.(c); events.emit('coin');
       }
     }
     coinTimer -= dt;
@@ -93,7 +94,7 @@ export function createPickups(ctx, scene, track) {
         if (p.y < -10) p.on = false;
       }
       if (Math.abs(p.s - b.s) < 0.9 + b.hs && Math.abs(p.x - b.x) < 0.9 + b.hx && p.y > b.y - 0.5 && p.y < b.y + b.h + 0.4) {
-        p.on = false; ctx.weapon.give(p.type); ctx.hud?.floatTrack(p.s, p.x, p.y + 0.8, POWERUPS[p.type].label, '#2ecc71');
+        p.on = false; ctx.weapon.give(p.type); events.emit('powerup', p.type); ctx.hud?.floatTrack(p.s, p.x, p.y + 0.8, POWERUPS[p.type].label, '#2ecc71');
         ctx.fx.burst(p.s, p.x, p.y, POWERUPS[p.type].color, 10, 4, 0.12, true);
       }
     }

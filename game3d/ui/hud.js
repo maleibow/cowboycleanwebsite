@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { run } from '../core/state.js';
+import { events } from '../core/events.js';
 import { POWERUPS, PROJ } from '../data/weapons.js';
 
 // In-game HUD (DOM): score, coins, bombs, health, heat, stage/act, active powerups, combo, floating text,
@@ -36,7 +37,12 @@ export function createHud(root) {
   const bossName = div(bossBar, `${TEXT}text-align:center;font-size:22px`), bossFill = div(div(bossBar, 'height:16px;background:rgba(0,0,0,.6);border:2px solid #000;border-radius:4px;overflow:hidden'), 'height:100%;background:#e74c3c;width:100%');
   const banner = div(root, `position:absolute;left:0;right:0;top:30%;text-align:center;${TEXT}font-size:64px;color:#ffd84a;display:none;letter-spacing:3px`, 'BOSS GATE');
   const hurt = div(root, 'position:absolute;inset:0;background:radial-gradient(transparent 55%,rgba(220,20,20,.55));opacity:0;transition:opacity .35s');
-  const dbg = div(root, 'position:absolute;right:8px;bottom:6px;font:12px monospace;color:#7CFC7C;white-space:pre;text-align:right;display:none');
+  // mute button (sfx.js owns the state: this only asks, and shows what muteChanged says). The M key does the same.
+  const mute = div(root, `position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid #fff;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;${TEXT}font-size:22px;user-select:none;-webkit-tap-highlight-color:transparent`, '🔊');
+  mute.title = 'Sound on/off  [M]'; mute.setAttribute('role', 'button'); mute.setAttribute('aria-label', 'Toggle sound');
+  mute.addEventListener('pointerdown', (e) => { e.stopPropagation(); events.emit('toggleMute'); });
+  events.on('muteChanged', (m) => { mute.textContent = m ? '🔇' : '🔊'; mute.style.opacity = m ? 0.7 : 1; });
+  const dbg = div(root, 'position:absolute;right:8px;bottom:62px;font:12px monospace;color:#7CFC7C;white-space:pre;text-align:right;display:none');
   const over = div(root, `position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(10,0,0,.7);pointer-events:auto;${TEXT}`);
   div(over, `font-size:88px;color:#e74c3c;letter-spacing:4px`, 'GAME OVER'); const overScore = div(over, 'font-size:34px;color:#ffd84a');
   const retry = div(over, 'font-size:28px;padding:6px 22px;border:3px solid #fff;border-radius:8px;cursor:pointer', 'RETRY STAGE  [Enter]');

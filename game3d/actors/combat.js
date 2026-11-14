@@ -48,6 +48,7 @@ export function createCombat(ctx) {
     e.hp -= dmg; e.hitT = 3 / 60; e.active = true;
     ctx.fx.burst(s, x, y, 0xffffff, 3, 3, 0.07);
     ctx.hud?.floatTrack(s, x, y + 0.3, String(Math.round(dmg * 10) / 10), '#ffffff', 0.7);
+    events.emit('enemyHit', e);
     if (e.hp <= 0) api.killEnemy(e);
   };
 

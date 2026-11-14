@@ -79,6 +79,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     if (view.sideW > 0.5 && Math.abs(sIn) < 0.2) { sIn = xIn; xIn = 0; }
     if (seg.lockX) xIn = 0;
     p.intentS = sIn; p.intentX = xIn; // read by the weapon to set the facing
+    if (Math.hypot(sIn, xIn) > 0.2) { p.faceS = sIn; p.faceX = xIn; }   // the hero turns to face where he is heading (back button = turn around)
     p.inSand = b.grounded && b.ground?.kind === 'quicksand';   // quicksand drags: half speed (the lane at the side is firm)
     const max = p.maxSpeed() * (p.inSand ? PHYS.sandDrag : 1);
 
@@ -125,6 +126,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     const wasGrounded = b.grounded, vyBefore = b.vy;
     moveBody(b, query(), dt, PHYS.stepUp);
     if (b.grounded && !wasGrounded && vyBefore < -4) { p.model.anim.land(-vyBefore); events.emit('land', -vyBefore); }
+    for (let i = 0; i < boxes.length; i++) { const o = boxes[i]; if (o.kind === 'barrier' && b.grounded && b.s > o.s0 - 0.4 && b.s < o.s1 + 0.4 && b.y + b.h <= o.y0 + 0.02 && p.lastGate !== o) { p.lastGate = o; events.emit('gateWhoosh', o); } }   // slid under a gate
     if (b.s < p.progress - PHYS.backroom) { b.s = p.progress - PHYS.backroom; if (b.vs < 0) b.vs = 0; }
     p.progress = Math.max(p.progress, b.s);
 
@@ -142,17 +144,22 @@ export function createPlayer(track, { startS = 4 } = {}) {
 
   // ---- visuals: the animated hero (playerModel.js). He faces +s; sliding/ducking, spraying and the vehicle feed the animator.
   const model = createPlayerModel(), group = model.group;
-  p.model = model; p.mesh = group; p.shooting = false;
+  p.model = model; p.mesh = group; p.shooting = false; p.faceS = 1; p.faceX = 0; p.yaw = 0; p.prevYaw = 0;
+  const _qy = new THREE.Quaternion(), UPY = new THREE.Vector3(0, 1, 0);
   const fr = { p: new THREE.Vector3(), t: new THREE.Vector3(), r: new THREE.Vector3(), u: new THREE.Vector3() }, m4 = new THREE.Matrix4(), ref = new THREE.Vector3();
   p.animate = (dt) => { // once per simulation step, after the physics
+    const target = Math.atan2(-p.faceX, p.faceS), d = Math.atan2(Math.sin(target - p.yaw), Math.cos(target - p.yaw));
+    p.prevYaw = p.yaw; p.yaw += d * Math.min(1, 14 * dt);
     if (model.vehicle !== !!run.upgrades.vehicle) model.setVehicle(!!run.upgrades.vehicle);
-    model.anim.update(dt, { speed: b.vs, grounded: b.grounded, vy: b.vy, sliding: p.sliding || p.ducking, shooting: p.shooting, moveX: p.intentX, vehicle: model.vehicle });
+    model.anim.update(dt, { speed: Math.hypot(b.vs, b.vx), grounded: b.grounded, vy: b.vy, sliding: p.sliding || p.ducking, shooting: p.shooting, moveX: p.intentX * Math.max(0, Math.cos(p.yaw)), vehicle: model.vehicle });
   };
   p.render = (alpha) => {
     const s = prev.s + (b.s - prev.s) * alpha, x = prev.x + (b.x - prev.x) * alpha, y = prev.y + (b.y - prev.y) * alpha - (p.inSand ? 0.12 : 0);
     track.frameAt(s, fr);
     group.position.copy(fr.p).addScaledVector(fr.r, x).addScaledVector(fr.u, y);
     ref.copy(fr.t).negate(); m4.makeBasis(fr.r, fr.u, ref); group.quaternion.setFromRotationMatrix(m4);
+    const yd = Math.atan2(Math.sin(p.yaw - p.prevYaw), Math.cos(p.yaw - p.prevYaw));
+    group.quaternion.multiply(_qy.setFromAxisAngle(UPY, p.prevYaw + yd * alpha));
     group.visible = p.invuln <= 0 || Math.floor(p.time * 18) % 2 === 0;
   };
   p.interp = (alpha, out = {}) => { out.s = prev.s + (b.s - prev.s) * alpha; out.x = prev.x + (b.x - prev.x) * alpha; out.y = prev.y + (b.y - prev.y) * alpha; return out; };
