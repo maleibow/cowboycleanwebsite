@@ -13,8 +13,10 @@ function instantiate(name, s0, act, c, flags = {}) {
     name, cls: t.cls, act, s0, len: d.len, s1: s0 + d.len,
     yaw: d.yaw || 0, rise: d.rise || 0, mode: d.mode || 'behind', lockX: !!d.lockX,
     width: d.width || c.w, chase: d.chase ? { ...d.chase, s0, s1: s0 + d.len } : null,
-    boxes: [], deco: [], gaps: [], slots: [], checkpoint: null, gate: null,
+    boxes: [], deco: [], gaps: [], patches: [], slots: [], checkpoint: null, gate: null, arena: null,
   };
+  for (const p of d.patches || []) seg.patches.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1 });
+  if (d.arena) seg.arena = { ...d.arena, s: s0 + d.arena.s };
   for (const p of d.spans || []) seg.boxes.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1, y0: p.top - p.depth, y1: p.top, kind: p.kind });
   for (const o of d.solids || []) seg.boxes.push({ ...o, s0: s0 + o.s0, s1: s0 + o.s1 });
   for (const o of d.deco || []) seg.deco.push({ ...o, s0: s0 + o.s0, s1: s0 + o.s1 });
@@ -33,7 +35,7 @@ export function generateStage(stageData, seed) {
   let s = 0, act = 1, doorDone = false, specialDone = false;
 
   const add = (name, flags) => {
-    const c = { rng, w, door: act === 2 && !doorDone && name === 'flat' && rng.chance(0.45) };
+    const c = { rng, w, stage: stageData, door: act === 2 && !doorDone && name === 'flat' && rng.chance(0.45) };
     const seg = instantiate(name, s, act, c, flags);
     if (seg.slots.some((sl) => sl.kind === 'door')) doorDone = true;
     segs.push(seg); s = seg.s1; return seg;
@@ -79,7 +81,7 @@ export function generateStage(stageData, seed) {
     acts.push({ act, s0: start, s1: s });
     if (act < 3) add('checkpoint');
   }
-  add('rest'); add('bossGate');
+  act = 3; add('rest'); add('bossGate'); add('arena');   // the loop above leaves act at 4
 
   // ---- slot pass: enemy roster/density by act, obstacle type, powerup guarantee ----
   const roster = stageData.roster, items = [];
@@ -103,11 +105,11 @@ export function generateStage(stageData, seed) {
 
   const all = segs.flatMap((sg) => sg.slots);
   all.forEach((sl, i) => (sl.id = i));
-  const gateSeg = segs[segs.length - 1];
+  const gateSeg = segs.find((g) => g.name === 'bossGate'), arenaSeg = segs[segs.length - 1];
   return {
     seed, stageId: stageData.id, segments: segs, length: s, acts, slots: all,
     checkpoints: segs.filter((g) => g.checkpoint != null).map((g) => ({ s: g.checkpoint })),
-    gateS: gateSeg.gate, startS: 4,
+    gateS: gateSeg.gate, arena: arenaSeg.arena, arenaSeg, startS: 4,
   };
 }
 
@@ -122,7 +124,7 @@ export function validateStage(layout, stageData) {
       if (segs[i].act === 1 && segs[i].name !== 'gap') errs.push('act 1 uses ' + segs[i].name);
     }
   }
-  if (segs.at(-1).name !== 'bossGate' || segs.at(-2).name !== 'rest') errs.push('rest must precede the boss gate');
+  if (segs.at(-1).name !== 'arena' || segs.at(-2).name !== 'bossGate' || segs.at(-3).name !== 'rest') errs.push('rest, boss gate, arena must end the stage');
   for (const n of ['gap', 'barrier']) if (!segs.some((g) => g.act === 1 && g.name === n)) errs.push('act 1 lacks ' + n);
   if (layout.checkpoints.length !== 2) errs.push('want a checkpoint at each act boundary');
   if (segs.filter((g) => g.name === 'side').length !== 1) errs.push('want exactly one side section');

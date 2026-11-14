@@ -8,7 +8,7 @@ export const CAM_MODES = {
   behind: { ds: -7,  dy: 4,   dx: 0,   ls: 6,   lx: 0,  ly: 1.2, fov: 62 },
   side:   { ds: 1,   dy: 2.4, dx: 13,  ls: 1.5, lx: 0,  ly: 1.3, fov: 50 }, // +x = right of the path: forward reads left-to-right
   toward: { ds: 10,  dy: 4.2, dx: 0,   ls: -1,  lx: 0,  ly: 1.2, fov: 62 },
-  arena:  { ds: -10, dy: 9,   dx: 0,   ls: 5,   lx: 0,  ly: 1,   fov: 55 },
+  arena:  { ds: -20, dy: 18,  dx: 0,   ls: -1,  lx: 0,  ly: 0,   fov: 56 }, // anchor = arena centre (rig.focus): the camera hangs over the entrance and sees the whole disc
 };
 const KEYS = ['ds', 'dy', 'dx', 'ls', 'lx', 'ly', 'fov'];
 const BLEND = 3.0;      // 1/s: ~95% of a mode change in 1 s
@@ -18,7 +18,8 @@ export function createCameraRig(track, { aspect = 16 / 9 } = {}) {
   const camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 400);
   const o = { ...CAM_MODES.behind };                     // current blended offsets
   const rig = {
-    camera, mode: 'behind', forced: null, weights: { sideW: 0, towardW: 0, arenaW: 0 },
+    camera, mode: 'behind', forced: null, focus: null, weights: { sideW: 0, towardW: 0, arenaW: 0 }, // focus = {s,x,y}: the anchor tracks this instead of the player (boss arena)
+   
     anchor: { s: 0, x: 0, y: 0 }, trauma: 0, fovKick: 0, minClearance: Infinity, clearance: Infinity,
   };
   const A = rig.anchor;
@@ -45,9 +46,12 @@ export function createCameraRig(track, { aspect = 16 / 9 } = {}) {
 
     if (first) { A.s = b.s; A.x = b.x; A.y = b.y; first = false; for (const k of KEYS) o[k] = goal[k]; }
     // Anchor: advances with the player, never goes backward; lateral/vertical follow loosely.
-    if (b.s > A.s) A.s += (b.s - A.s) * Math.min(1, 14 * dt);
-    A.x += (b.x - A.x) * Math.min(1, 5 * dt);
-    A.y += (Math.max(b.y, -1) - A.y) * Math.min(1, 3 * dt);
+    if (rig.focus) { const k = Math.min(1, 3 * dt); A.s += (rig.focus.s - A.s) * k; A.x += (rig.focus.x - A.x) * k; A.y += (rig.focus.y - A.y) * k; }
+    else {
+      if (b.s > A.s) A.s += (b.s - A.s) * Math.min(1, 14 * dt);
+      A.x += (b.x - A.x) * Math.min(1, 5 * dt);
+      A.y += (Math.max(b.y, -1) - A.y) * Math.min(1, 3 * dt);
+    }
 
     // Desired position / look target in track space. Side and arena use an absolute lateral offset;
     // behind/toward follow the player's x loosely.

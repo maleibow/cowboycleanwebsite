@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { stage01 as stage } from '../themes/stage01.js';
-import { buildStage01, groundHeight, TRACK_LEN } from '../themes/stage01Props.js';
+import { buildStage01, groundHeight, TRACK_LEN } from './lookdevProps.js';
 import { createSky } from '../render/sky.js';
 import { createParticles } from '../render/particles.js';
 import { setStageLook, setCleanWave } from '../render/materials.js';

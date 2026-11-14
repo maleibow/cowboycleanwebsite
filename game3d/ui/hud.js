@@ -30,9 +30,9 @@ export function createHud(root) {
     const c = div(chips, `${TEXT}font-size:15px;display:none;padding:2px 8px;border-radius:4px;background:rgba(0,0,0,.55);border-left:6px solid #fff;min-width:96px`);
     const lab = div(c, ''), b = div(c, 'height:4px;margin-top:2px;background:#fff'); chipEls[k] = { c, lab, b, on: false };
   }
-  const combo = div(root, `position:absolute;left:50%;top:12px;transform:translateX(-50%);text-align:center;${TEXT}font-size:34px;color:#ff7ad9;display:none`);
+  const combo = div(root, `position:absolute;left:50%;top:64px;transform:translateX(-50%);text-align:center;${TEXT}font-size:34px;color:#ff7ad9;display:none`);
   const toast = div(root, `position:absolute;left:50%;top:26%;transform:translateX(-50%);${TEXT}font-size:36px;opacity:0;transition:opacity .25s`);
-  const bossBar = div(root, 'position:absolute;left:25%;right:25%;bottom:34px;display:none');
+  const bossBar = div(root, 'position:absolute;left:25%;right:25%;top:12px;display:none');
   const bossName = div(bossBar, `${TEXT}text-align:center;font-size:22px`), bossFill = div(div(bossBar, 'height:16px;background:rgba(0,0,0,.6);border:2px solid #000;border-radius:4px;overflow:hidden'), 'height:100%;background:#e74c3c;width:100%');
   const banner = div(root, `position:absolute;left:0;right:0;top:30%;text-align:center;${TEXT}font-size:64px;color:#ffd84a;display:none;letter-spacing:3px`, 'BOSS GATE');
   const hurt = div(root, 'position:absolute;inset:0;background:radial-gradient(transparent 55%,rgba(220,20,20,.55));opacity:0;transition:opacity .35s');
@@ -80,7 +80,7 @@ export function createHud(root) {
     for (const k of TIMED) chip(k, w.timers[k] > 0, POWERUPS[k].label, POWERUPS[k].color, w.timers[k] / POWERUPS[k].time);
     chip('shield', w.shield, 'SHIELD', POWERUPS.shield.color, 1); chip('laser', run.upgrades.laser, 'LASER', PROJ.laser.color, 1); chip('lasso', run.upgrades.lasso, 'LASSO', PROJ.lasso.color, 1);
     const cb = level.combat.combo; if (cb.n >= 2) { combo.style.display = 'block'; setText('cb', combo, `COMBO x${cb.n}`); } else if (combo.style.display !== 'none') combo.style.display = 'none';
-    banner.style.display = level.finished ? 'block' : 'none';
+    const arenaState = level.arena?.state; banner.style.display = arenaState === 'opening' || arenaState === 'open' ? 'block' : 'none';
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) toast.style.opacity = 0; }
     if (dbg.style.display !== 'none') dbg.textContent = level.debugLine?.() || '';
   };

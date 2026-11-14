@@ -141,7 +141,7 @@ export function toonColor(color, o = {}) {
 // ---- Inverted-hull outline ----
 // Adds a smoothed-normal attribute (so hard edges don't split open) and returns a Mesh that
 // draws the back faces pushed out by a constant SCREEN-space width.
-function smoothNormals(geo) {
+export function smoothNormals(geo) {
   if (geo.getAttribute('aSmooth')) return geo;
   const pos = geo.getAttribute('position'), nor = geo.getAttribute('normal');
   const acc = new Map(), keyOf = (i) => `${Math.round(pos.getX(i) * 1e3)},${Math.round(pos.getY(i) * 1e3)},${Math.round(pos.getZ(i) * 1e3)}`;
@@ -187,4 +187,26 @@ export function makeOutline(mesh, { color, width } = {}) {
   o.name = 'outline'; o.castShadow = false; o.receiveShadow = false; o.frustumCulled = mesh.frustumCulled;
   mesh.add(o);
   return o;
+}
+
+// Same outline for InstancedMesh parts (enemies, bosses): the hull is pushed out after the instance matrix.
+let instOutline = null;
+export function instancedOutlineMaterial(color = 0x2a1420, width = 0.0034) {
+  if (instOutline) return instOutline;
+  instOutline = new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(color) }, uWidth: { value: width } },
+    vertexShader: /* glsl */`
+      attribute vec3 aSmooth; uniform float uWidth;
+      void main() {
+        mat4 mv = modelViewMatrix * instanceMatrix;
+        vec4 p = projectionMatrix * mv * vec4( position, 1.0 );
+        vec3 n = normalize( mat3( mv ) * aSmooth );
+        vec2 d = ( projectionMatrix * vec4( n, 0.0 ) ).xy;
+        p.xy += normalize( d + 1e-5 ) * uWidth * p.w * vec2( 0.5625, 1.0 );
+        gl_Position = p;
+      }`,
+    fragmentShader: /* glsl */`uniform vec3 uColor; void main() { gl_FragColor = vec4( uColor, 1.0 ); }`,
+    side: THREE.BackSide, fog: false,
+  });
+  return instOutline;
 }

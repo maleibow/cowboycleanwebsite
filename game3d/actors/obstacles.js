@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { createBatch, shapes } from './instanced.js';
 import { groundAt, rndRange } from './enemyAI.js';
 import { pxs } from '../data/weapons.js';
+import { OBSTACLE_MODELS } from './propModels.js';
+import { createToon } from '../render/materials.js';
 
 // The stage's low obstacle: rolls down the path toward the player (PLAN 1.1) or sits still as a static hazard.
 // Obstacles are NOT damage dealers in the original: touching one just shoves the player (7416-7433), so they are
@@ -27,7 +29,8 @@ export function createObstacles(ctx, scene, track) {
   const pool = Array.from({ length: CAP }, () => ({ on: false, type: 'sand_pile', def: OBSTACLES.sand_pile, s: 0, x: 0, y: 0, p0s: 0, rolling: false, started: false, spin: 0, box: { s0: 0, s1: 0, x0: 0, x1: 0, y0: 0, y1: 0, kind: 'obstacle' }, slot: -1 }));
   const lit = new THREE.MeshLambertMaterial({ color: 0xffffff });
   const batches = { ball: createBatch(scene, track, shapes.ball(), lit, CAP), cyl: createBatch(scene, track, shapes.cyl(), lit, CAP), box: createBatch(scene, track, shapes.box(), lit, CAP) };
-  const list = [];
+  const models = {}; for (const [k, m] of Object.entries(OBSTACLE_MODELS)) models[k] = createBatch(scene, track, m.build(), createToon({ vertexColors: true, grime: false, rimStrength: 0.8 }), CAP);
+  const list = [], _w = new THREE.Vector3();
   let timer = rndRange(AMBIENT[0], AMBIENT[1]);
   const api = { list, rolling: 0 };
 
@@ -73,11 +76,19 @@ export function createObstacles(ctx, scene, track) {
 
   api.render = (alpha) => {
     for (const k in batches) batches[k].begin();
+    for (const k in models) models[k].begin();
     for (const o of list) {
-      const d = o.def, s = o.p0s + (o.s - o.p0s) * alpha;
+      const d = o.def, s = o.p0s + (o.s - o.p0s) * alpha, m = OBSTACLE_MODELS[o.type];
+      if (m && models[o.type]) {   // modelled: a rolling one rocks forward and back as it slides in, shedding dust
+        const rock = o.rolling && o.started ? Math.sin(o.spin * 1.6) * m.rock : 0;
+        models[o.type].put(s, o.x, o.y, d.hx / 0.9, d.h / 0.9, d.hs / 0.9, 0xffffff, o.rolling ? Math.sin(o.spin * 0.5) * 0.25 : 0, rock);
+        if (m.dust && o.rolling && o.started && ctx.particles && Math.random() < 0.25) { track.toWorld(s, o.x, o.y + 0.15, _w); ctx.particles.emit('dust', _w.x, _w.y, _w.z, { count: 0.5, scale: 0.9 }); }
+        continue;
+      }
       batches[d.shape].put(s, o.x, o.y, d.hx * 2, d.h, d.hs * 2, d.color, o.rolling ? o.spin : 0);
     }
     for (const k in batches) batches[k].end();
+    for (const k in models) models[k].end();
   };
   api.clear = () => { for (const o of [...list]) remove(o); timer = rndRange(AMBIENT[0], AMBIENT[1]); };
   return api;

@@ -24,7 +24,8 @@ export const cone = (r, h, seg = 8) => new THREE.ConeGeometry(r, h, seg);
 const hash = (x, y, z) => { const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return s - Math.floor(s); };
 
 export class Builder {
-  constructor() { this.parts = []; this.m = new THREE.Matrix4(); this.q = new THREE.Quaternion(); this.e = new THREE.Euler(); }
+  // boxSeg: subdivisions per box face (3 = softly rounded corners; 1 = plain, for background scenery that must stay cheap)
+  constructor({ boxSeg = 3 } = {}) { this.parts = []; this.boxSeg = boxSeg; this.m = new THREE.Matrix4(); this.q = new THREE.Quaternion(); this.e = new THREE.Euler(); }
   // geo: BufferGeometry. opts: p position, r euler, s scale, jitter (vertex noise, metres), ao (bottom darkening 0..1)
   add(geo, color, o = {}) {
     let g = geo.index ? geo.toNonIndexed() : geo.clone();
@@ -46,7 +47,7 @@ export class Builder {
     this.parts.push(g);
     return this;
   }
-  box(w, h, d, color, o = {}) { return this.add(roundedBox(w, h, d, o.radius ?? Math.min(w, h, d) * 0.28), color, o); }
+  box(w, h, d, color, o = {}) { return this.add(roundedBox(w, h, d, o.radius ?? Math.min(w, h, d) * 0.28, o.seg ?? this.boxSeg), color, o); }
   sphere(r, color, o = {}) { return this.add(sphere(r), color, o); }
   cyl(rt, rb, h, color, o = {}) { return this.add(cyl(rt, rb, h, o.seg ?? 10), color, o); }
   capsule(r, len, color, o = {}) { return this.add(capsule(r, len), color, o); }

@@ -26,7 +26,9 @@ function makeSink() {
 }
 
 // A box in track space swept along the centreline: top, both side skirts, end caps, bottom if floating.
-function addBox(track, sink, box, hex) {
+const hh = (a, b) => { const t = Math.sin(a * 127.1 + b * 311.7) * 43758.5; return t - Math.floor(t); };
+function addBox(track, sink, box, hex, style = {}) {
+  if (box.kind === 'hidden') return;   // collision only (the arena floor is drawn by the theme)
   const n = Math.max(1, Math.ceil((box.s1 - box.s0) / 2)), F = [];
   for (let i = 0; i <= n; i++) {
     const f = track.frameAt(box.s0 + ((box.s1 - box.s0) * i) / n);
@@ -35,9 +37,17 @@ function addBox(track, sink, box, hex) {
   const P = (i, x, y) => new THREE.Vector3().copy(F[i].p).addScaledVector(F[i].r, x).addScaledVector(F[i].u, y);
   const hint = new THREE.Vector3(), floating = box.y0 > 0.01 && box.kind !== 'ground' && box.kind !== 'platform';
   for (let i = 0; i < n; i++) {
-    const k = i % 2 ? 0.94 : 1.04; // faint checker so speed reads on flat ground
+    const k = i % 2 ? 0.97 : 1.03; // faint checker so speed reads on flat ground
     const top = mix(hex, SHADE.top * k), side = mix(hex, SHADE.side * k);
-    sink.quad(P(i, box.x0, box.y1), P(i, box.x1, box.y1), P(i + 1, box.x1, box.y1), P(i + 1, box.x0, box.y1), hint.copy(F[i].u), top);
+    const cols = Math.max(1, Math.round((box.x1 - box.x0) / 1.1)), noise = style.noise ?? 0;   // top face in cells: colour noise + wheel ruts
+    hint.copy(F[i].u);
+    for (let j = 0; j < cols; j++) {
+      const xa = box.x0 + ((box.x1 - box.x0) * j) / cols, xb = box.x0 + ((box.x1 - box.x0) * (j + 1)) / cols, xm = (xa + xb) / 2;
+      let kk = 1 + (hh(Math.floor(box.s0 + i * 2), j + box.x0) - 0.5) * 2 * noise;
+      if (style.rut && box.kind === 'ground' && Math.abs(Math.abs(xm) - style.rutX) < 0.45) kk *= 1 - style.rut;
+      if (style.edge && (j === 0 || j === cols - 1) && cols > 2) kk *= style.edge;                 // kerb stones along both edges
+      sink.quad(P(i, xa, box.y1), P(i, xb, box.y1), P(i + 1, xb, box.y1), P(i + 1, xa, box.y1), hint, top.clone().multiplyScalar(kk));
+    }
     sink.quad(P(i, box.x0, box.y1), P(i, box.x0, box.y0), P(i + 1, box.x0, box.y0), P(i + 1, box.x0, box.y1), hint.copy(F[i].r).negate(), side);
     sink.quad(P(i, box.x1, box.y1), P(i, box.x1, box.y0), P(i + 1, box.x1, box.y0), P(i + 1, box.x1, box.y1), hint.copy(F[i].r), side);
     if (floating) sink.quad(P(i, box.x0, box.y0), P(i, box.x1, box.y0), P(i + 1, box.x1, box.y0), P(i + 1, box.x0, box.y0), hint.copy(F[i].u).negate(), mix(hex, SHADE.bottom));
@@ -47,9 +57,9 @@ function addBox(track, sink, box, hex) {
   sink.quad(P(n, box.x0, box.y0), P(n, box.x1, box.y0), P(n, box.x1, box.y1), P(n, box.x0, box.y1), hint.copy(F[n].t), end);
 }
 
-export function buildSegmentGeometry(track, seg, palette, showSlots = true) {
+export function buildSegmentGeometry(track, seg, palette, showSlots = true, style = {}) {
   const sink = makeSink();
-  for (const box of seg.boxes) addBox(track, sink, box, palette[box.kind] ?? palette.ground);
+  for (const box of seg.boxes) addBox(track, sink, box, palette[box.kind] ?? palette.ground, style);
   for (const d of seg.deco) addBox(track, sink, d, d.color);
   if (showSlots) for (const sl of seg.slots) {
     const hex = sl.kind === 'pickup' && sl.role === 'item' ? 0xffffff : SLOT_COLORS[sl.kind] ?? 0xff00ff;
@@ -65,8 +75,8 @@ export function buildSegmentGeometry(track, seg, palette, showSlots = true) {
   return g;
 }
 
-export function createTrackBuilder(track, scene, { palette, showSlots = true, shadows = false } = {}) {
-  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
+export function createTrackBuilder(track, scene, { palette, showSlots = true, shadows = false, material: themeMaterial = null, style = {} } = {}) {
+  const material = themeMaterial || new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
   const live = new Map(); // segment index -> Mesh
   const api = { live, built: 0, disposed: 0, material };
   api.update = (s) => {
@@ -74,7 +84,7 @@ export function createTrackBuilder(track, scene, { palette, showSlots = true, sh
     for (let i = 0; i < segs.length; i++) {
       const g = segs[i], want = g.s1 > s - WINDOW.behind && g.s0 < s + WINDOW.ahead, mesh = live.get(i);
       if (want && !mesh) {
-        const m = new THREE.Mesh(buildSegmentGeometry(track, g, palette, showSlots), material);
+        const m = new THREE.Mesh(buildSegmentGeometry(track, g, palette, showSlots, style), material);
         m.castShadow = m.receiveShadow = shadows; m.frustumCulled = true; m.name = `seg${i}:${g.name}`;
         scene.add(m); live.set(i, m); api.built++;
       } else if (!want && mesh) {
@@ -82,6 +92,7 @@ export function createTrackBuilder(track, scene, { palette, showSlots = true, sh
       }
     }
   };
+  api.invalidate = (i) => { const m = live.get(i); if (m) { scene.remove(m); m.geometry.dispose(); live.delete(i); } };   // rebuilt on the next update (e.g. the gate wall opened)
   api.dispose = () => { for (const m of live.values()) { scene.remove(m); m.geometry.dispose(); } live.clear(); material.dispose(); };
   return api;
 }

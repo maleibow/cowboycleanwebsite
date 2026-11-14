@@ -66,6 +66,10 @@ export const BOSSES = {
   boss9: { hp: 250, w: px(160), h: px(220), speed: pxs(0.8) }, boss10: { hp: 300, w: px(160), h: px(240), speed: pxs(0.5) },
 };
 
+// Bosses are spawned into the enemy list like anything else (so shots, bombs, aim-assist and contact all work), with a
+// controller from actors/bosses/ that replaces the archetype AI. Defined here as plain records.
+export const BOSS_DEFS = Object.fromEntries(Object.entries(BOSSES).map(([k, v]) => [k, { arch: 'boss', color: 0x8e44ad, pts: enemyPoints(k), ...v }]));
+
 // Per-archetype grey-box shape and behaviour defaults.
 export const ARCH = {
   walker:  { shape: 'box',  aggro: 28, lateral: 1.5 },
@@ -74,5 +78,6 @@ export const ARCH = {
   flyer:   { shape: 'oct',  aggro: 36, standoff: 11, diveEvery: [3, 5], diveSpeed: 1.7 },
   crawler: { shape: 'flat', aggro: 26, lateral: 2.5 },
   floater: { shape: 'ico',  aggro: 34, standoff: 8 },
+  boss:    { shape: 'box',  aggro: 1e9 },
 };
 export const ENEMY_TYPES = Object.keys(ENEMIES);
