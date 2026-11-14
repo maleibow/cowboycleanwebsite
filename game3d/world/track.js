@@ -79,6 +79,8 @@ export function createTrack(layout) {
       for (let k = track.segmentIndexAt(sa); k < segs.length && segs[k].s0 <= sb; k++) {
         const bx = segs[k].boxes; for (let j = 0; j < bx.length; j++) out.push(bx[j]);
       }
+      const dyn = track.dyn; // moving collision boxes (rolling obstacles) registered by actors/obstacles.js
+      if (dyn) for (let j = 0; j < dyn.length; j++) if (dyn[j].s1 > sa && dyn[j].s0 < sb) out.push(dyn[j]);
       return out;
     },
     _q: [],
