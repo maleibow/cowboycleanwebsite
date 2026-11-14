@@ -4,7 +4,7 @@ import { createQuality } from './core/quality.js';
 import { run, newRun } from './core/state.js';
 import { events } from './core/events.js';
 import { createRenderer } from './render/renderer.js';
-import { createTestScene } from './world/testScene.js';
+import { createLookdev } from './world/lookdev.js';
 import { createDebugPanel, createFreeCam } from './core/debug.js';
 
 const params = new URLSearchParams(location.search);
@@ -20,7 +20,7 @@ const box = document.getElementById('game-scale-box');
 const quality = createQuality(params);
 const gfx = createRenderer(canvas, box, quality);
 const input = createInput();
-const world = createTestScene(quality);
+const world = createLookdev(quality, gfx, input, params);
 const debugPanel = debug ? createDebugPanel(gfx, quality) : null;
 const freeCam = debug ? createFreeCam(world.camera, input, canvas) : null;
 

@@ -1,9 +1,9 @@
 // Three quality tiers, auto-picked, with dynamic resolution scaling (PLAN 4.1).
 // Override with ?quality=low|medium|high. Disable scaling with ?dynres=0.
 export const TIERS = {
-  high:   { name: 'high',   pixelCap: 2,   shadowMap: 2048, bloom: 1,   bloomScale: 1,   targetMs: 16.7, minScale: 0.75 },
-  medium: { name: 'medium', pixelCap: 1.5, shadowMap: 0,    bloom: 1,   bloomScale: 0.5, targetMs: 20,   minScale: 0.7 },
-  low:    { name: 'low',    pixelCap: 1.25, shadowMap: 0,   bloom: 0,   bloomScale: 0.5, targetMs: 33,   minScale: 0.7 },
+  high:   { name: 'high',   pixelCap: 2,   shadowMap: 2048, bloom: 1,   bloomScale: 1,   grade: 1, vignette: 1, grain: 1, density: 1, targetMs: 16.7, minScale: 0.75 },
+  medium: { name: 'medium', pixelCap: 1.5, shadowMap: 0,    bloom: 1,   bloomScale: 0.5, grade: 1, vignette: 1, grain: 0, density: 0.6, targetMs: 20,   minScale: 0.7 },
+  low:    { name: 'low',    pixelCap: 1.25, shadowMap: 0,   bloom: 0,   bloomScale: 0.5, grade: 1, vignette: 1, grain: 0, density: 0.5, targetMs: 33,   minScale: 0.7 },
 };
 
 export function pickTier(params = new URLSearchParams(location.search)) {
