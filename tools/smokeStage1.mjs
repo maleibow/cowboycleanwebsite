@@ -15,7 +15,7 @@ const fail = (m) => { failures.push(m); console.error('FAIL: ' + m); };
 const browser = await chromium.launch({ args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const fresh = async (q) => { if (!/quality=/.test(q)) q += '&quality=low';   // headless is CPU-rendered: keep the test frame cheap
   const pg = await browser.newPage({ viewport: { width: 960, height: 540 } });
-  pg.on('console', (m) => { const u = m.location().url; if (m.type() === 'error' && !(u && !u.startsWith(`http://127.0.0.1:${port}`))) fail('console error: ' + m.text()); });
+  pg.on('console', (m) => { const u = m.location().url; if (m.type() === 'error' && !(u && (!u.startsWith(`http://127.0.0.1:${port}`) || u.includes('/game3d/music/')))) fail('console error: ' + m.text()); });
   pg.on('pageerror', (e) => fail('page error: ' + e.message));
   await pg.goto(`http://127.0.0.1:${port}/cleaningup3d.html?${q}`, { waitUntil: 'domcontentloaded', timeout: 90000 });
   await pg.waitForFunction(() => window.__game && window.__game.ready, null, { timeout: 30000 });

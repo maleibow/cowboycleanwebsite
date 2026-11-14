@@ -13,7 +13,7 @@ await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const port = server.address().port, failures = [];
 const fail = (m) => { failures.push(m); console.error('FAIL: ' + m); };
 const ok = (c, m) => { if (!c) fail(m); };
-const isExt = (u) => u && !u.startsWith(`http://127.0.0.1:${port}`);
+const isExt = (u) => u && (!u.startsWith(`http://127.0.0.1:${port}`) || u.includes('/game3d/music/'));   // a missing music file is expected: the Jukebox falls back to synth
 const browser = await chromium.launch({ args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 
 // In-memory stand-ins for the Firebase SDK (same API surface the leaderboard service uses) and for the MailerLite form.
