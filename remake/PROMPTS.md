@@ -3,8 +3,8 @@
 Paste one prompt into a **fresh** coding session, in order. Each assumes the repo
 `maleibow/cowboycleanwebsite` is checked out with `remake/PLAN.md` present.
 
-`remake/PLAN.md` and `remake/PROMPTS.md` are already on the branch `remake-3d`; start
-every coding session on that branch. After each prompt: open `cleaningup3d.html` yourself, play for a minute, and
+`remake/PLAN.md` and `remake/PROMPTS.md` are on `main`; each coding session branches
+from the latest `main`. After each prompt: open `cleaningup3d.html` yourself, play for a minute, and
 only move on when it works. If something is off, use prompt R.
 
 ---
@@ -420,7 +420,7 @@ prompt allowed to touch index.html.
 ## Prompt R — Bug-fix / tuning template (reuse as needed)
 
 ```
-Read remake/PLAN.md section 2 (house rules) and continue on branch remake-3d.
+Read remake/PLAN.md section 2 (house rules) and 4.2. Branch from the latest main.
 
 Problem: {describe what you see, on which stage, on which device}
 Expected: {what should happen instead}
