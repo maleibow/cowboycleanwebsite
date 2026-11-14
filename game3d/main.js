@@ -5,6 +5,7 @@ import { run, newRun } from './core/state.js';
 import { events } from './core/events.js';
 import { createRenderer } from './render/renderer.js';
 import { createLevel } from './world/level.js';
+import { createLookdev } from './world/lookdev.js';
 import { createHud } from './ui/hud.js';
 import { createDebugPanel, createFreeCam } from './core/debug.js';
 
@@ -23,8 +24,10 @@ const gfx = createRenderer(canvas, box, quality);
 const input = createInput();
 const hud = createHud(document.getElementById('hud'));
 const foes = params.get('foes') !== '0'; // ?foes=0: no enemies/obstacles (pure platformer, used by the platformer tests)
-const world = createLevel(quality, { stage: startStage, seed, debug, hud, foes });
-if (bossJump) world.jumpToGate();
+// ?lookdev=1 shows the art-kit stage 1 scene (new toon look + animated hero) instead of the grey-box level.
+const lookdev = params.get('lookdev') === '1';
+const world = lookdev ? createLookdev(quality, gfx, input, params) : createLevel(quality, { stage: startStage, seed, debug, hud, foes });
+if (bossJump && world.jumpToGate) world.jumpToGate();
 const debugPanel = debug ? createDebugPanel(gfx, quality) : null;
 const freeCam = debug ? createFreeCam(world.camera, input, canvas) : null;
 

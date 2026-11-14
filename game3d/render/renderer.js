@@ -3,6 +3,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { createPost } from './post.js';
 
 // WebGLRenderer + bloom composer. `box` is the 16:9 element whose size we track.
 export function createRenderer(canvas, box, quality) {
@@ -15,16 +16,18 @@ export function createRenderer(canvas, box, quality) {
 
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(new THREE.Scene(), new THREE.PerspectiveCamera());
-  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.6, 0.85);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.5, 1.05); // threshold >1 = only HDR emissives glow
   const output = new OutputPass();
   composer.addPass(renderPass); composer.addPass(bloom); composer.addPass(output);
+  const post = createPost(composer, quality, output);
 
-  const api = { renderer, composer, bloom, renderPass, width: 0, height: 0, pixelRatio: 1 };
+  const api = { renderer, composer, bloom, renderPass, post, width: 0, height: 0, pixelRatio: 1 };
 
   api.applyQuality = () => {
     const t = quality.tier;
     renderer.shadowMap.enabled = t.shadowMap > 0;
     bloom.enabled = t.bloom > 0;
+    post.applyTier();
     api.resize(true);
   };
 
