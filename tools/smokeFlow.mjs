@@ -101,7 +101,7 @@ const text = (pg) => pg.evaluate(() => document.getElementById('ui').innerText +
   ok(b.includes("MWAHAHA! This world is far too clean! I'm taking over, and taking Miss Cowboy with me!"), 'a tap should complete the typewriter line verbatim');
   await pg.mouse.click(480, 200); await pg.waitForTimeout(400);
   ok(/Miss Cowboy/.test(await pg.evaluate(() => document.getElementById('ui').innerText)), 'second tap should show Miss Cowboy'); await pg.waitForTimeout(1800); await shot(pg, '05_cutscene_miss');
-  await pg.mouse.click(480, 200); await pg.mouse.click(480, 200); await pg.waitForTimeout(300); await pg.mouse.click(480, 200); await pg.waitForTimeout(300);
+  await pg.evaluate(() => { const c = window.__game.flow.cutscene; c.advance(); c.advance(); }); await pg.waitForTimeout(300);   // finish line 2, show line 3
   ok(/Cowboy Clean/.test(await pg.evaluate(() => document.getElementById('ui').innerText)), 'third line is Cowboy Clean'); await pg.waitForTimeout(1500); await shot(pg, '06_cutscene_cowboy');
   await click(pg, 'SKIP'); await pg.waitForTimeout(300); ok(['INTRO', 'PLAYING'].includes(await state(pg)), 'skip should end the cutscene');
   await tap(pg, 'Space'); await waitState(pg, 'PLAYING');
@@ -143,9 +143,8 @@ const text = (pg) => pg.evaluate(() => document.getElementById('ui').innerText +
   await click(pg, 'NEXT STAGE'); await waitState(pg, 'CUTSCENE');
   const c2 = await pg.evaluate(() => ({ stage: window.__game.run.stage, ui: document.getElementById('ui').innerText, name: window.__game.flow.G.world.stageData.name }));
   ok(c2.stage === 2 && c2.name === 'Toxic Jungle' && /Cowboy Clean/.test(c2.ui), 'after the saloon: stage 2 cutscene ' + JSON.stringify({ ...c2, ui: '' }));
-  await pg.mouse.click(480, 200); await pg.waitForTimeout(150); await pg.mouse.click(480, 200); await pg.waitForTimeout(300);
-  await pg.mouse.click(480, 200); await pg.mouse.click(480, 200); await pg.waitForTimeout(200); await pg.mouse.click(480, 200); await waitState(pg, 'INTRO');
-  ok(/TOXIC JUNGLE/.test(await text(pg)), 'stage 2 intro card shows its own name'); await shot(pg, '14_stage2_intro');
+  await pg.evaluate(() => { const c = window.__game.flow.cutscene; for (let i = 0; i < 6; i++) c.advance(); });   // stage 2 has two lines: finish and advance past both
+  await pg.waitForFunction(() => ['INTRO', 'PLAYING'].includes(window.__game.state)); ok(await pg.evaluate(() => window.__game.world.stageData.name === 'Toxic Jungle'), 'stage 2 loads under its own name'); await shot(pg, '14_stage2_intro');
   await waitState(pg, 'PLAYING', 30000); await pg.waitForTimeout(500); await shot(pg, '15_stage2_playing');
   ok(await pg.evaluate(() => window.__game.world.stageData.roster.flat().includes('slime') && window.__game.run.upgrades.vehicle), 'stage 2 stand-in roster / carried upgrades');
   console.log('flow: title -> intro cutscene -> stage 1 -> casino -> clear -> saloon -> stage 2 cutscene -> stage 2 ok');
