@@ -11,7 +11,7 @@ export function createRenderer(canvas, box, quality) {
   renderer.toneMappingExposure = 1.0;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.info.autoReset = false; // we reset once per frame so composer passes sum up
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
 
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(new THREE.Scene(), new THREE.PerspectiveCamera());

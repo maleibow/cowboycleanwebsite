@@ -85,6 +85,115 @@ const shot = path.join(root, 'remake/shots/smoke.png');
 await page.screenshot({ path: shot });
 console.log('screenshot: ' + shot);
 
+
+// ---------------------------------------------------------------------------------------------
+// Track / platformer checks (prompt 1)
+// ---------------------------------------------------------------------------------------------
+const gen = await import('../game3d/world/generator.js');
+const { getStage } = await import('../game3d/data/stages.js');
+{ // 1. layout rules hold across many seeds; different seeds give different layouts
+  let bad = 0;
+  for (let sd = 0; sd < 300; sd++) { const l = gen.generateStage(getStage(1), sd), e = gen.validateStage(l, getStage(1)); if (e.length) { bad++; fail(`seed ${sd}: ${e.join('; ')}`); } }
+  const sig = (sd) => gen.generateStage(getStage(1), sd).segments.map((g) => g.name + g.len).join();
+  if (sig(1) === sig(2) || sig(1) !== sig(1)) fail('seed does not change / fix the layout');
+  console.log(`layout: 300 seeds validated (${bad} bad), seed 1 vs 2 differ: ${sig(1) !== sig(2)}`);
+}
+
+const url = (q) => `http://127.0.0.1:${port}/cleaningup3d.html?${q}`;
+const fresh = async (q, init) => {
+  const pg = await browser.newPage({ viewport: { width: 960, height: 540 } });
+  pg.on('console', (m) => { if (m.type() === 'error' && !isExternal(m.location().url)) fail('console error: ' + m.text()); });
+  pg.on('pageerror', (e) => fail('page error: ' + e.message));
+  if (init) await pg.addInitScript(init);
+  await pg.goto(url(q), { waitUntil: 'load' });
+  await pg.waitForFunction(() => window.__game && window.__game.ready, null, { timeout: 15000 });
+  await pg.addScriptTag({ path: path.join(root, 'tools/smokeBot.js') });
+  return pg;
+};
+const S = (pg) => pg.evaluate(() => window.__game.world.player.body.s);
+
+{ // 2. real keyboard through the real loop: hold forward, hop periodically, s must increase
+  const pg = await fresh('stage=1&seed=1&god=1');
+  const s0 = await S(pg);
+  for (let i = 0; i < 12; i++) { await pg.keyboard.down('KeyW'); await pg.keyboard.press('Space'); await pg.waitForTimeout(700); }
+  await pg.keyboard.up('KeyW');
+  const s1 = await S(pg);
+  console.log(`keyboard: hold W + hop, s ${s0.toFixed(1)} -> ${s1.toFixed(1)}`);
+  if (!(s1 > s0 + 15)) fail(`player s did not increase with forward held (${s0} -> ${s1})`);
+  await pg.close();
+}
+
+{ // 3. real gamepad path: stick forward + A periodically (fake Gamepad API)
+  const pg = await fresh('stage=1&seed=1&god=1', () => {
+    window.__pad = { connected: true, axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
+    navigator.getGamepads = () => [window.__pad];
+  });
+  const s0 = await S(pg);
+  for (let i = 0; i < 12; i++) {
+    await pg.evaluate(() => { window.__pad.axes[1] = -1; window.__pad.buttons[0].pressed = true; });
+    await pg.waitForTimeout(150);
+    await pg.evaluate(() => { window.__pad.buttons[0].pressed = false; });
+    await pg.waitForTimeout(550);
+  }
+  const s1 = await S(pg);
+  console.log(`gamepad: stick forward + A, s ${s0.toFixed(1)} -> ${s1.toFixed(1)}`);
+  if (!(s1 > s0 + 15)) fail(`gamepad: player s did not increase (${s0} -> ${s1})`);
+  await pg.close();
+}
+
+{ // 4. gaps kill and respawn; the low barrier needs a slide
+  const pg = await fresh('stage=1&seed=1'); // no god: pit damage must apply
+  const r = await pg.evaluate(() => {
+    const g = window.__game, W = g.world, P = W.player, B = P.body, K = g.input.keys, out = {};
+    const segs = W.layout.segments, gapSeg = segs.find((x) => x.name === 'gap'), barSeg = segs.find((x) => x.name === 'barrier');
+    const run = (n, keys) => { K.clear(); keys.forEach((k) => K.add(k)); window.__bot.step(n); K.clear(); };
+    // gap: run straight in without jumping
+    P.teleport(gapSeg.gaps[0].s0 - 6); const f0 = P.pitFalls, hp0 = window.__game.run.health;
+    const off = g.events.on('respawn', () => { if (out.gapRespawnS === undefined) { out.gapRespawnS = B.s; out.hpAfterPit = window.__game.run.health - hp0; } }); run(180, ['KeyW']); off();
+    out.gapFell = P.pitFalls - f0; out.gapS0 = gapSeg.gaps[0].s0; window.__game.run.health = 100; P.invuln = 0;
+    // barrier without sliding: blocked
+    const bar = barSeg.boxes.find((x) => x.kind === 'barrier');
+    P.teleport(bar.s0 - 8); run(240, ['KeyW']); out.blockedS = B.s; out.barS0 = bar.s0;
+    // barrier with a slide
+    P.teleport(bar.s0 - 8); K.add('KeyW');
+    for (let i = 0; i < 240; i++) { if (B.s > bar.s0 - 3 && B.s < bar.s0 - 2.5) K.add('ShiftLeft'); else K.delete('ShiftLeft'); window.__bot.step(1); }
+    K.clear(); out.slidS = B.s; out.barS1 = bar.s1;
+    // duck (stand still, hold slide) is lower than standing
+    P.teleport(4); K.add('ShiftLeft'); window.__bot.step(10); out.duckH = B.h; K.clear(); window.__bot.step(10); out.standH = B.h;
+    return out;
+  });
+  console.log('events: ' + JSON.stringify(r));
+  if (r.gapFell < 1) fail('running into a gap did not trigger a pit fall');
+  if (!(r.gapRespawnS < r.gapS0 && r.gapRespawnS > r.gapS0 - 8)) fail('respawn after a pit is not before the gap');
+  if (r.hpAfterPit !== -20) fail(`pit fall should cost 20 health, cost ${-r.hpAfterPit}`);
+  if (!(r.blockedS < r.barS0)) fail('low barrier did not block a standing player');
+  if (!(r.slidS > r.barS1)) fail('sliding did not get the player under the low barrier');
+  if (!(r.duckH < 1.2 && r.standH > 1.7)) fail(`duck/stand hitbox heights wrong (${r.duckH}, ${r.standH})`);
+  await pg.close();
+}
+
+for (const sd of [1, 2, 3, null]) { // 5. a scripted player can finish the whole stage; camera modes change without clipping
+  const pg = await fresh('stage=1&god=1' + (sd ? `&seed=${sd}` : ''));
+  const r = await pg.evaluate(() => {
+    const g = window.__game, W = g.world, bot = window.__bot.make(), modes = new Set(), cam = W.rig;
+    let steps = 0, maxSide = 0, maxToward = 0, maxLive = 0;
+    while (!W.finished && steps < 60 * 300) {
+      window.__bot.step(1, bot); steps++;
+      modes.add(cam.mode); maxSide = Math.max(maxSide, cam.weights.sideW); maxToward = Math.max(maxToward, cam.weights.towardW);
+      maxLive = Math.max(maxLive, W.builder.live.size);
+    }
+    return { finished: W.finished, secs: steps / 60, s: W.player.body.s, len: W.layout.length, modes: [...modes], maxSide, maxToward,
+      minClear: cam.minClearance, pit: W.player.pitFalls, built: W.builder.built, disposed: W.builder.disposed, maxLive, segs: W.layout.segments.length, seed: W.seed };
+  });
+  console.log(`run seed=${r.seed}: ` + JSON.stringify(r));
+  if (!r.finished) fail(`seed ${r.seed}: scripted run never reached the boss gate (s=${r.s.toFixed(0)})`);
+  if (r.secs < 100 || r.secs > 170) fail(`seed ${r.seed}: run took ${r.secs.toFixed(0)} s, expected ~2 minutes`);
+  if (!(r.maxSide > 0.9 && r.maxToward > 0.9)) fail(`seed ${r.seed}: camera did not reach side/toward modes`);
+  if (r.minClear < 0.9) fail(`seed ${r.seed}: camera clipped the ground (clearance ${r.minClear})`);
+  if (r.disposed < r.built - r.maxLive - 1 || r.maxLive > 8) fail(`seed ${r.seed}: windowed builder not disposing (built ${r.built}, disposed ${r.disposed}, live<=${r.maxLive})`);
+  await pg.close();
+}
+
 await browser.close(); server.close();
 if (failures.length) { console.error(`\nSMOKE FAILED (${failures.length})`); process.exit(1); }
 console.log('SMOKE PASSED');

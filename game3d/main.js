@@ -4,7 +4,8 @@ import { createQuality } from './core/quality.js';
 import { run, newRun } from './core/state.js';
 import { events } from './core/events.js';
 import { createRenderer } from './render/renderer.js';
-import { createTestScene } from './world/testScene.js';
+import { createLevel } from './world/level.js';
+import { createHud } from './ui/hud.js';
 import { createDebugPanel, createFreeCam } from './core/debug.js';
 
 const params = new URLSearchParams(location.search);
@@ -20,7 +21,8 @@ const box = document.getElementById('game-scale-box');
 const quality = createQuality(params);
 const gfx = createRenderer(canvas, box, quality);
 const input = createInput();
-const world = createTestScene(quality);
+const world = createLevel(quality, { stage: startStage, seed, debug, hud: createHud(document.getElementById('hud')) });
+if (bossJump) world.jumpToGate();
 const debugPanel = debug ? createDebugPanel(gfx, quality) : null;
 const freeCam = debug ? createFreeCam(world.camera, input, canvas) : null;
 
@@ -33,7 +35,7 @@ const states = {
   PLAYING: {
     enter() { world.camera.aspect = gfx.width / gfx.height; },
     update(dt) {
-      world.update(dt);
+      world.update(dt, input);
       if (input.pausePressed) fsm.go('PAUSED');
     },
     render(alpha) {
