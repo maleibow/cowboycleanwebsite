@@ -12,7 +12,7 @@ const query = process.argv[2] || 'debug=1&seed=1&god=1&autorun=0';
 const browser = await chromium.launch({ args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 const errs = []; page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') { if (!m.location().url?.includes('googleapis')) errs.push(m.type() + ': ' + m.text()); } }); page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
-await page.goto(`http://127.0.0.1:${server.address().port}/cleaningup3d.html?${query}`);
+await page.goto(`http://127.0.0.1:${server.address().port}/cleaningup3d.html?lookdev=1&${query}`);
 await page.waitForFunction(() => window.__game?.ready, null, { timeout: 20000 });
 const out = path.join(root, 'remake/shots'); fs.mkdirSync(out, { recursive: true });
 const shots = JSON.parse(process.env.SHOTS || '[{"name":"a","s":6,"wait":1200},{"name":"b","s":38,"act":"jump","wait":260},{"name":"c","s":150,"hold":["KeyJ"],"run":1,"wait":900}]');
