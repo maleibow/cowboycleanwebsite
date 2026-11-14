@@ -118,9 +118,11 @@ const fresh = async (q) => { if (!/quality=/.test(q)) q += '&quality=low';   // 
   console.log('tally: ' + tally.state);
   if (tally.state !== 'STAGECLEAR' || !/STAGE CLEAN/.test(tally.text) || !/SCORE/.test(tally.text) || !/COINS/.test(tally.text) || !/TIME/.test(tally.text)) fail('stage-clear tally not shown: ' + tally.state);
   await pg.waitForFunction(() => [...document.querySelectorAll('#hud div')].some((d) => d.textContent.startsWith('CONTINUE') && d.style.opacity === '1'), null, { timeout: 40000 }).catch(() => fail('tally never finished counting'));
-  await pg.keyboard.press('Enter'); await pg.waitForTimeout(500);
-  const after = await pg.evaluate(() => ({ state: window.__game.state, loop: window.__game.run.stageLoop, stage: window.__game.run.stage, boss: window.__game.world.arena.boss }));
-  if (!(after.state === 'INTRO' && after.loop === 2 && after.stage === 1 && !after.boss)) fail('Enter on the tally should start the next stage (loop 2): ' + JSON.stringify(after));
+  await pg.keyboard.press('Enter');
+  await pg.waitForFunction(() => window.__game.state === 'STORE', null, { timeout: 15000 }).catch(() => {});
+  const after = await pg.evaluate(() => ({ state: window.__game.state, loop: window.__game.run.stageLoop, stage: window.__game.run.stage }));
+  // Since the game-flow prompt the tally leads to the saloon store; store -> next stage is covered by smokeFlow.mjs.
+  if (!(after.state === 'STORE' && after.loop === 1 && after.stage === 1)) fail('Enter on the tally should open the store: ' + JSON.stringify(after));
   await pg.close();
 }
 
@@ -186,6 +188,7 @@ const fresh = async (q) => { if (!/quality=/.test(q)) q += '&quality=low';   // 
     return out;
   });
   await pg.waitForTimeout(500);
+  await pg.evaluate(() => document.activeElement?.blur());   // the name field auto-focuses and keeps Enter for POST SCORE
   await pg.keyboard.press('Enter'); await pg.waitForTimeout(600);
   const a = await pg.evaluate(() => {
     const g = window.__game, W = g.world, A = W.arena, K = g.input.keys, step = (n) => window.__bot.step(n), out = { state: g.state, arena: A.state, boss: !!A.boss, bossEnemy: W.enemies.list.some((e) => e.ctrl),  s: W.player.body.s, hp: g.run.health, gateOpen: W.scenery.gateOpen,
