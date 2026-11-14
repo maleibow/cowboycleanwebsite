@@ -26,7 +26,7 @@ const port = server.address().port;
 
 const failures = [];
 const fail = (m) => { failures.push(m); console.error('FAIL: ' + m); };
-const isExternal = (u) => u && !u.startsWith(`http://127.0.0.1:${port}`); // e.g. Google Fonts
+const isExternal = (u) => u && (!u.startsWith(`http://127.0.0.1:${port}`) || u.includes('/game3d/music/')); // e.g. Google Fonts; a missing music file is expected (the Jukebox falls back to synth) so its 404 is not a failure
 
 const browser = await chromium.launch({ args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 960, height: 540 } });

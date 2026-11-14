@@ -1,5 +1,6 @@
 // Full-screen cards drawn over the game (DOM): stage intro, boss title, stage-clear tally.
 // Plain functions of the stage data, so every stage gets the same cards for free.
+import { ARTIST, ARTIST_URL, slotFor, listenUrl } from '../data/music.js';
 const FONT = 'Bangers,cursive';
 const css = (el, s) => { el.style.cssText = s; return el; };
 const div = (parent, s, text = '') => { const d = css(document.createElement('div'), s); if (text) d.textContent = text; parent?.appendChild(d); return d; };
@@ -13,12 +14,16 @@ export function createStageCards(root) {
   const intro = div(root, `position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(90deg,transparent,rgba(20,6,30,.82) 18%,rgba(20,6,30,.82) 82%,transparent);${TEXT}pointer-events:auto;transition:opacity .5s`);
   const iNum = div(intro, 'font-size:30px;color:#ff9a52'), iName = div(intro, 'font-size:104px;line-height:1;color:#ffd84a;text-align:center'), iTag = div(intro, 'font-size:26px;opacity:.9;margin-top:8px;text-align:center;max-width:70%');
   const iTrack = div(intro, 'font-size:22px;margin-top:34px;padding:6px 18px;border:2px solid rgba(255,255,255,.55);border-radius:30px;background:rgba(0,0,0,.35)');
-  div(intro, 'font-size:16px;opacity:.65;margin-top:26px', 'press any key');
+  // Listen / Follow buttons (PLAN 8.2). Pointing at them holds the card open so they can be clicked.
+  const links = div(intro, 'display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;justify-content:center');
+  const spLink = (label, bg) => { const a = document.createElement('a'); a.textContent = label; a.target = '_blank'; a.rel = 'noopener'; a.style.cssText = `${TEXT}font-size:20px;padding:4px 16px;border-radius:20px;background:${bg};color:#000;text-shadow:none;text-decoration:none;cursor:pointer;pointer-events:auto`; a.addEventListener('pointerdown', (e) => e.stopPropagation()); a.addEventListener('pointerenter', () => clearTimeout(introTimer)); a.addEventListener('pointerleave', () => { if (api.introOpen) introTimer = setTimeout(closeIntro, 2500); }); links.appendChild(a); return a; };
+  const listenA = spLink('Listen on Spotify', '#1ed760'), followA = spLink('Follow', '#fff'); followA.href = ARTIST_URL;
+  div(intro, 'font-size:16px;opacity:.65;margin-top:18px', 'press any key');
   let introDone = null, introTimer = 0;
   const closeIntro = () => { if (!api.introOpen) return; api.introOpen = false; intro.style.opacity = 0; setTimeout(() => { intro.style.display = 'none'; }, 500); clearTimeout(introTimer); removeEventListener('keydown', closeIntro); intro.removeEventListener('pointerdown', closeIntro); const f = introDone; introDone = null; f?.(); };
   api.showIntro = (stage, onDone, secs = 3.6) => {
     iNum.textContent = `STAGE ${stage.id}`; iName.textContent = stage.name.toUpperCase(); iTag.textContent = stage.tagline || '';
-    iTrack.textContent = `♪  ${stage.music?.title || 'Track title'}  —  ${stage.music?.artist || 'Cowboy Clean'}`;
+    const track = slotFor(stage.id); iTrack.textContent = `♪  ${track.title}  —  ${ARTIST}`; listenA.href = listenUrl(track);
     intro.style.display = 'flex'; intro.style.opacity = 1; api.introOpen = true; introDone = onDone;
     introTimer = setTimeout(closeIntro, secs * 1000); setTimeout(() => { if (api.introOpen) addEventListener('keydown', closeIntro); }, 350); intro.addEventListener('pointerdown', closeIntro);
   };

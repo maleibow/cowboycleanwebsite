@@ -1,10 +1,6 @@
-// Saloon jingle (store music). PLACEHOLDER tune: the original `SaloonMusic` notes (cleaningup.html 1476-1507) were
-// outside the line ranges this session was allowed to read, so a simple ragtime loop stands in. To use the original,
-// replace `SALOON_TUNE` with its notes (frequency in Hz, 0 = rest) and `STEP` with its note length. Nothing else changes.
-export const STEP = 0.16;                           // seconds per step
-export const SALOON_TUNE = [
-  // C  E  G  E | A  C5 A  F  | D  F  A  F | G  B  D5 B | repeated with a turn at the end
-  262, 330, 392, 330, 440, 523, 440, 349, 294, 349, 440, 349, 392, 494, 587, 494,
-  262, 392, 330, 392, 349, 440, 349, 440, 392, 494, 392, 330, 262, 0, 392, 0,
-];
-export const BASS = [131, 0, 196, 0, 175, 0, 220, 0, 147, 0, 220, 0, 196, 0, 247, 0, 131, 0, 196, 0, 175, 0, 220, 0, 196, 0, 165, 0, 131, 0, 98, 0];
+// Saloon jingle (store music): the original `SaloonMusic` (cleaningup.html 1476-1507), note for note.
+// 16 lead notes (Hz) and a 4-note bass, one step every 220 ms. The lead is a 0.15 s square at 0.05 volume, the bass a
+// 0.2 s triangle at 0.08. Both loop independently (the bass wraps every 4 steps) until stopped.
+export const STEP = 0.22;                           // seconds per step (original: setTimeout 220)
+export const SALOON_TUNE = [392.0, 329.63, 261.63, 329.63, 392.0, 329.63, 261.63, 261.63, 392.0, 329.63, 261.63, 329.63, 440.0, 392.0, 349.23, 329.63];
+export const BASS = [130.81, 196.0, 130.81, 196.0];

@@ -7,7 +7,6 @@ import { createBustStage } from './scenes/bustStage.js';
 import { createSaloon } from './scenes/saloon.js';
 import { createSlotRoom } from './scenes/slotRoom.js';
 import { createTitleFly } from './scenes/titleFly.js';
-import { createSaloonMusic } from './audio/saloon.js';
 import { createCutscene } from './ui/cutscene.js';
 import { createTitle } from './ui/title.js';
 import { createStore } from './ui/store.js';
@@ -27,19 +26,19 @@ const HUD_STATES = new Set(['INTRO', 'PLAYING', 'PAUSED', 'STAGECLEAR', 'GAMEOVE
 const IDLE = { moveX: 0, moveY: 0, jump: false, spray: false, bomb: false, slide: false, pause: false, jumpPressed: false, bombPressed: false, pausePressed: false, anyPressed: false, keys: new Set() };
 
 export function createFlow(env) {
-  const { gfx, input, hud, cards, sfx, makeWorld } = env, hudEl = document.getElementById('hud');
+  const { gfx, input, hud, cards, sfx, makeWorld, jukebox } = env, hudEl = document.getElementById('hud');
   const G = { world: null, fly: null, stats: null, overAge: 0, door: null, then: null };
   const fsm = { name: null, current: null };
 
   // ---- scenes and screens (built once, lazily where they are heavy)
   const bust = createBustStage(), cutscene = createCutscene(env.ui, bust);
   const lazy = {}, once = (k, f) => lazy[k] || (lazy[k] = f());
-  const saloon = () => once('saloon', createSaloon), slotRoom = () => once('slot', createSlotRoom), music = () => once('music', () => createSaloonMusic(sfx.synth));
+  const saloon = () => once('saloon', createSaloon), slotRoom = () => once('slot', createSlotRoom);
   let store, casino;
-  const title = createTitle(env.ui, { onStart: () => startRun(1), onCheat: (c) => startRun(c.stage, c.vehicle) });
-  const pauseMenu = createPauseMenu(env.ui, { onResume: () => fsm.name === 'PAUSED' && go('PLAYING'), onRestart: () => { G.world.restart(); hud.reset(); cards.reset(); go('PLAYING'); }, onQuit: () => toTitle() });
-  const gameOver = createGameOver(env.ui, { onRetry: () => retry(), onQuit: () => toTitle() });
-  const victory = createVictory(env.ui, { onContinue: () => go('STORE') });
+  const title = createTitle(env.ui, { onStart: () => startRun(1), onCheat: (c) => startRun(c.stage, c.vehicle), jukebox });
+  const pauseMenu = createPauseMenu(env.ui, { onResume: () => fsm.name === 'PAUSED' && go('PLAYING'), onRestart: () => { G.world.restart(); hud.reset(); cards.reset(); jukebox.bossOff(); go('PLAYING'); }, onQuit: () => toTitle(), jukebox });
+  const gameOver = createGameOver(env.ui, { onRetry: () => retry(), onQuit: () => toTitle(), jukebox });
+  const victory = createVictory(env.ui, { onContinue: () => go('STORE'), jukebox });
 
   const disposeWorld = () => { if (G.fly) { G.fly.dispose(); G.fly = null; } if (G.world) { G.world.dispose?.(); G.world = null; } hud.reset(); cards.reset(); };
   const loadStage = (opts) => { disposeWorld(); G.world = makeWorld(opts); env.onWorld?.(G.world); };
@@ -47,14 +46,13 @@ export function createFlow(env) {
 
   // ---- transitions
   function startRun(stage = 1, vehicle = false) {            // startGame(forceStage): fresh run, then the stage's cutscene
-    newRun(stage); if (vehicle) run.upgrades.vehicle = true;
+    newRun(stage); jukebox.resetHeard(); if (vehicle) run.upgrades.vehicle = true;
     loadStage(); go('CUTSCENE', { id: storyIdFor(stage), then: 'INTRO' });
   }
   function toTitle() { newRun(1); input.keys.clear(); go('TITLE'); }
   function retry() { gameOver.hide(); input.keys.clear(); hud.reset(); cards.reset(); G.world.restart(); go('PLAYING'); }
   // After the saloon: next stage (stage 10 wraps to stage 1 of the next loop). Story plays only on loop 1 (original nxtStageFn).
   function leaveStore() {
-    music().stop();
     const wrap = run.stage >= LAST_STAGE, next = wrap ? 1 : run.stage + 1, id = 'stage' + next;
     const story = !wrap && run.stageLoop === 1 && Story[id];
     if (wrap) run.stageLoop += 1;
@@ -95,8 +93,8 @@ export function createFlow(env) {
       exit() { cards.hideClear(); }, update: idle, render(a) { G.world.render(a); }, view: worldView,
     },
     STORE: {
-      enter() { disposeWorld(); const s = saloon(); s.enter(gfx); store ||= createStore(env.ui, run, s); music().start(); store.show(leaveStore); },
-      exit() { store.hide(); music().stop(); }, update(dt) { saloon().update(dt); }, view: () => saloon(),
+      enter() { disposeWorld(); const s = saloon(); s.enter(gfx); store ||= createStore(env.ui, run, s); store.show(leaveStore); },
+      exit() { store.hide(); }, update(dt) { saloon().update(dt); }, view: () => saloon(),
     },
     CASINO: {
       enter() { const r = slotRoom(); r.enter(gfx); casino ||= createCasino(env.ui, run, r, () => G.world.weapon); casino.show(() => { G.door && (G.door.used = true); go('PLAYING'); }); },

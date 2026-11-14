@@ -3,13 +3,14 @@ import { events } from '../core/events.js';
 import { submitScore, fetchLeaderboard } from '../services/leaderboard.js';
 import { claimPrize, validEmail, prizeTier, PRIZE_LINKS, TSHIRT_SCORE } from '../services/prize.js';
 import { TEXT, MONO, div, el, button, screen, isolateKeys } from './dom.js';
+import { createTrackList } from './jukeboxPanel.js';
 
 // Game over (original "GRIME OVERLOAD" screen): final score, prize unlock + email (score >= 100), name entry with POST
 // SCORE (Firebase leaderboard via services/leaderboard.js), the global top 5, and RETRY STAGE (PLAN 3.4: the stage
 // restarts with the score it began with). QUIT TO TITLE returns to the menu.
 const M = `font-family:${MONO};text-shadow:none;`;
 
-export function createGameOver(root, { onRetry, onQuit }) {
+export function createGameOver(root, { onRetry, onQuit, jukebox }) {
   const ui = screen(root, `${TEXT}background:rgba(14,0,0,.82);overflow:auto;padding:14px 0;box-sizing:border-box;gap:10px;justify-content:flex-start;`);
   div(ui.el, 'font-size:clamp(46px,8vw,84px);color:#e74c3c;text-shadow:3px 3px 0 #000,6px 6px 0 #c0392b;margin-top:auto', 'GRIME OVERLOAD');
   const score = div(ui.el, 'font-size:32px;color:#ffd84a');
@@ -60,6 +61,7 @@ export function createGameOver(root, { onRetry, onQuit }) {
   const list = div(lb, `${M}font-size:9px;line-height:1.8;color:#ecf0f1;min-height:50px`, 'Loading High Scores...');
   button(right, 'RETRY STAGE  [Enter]', () => onRetry(), { bg: '#e67e22', border: '#d35400', size: 24 });
   button(right, 'QUIT TO TITLE', () => onQuit(), { bg: '#34495e', border: '#95a5a6', size: 18 });
+  const heard = createTrackList(right, jukebox);
   div(ui.el, 'margin-bottom:auto');
 
   return {
@@ -68,7 +70,7 @@ export function createGameOver(root, { onRetry, onQuit }) {
       score.textContent = 'FINAL SCORE: ' + run.score; status.textContent = ''; entry.style.display = 'flex'; name.value = ''; posted = false;
       const tier = prizeTier(run.score); prize.style.display = tier ? 'block' : 'none';
       if (tier) { pDesc.textContent = `Score ${tier}+! Enter email for your secret rewards:`; pForm.style.display = 'flex'; email.value = ''; pStatus.textContent = ''; rewards.style.display = 'none'; for (const l of links) l.a.style.display = 'none'; shirt.style.display = 'none'; }
-      ui.show(); fetchLeaderboard(list); setTimeout(() => { if (ui.open) name.focus(); }, 100);
+      heard.refresh(); ui.show(); fetchLeaderboard(list); setTimeout(() => { if (ui.open) name.focus(); }, 100);
     },
     hide() { ui.hide(); name.blur(); email.blur(); },
   };

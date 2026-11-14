@@ -1,6 +1,6 @@
 // ===========================================================================================================
 // HOW TO ADD A STAGE
-//   1. Copy the STAGE1 object below, change `id`, `name`, `roster`, `obstacle`, `boss`, `music`, `weights`...
+//   1. Copy the STAGE1 object below, change `id`, `name`, `roster`, `obstacle`, `boss`, `weights`...
 //      Every field is read by the engine; nothing about a stage lives in engine code (PLAN house rule 5).
 //   2. Copy game3d/themes/stage01.js to themes/stageNN.js: palette, sky, fog, lights, colour grade, scatter
 //      props, edge props, far layers, set-piece dressing. Register it in themes/index.js.
@@ -16,7 +16,7 @@
 //   obstacle              rolling obstacle type (actors/obstacles.js)
 //   setPiece              tuning for the stage's set-piece segment (the chase's speed, lag and damage)
 //   boss                  { id, name, intro line, arena size, phase threshold }
-//   music                 intro-card track credit; `placeholder: true` until the Jukebox prompt fills data/music.js
+//   (the stage's track title, Spotify link and audio file live in data/music.js, slot `stageN`)
 //   checkpoints           names shown on the checkpoint toasts, one per act boundary
 //   palette               grey-box fallback colours for the track builder (the theme overrides them)
 // ===========================================================================================================
@@ -39,7 +39,6 @@ const STAGE1 = {
   ],
   setPiece: { id: 'dustChase', name: 'RUN!', warning: 'A RUNAWAY DUST BALL!', speed: 8, lag: 16, damage: 15 },
   boss: { id: 'boss1', name: 'BIG DIRT', intro: 'The filthiest thing in the desert', phaseAt: 0.5, arena: { radius: 13 } },
-  music: { title: 'Track title to be announced', artist: 'Cowboy Clean', placeholder: true },
   checkpoints: ['DRY WASH', 'GHOST TOWN'],
   palette: { ground: 0xc9a066, platform: 0xe0b872, ledge: 0xb88a4e, beam: 0x9a6b43, barrier: 0xd94a3d, wall: 0x6b5b7a, quicksand: 0xd7a05a },
 };

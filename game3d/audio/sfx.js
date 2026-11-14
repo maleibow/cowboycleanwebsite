@@ -1,5 +1,6 @@
 import { events } from '../core/events.js';
 import { createSynth } from './synth.js';
+import { createSaloonMusic } from './saloon.js';
 
 // Every sound effect, synthesised (no files). Part 1 is the original game's `Sound` object (cleaningup.html 1416-1475)
 // ported one for one: same oscillator type, start / end frequency, length and volume. Part 2 is what the 3D game needs
@@ -87,5 +88,6 @@ const SHOOT = { super: 'shootSuper', charcoal: 'shootSuper', laser: 'shootLaser'
   events.on('toggleMute', () => setMuted(!S.muted));
   addEventListener('keydown', (e) => { if (e.code === 'KeyM' && !e.repeat && !/^(INPUT|TEXTAREA)$/.test(e.target?.tagName || '')) setMuted(!S.muted); });
   events.emit('muteChanged', S.muted);
-  return { synth: S, play, get muted() { return S.muted; }, setMuted };
+  // `saloon` is the original store jingle (audio/saloon.js); it plays on the synth's music bus, so the Jukebox volume governs it.
+  return { synth: S, saloon: createSaloonMusic(S), play, get muted() { return S.muted; }, setMuted };
 }
