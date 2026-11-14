@@ -40,6 +40,33 @@ export function createBatch(scene, track, geometry, material, cap) {
       _q.setFromUnitVectors(UP, _d); _s.set(r, r * stretch, r);
       mesh.setMatrixAt(n, _m.compose(_p, _q, _s)); mesh.setColorAt(n, _c.setHex(color)); n++;
     },
+    // `glow` > 1 pushes the colour past white so bloom picks it up (bolts, hot rounds).
+    putDirG(s, x, y, vs, vx, vy, sx, sy, sz, color, glow = 1) {
+      if (n >= cap) return;
+      const f = track.frameAt(s);
+      _p.copy(f.p).addScaledVector(f.r, x).addScaledVector(f.u, y);
+      _d.set(0, 0, 0).addScaledVector(f.t, vs).addScaledVector(f.r, vx).addScaledVector(f.u, vy);
+      if (_d.lengthSq() < 1e-6) _d.copy(f.t); else _d.normalize();
+      _q.setFromUnitVectors(UP, _d); _s.set(sx, sy, sz);
+      mesh.setMatrixAt(n, _m.compose(_p, _q, _s)); mesh.setColorAt(n, _c.setHex(color).multiplyScalar(glow)); n++;
+    },
+    // Tumbling instance: its long (Y) axis swings in the vertical plane along the track by `ang` radians (grenade canister).
+    putTumble(s, x, y, ang, sx, sy, sz, color) {
+      if (n >= cap) return;
+      const f = track.frameAt(s);
+      _p.copy(f.p).addScaledVector(f.r, x).addScaledVector(f.u, y);
+      _q.setFromAxisAngle(f.r, ang); _s.set(sx, sy, sz);
+      mesh.setMatrixAt(n, _m.compose(_p, _q, _s)); mesh.setColorAt(n, _c.setHex(color)); n++;
+    },
+    // Instance facing back down the track (its Z axis toward the camera) and rolled about that axis: the spinning star.
+    putFacing(s, x, y, roll, size, color) {
+      if (n >= cap) return;
+      const f = track.frameAt(s), c = Math.cos(roll), sn = Math.sin(roll);
+      _p.copy(f.p).addScaledVector(f.r, x).addScaledVector(f.u, y);
+      _x.copy(f.r).multiplyScalar(c).addScaledVector(f.u, sn); _y.copy(f.u).multiplyScalar(c).addScaledVector(f.r, -sn); _z.copy(f.t).negate();
+      _m.makeBasis(_x.multiplyScalar(size), _y.multiplyScalar(size), _z.multiplyScalar(size)).setPosition(_p);
+      mesh.setMatrixAt(n, _m); mesh.setColorAt(n, _c.setHex(color)); n++;
+    },
     end() { mesh.count = n; mesh.instanceMatrix.needsUpdate = true; mesh.instanceColor.needsUpdate = true; },
     get count() { return n; },
   };

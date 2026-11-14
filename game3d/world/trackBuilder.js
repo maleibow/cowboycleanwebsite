@@ -1,8 +1,11 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { THEMED_KINDS, buildThemed } from './themedSolids.js';
 
 // Swept ground meshes per segment, and a windowed builder that keeps geometry only for the part of
 // the track near the player (PLAN 4.1): built ~150 m ahead, disposed ~30 m behind. One merged
-// vertex-coloured geometry (one draw call) per segment; no art yet, flat-coloured boxes.
+// vertex-coloured geometry (one draw call) per segment. Gates, ledges, logs and pillars come from the theme (themedSolids.js)
+// and are merged into the same geometry; only their swaying parts (a sign, a lantern) become extra small meshes.
 export const WINDOW = { ahead: 150, behind: 30 };
 const SLOT_COLORS = { enemy: 0xd33c3c, pickup: 0xf2c230, obstacle: 0xe58a2f, door: 0xb05fe0 };
 const SHADE = { top: 1, side: 0.68, end: 0.8, bottom: 0.45 };
@@ -57,42 +60,63 @@ function addBox(track, sink, box, hex, style = {}) {
   sink.quad(P(n, box.x0, box.y0), P(n, box.x1, box.y0), P(n, box.x1, box.y1), P(n, box.x0, box.y1), hint.copy(F[n].t), end);
 }
 
-export function buildSegmentGeometry(track, seg, palette, showSlots = true, style = {}) {
-  const sink = makeSink();
-  for (const box of seg.boxes) addBox(track, sink, box, palette[box.kind] ?? palette.ground, style);
+// `themed` = { theme, ordinal(box), seed, out } : when the theme builds a box kind, that box is not drawn as a plain box.
+export function buildSegmentGeometry(track, seg, palette, showSlots = true, style = {}, themed = null) {
+  const sink = makeSink(), extra = [];
+  for (const box of seg.boxes) {
+    if (themed && THEMED_KINDS.has(box.kind)) {
+      const t = buildThemed(track, themed.theme, box, themed.ordinal.get(box) ?? 0, themed.seed);
+      if (t) { extra.push(t.geo); themed.out.sway.push(...t.sway); continue; }
+    }
+    addBox(track, sink, box, palette[box.kind] ?? palette.ground, style);
+  }
   for (const d of seg.deco) addBox(track, sink, d, d.color);
   if (showSlots) for (const sl of seg.slots) {
     const hex = sl.kind === 'pickup' && sl.role === 'item' ? 0xffffff : SLOT_COLORS[sl.kind] ?? 0xff00ff;
     const base = sl.kind === 'pickup' ? sl.y - 0.15 : sl.y;
     addBox(track, sink, { s0: sl.s - 0.3, s1: sl.s + 0.3, x0: sl.x - 0.3, x1: sl.x + 0.3, y0: base, y1: base + (sl.kind === 'pickup' ? 0.3 : 0.7), kind: 'marker' }, hex);
   }
-  const g = new THREE.BufferGeometry();
+  let g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(sink.pos, 3));
   g.setAttribute('color', new THREE.Float32BufferAttribute(sink.col, 3));
   g.setIndex(sink.idx);
   g.computeVertexNormals(); // vertices are unshared per face, so normals stay flat
+  if (extra.length) { const flat = sink.pos.length ? g.toNonIndexed() : null; g.dispose(); g = mergeGeometries(flat ? [flat, ...extra] : extra, false); flat?.dispose(); extra.forEach((e) => e.dispose()); }
   g.computeBoundingSphere();
   return g;
 }
 
-export function createTrackBuilder(track, scene, { palette, showSlots = true, shadows = false, material: themeMaterial = null, style = {} } = {}) {
+const disposeTree = (m) => { m.geometry?.dispose(); for (const c of m.children) disposeTree(c); };
+
+export function createTrackBuilder(track, scene, { palette, showSlots = true, shadows = false, material: themeMaterial = null, style = {}, theme = null, seed = 0 } = {}) {
   const material = themeMaterial || new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
   const live = new Map(); // segment index -> Mesh
   const api = { live, built: 0, disposed: 0, material };
-  api.update = (s) => {
+  const ordinal = new Map(), count = {};          // each themed box gets a running number per kind, so neighbouring gates differ
+  for (const g of track.segments) for (const bx of g.boxes) if (THEMED_KINDS.has(bx.kind)) ordinal.set(bx, (count[bx.kind] = (count[bx.kind] ?? -1) + 1));
+  const sways = new Set();                         // { group, base, amp, speed, phase } of live segments
+  const _rz = new THREE.Matrix4(), _rx = new THREE.Matrix4();
+  const drop = (m) => { for (const e of m.userData.sways || []) sways.delete(e); disposeTree(m); };
+  api.update = (s, t = 0) => {
+    for (const e of sways) { const a = e.amp * Math.sin(t * e.speed + e.phase); e.group.matrix.copy(e.base).multiply(_rz.makeRotationZ(a)).multiply(_rx.makeRotationX(a * 0.35)); e.group.matrixWorldNeedsUpdate = true; }
     const segs = track.segments;
     for (let i = 0; i < segs.length; i++) {
       const g = segs[i], want = g.s1 > s - WINDOW.behind && g.s0 < s + WINDOW.ahead, mesh = live.get(i);
       if (want && !mesh) {
-        const m = new THREE.Mesh(buildSegmentGeometry(track, g, palette, showSlots, style), material);
+        const out = { sway: [] }, m = new THREE.Mesh(buildSegmentGeometry(track, g, palette, showSlots, style, theme ? { theme, ordinal, seed, out } : null), material);
         m.castShadow = m.receiveShadow = shadows; m.frustumCulled = true; m.name = `seg${i}:${g.name}`;
+        m.userData.sways = out.sway.map((w) => {
+          const grp = new THREE.Group(); grp.matrixAutoUpdate = false; grp.matrix.copy(w.base); grp.matrixWorldNeedsUpdate = true; m.add(grp);
+          const c = new THREE.Mesh(w.geo, material); c.castShadow = shadows; c.frustumCulled = false; grp.add(c);
+          const e = { group: grp, base: w.base, amp: w.amp, speed: w.speed, phase: w.phase }; sways.add(e); return e;
+        });
         scene.add(m); live.set(i, m); api.built++;
       } else if (!want && mesh) {
-        scene.remove(mesh); mesh.geometry.dispose(); live.delete(i); api.disposed++;
+        scene.remove(mesh); drop(mesh); live.delete(i); api.disposed++;
       }
     }
   };
-  api.invalidate = (i) => { const m = live.get(i); if (m) { scene.remove(m); m.geometry.dispose(); live.delete(i); } };   // rebuilt on the next update (e.g. the gate wall opened)
-  api.dispose = () => { for (const m of live.values()) { scene.remove(m); m.geometry.dispose(); } live.clear(); material.dispose(); };
+  api.invalidate = (i) => { const m = live.get(i); if (m) { scene.remove(m); drop(m); live.delete(i); } };   // rebuilt on the next update (e.g. the gate wall opened)
+  api.dispose = () => { for (const m of live.values()) { scene.remove(m); drop(m); } live.clear(); sways.clear(); material.dispose(); };
   return api;
 }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { placeMatrix } from '../../world/scenery.js';
+import { events } from '../../core/events.js';
 
 // Shared boss tools (every boss uses these, PLAN section 6): floor markers that telegraph an attack, expanding
 // shockwave rings, a blob shadow, and tiny state-machine helpers. All pooled, no per-frame allocation.
@@ -31,7 +32,7 @@ export function createBossFx(scene, track) {
   const api = {
     markers, waves, group,
     marker(s, x, y, r, dur) { const k = markers.find((q) => !q.on); if (!k) return null; Object.assign(k, { on: true, s, x, y, r, t: dur, dur }); return k; },
-    shock(s, x, y, o = {}) { const k = waves.find((q) => !q.on); if (!k) return null; Object.assign(k, { on: true, s, x, y, r: 0.5, speed: 8, thick: 1.2, height: 1, damage: 20, delay: 0, hit: false, harmless: false, maxR: 24 }, o); return k; },
+    shock(s, x, y, o = {}) { const k = waves.find((q) => !q.on); if (!k) return null; Object.assign(k, { on: true, s, x, y, r: 0.5, speed: 8, thick: 1.2, height: 1, damage: 20, delay: 0, hit: false, harmless: false, maxR: 24 }, o); if (!k.harmless && !k.delay) events.emit('shockwave'); return k; },
     shadow(s, x, y, r, a) { if (r <= 0) { shadow.visible = false; return; } flat(shadow, s, x, y, r); shadow.material.opacity = a; },
     update(dt, player, combat) {
       for (const k of markers) if (k.on) { k.t -= dt; if (k.t <= 0) k.on = false; }

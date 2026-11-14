@@ -126,6 +126,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     const wasGrounded = b.grounded, vyBefore = b.vy;
     moveBody(b, query(), dt, PHYS.stepUp);
     if (b.grounded && !wasGrounded && vyBefore < -4) { p.model.anim.land(-vyBefore); events.emit('land', -vyBefore); }
+    for (let i = 0; i < boxes.length; i++) { const o = boxes[i]; if (o.kind === 'barrier' && b.grounded && b.s > o.s0 - 0.4 && b.s < o.s1 + 0.4 && b.y + b.h <= o.y0 + 0.02 && p.lastGate !== o) { p.lastGate = o; events.emit('gateWhoosh', o); } }   // slid under a gate
     if (b.s < p.progress - PHYS.backroom) { b.s = p.progress - PHYS.backroom; if (b.vs < 0) b.vs = 0; }
     p.progress = Math.max(p.progress, b.s);
 
@@ -150,7 +151,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     const target = Math.atan2(-p.faceX, p.faceS), d = Math.atan2(Math.sin(target - p.yaw), Math.cos(target - p.yaw));
     p.prevYaw = p.yaw; p.yaw += d * Math.min(1, 14 * dt);
     if (model.vehicle !== !!run.upgrades.vehicle) model.setVehicle(!!run.upgrades.vehicle);
-    model.anim.update(dt, { speed: b.vs, grounded: b.grounded, vy: b.vy, sliding: p.sliding || p.ducking, shooting: p.shooting, moveX: p.intentX, vehicle: model.vehicle });
+    model.anim.update(dt, { speed: Math.hypot(b.vs, b.vx), grounded: b.grounded, vy: b.vy, sliding: p.sliding || p.ducking, shooting: p.shooting, moveX: p.intentX * Math.max(0, Math.cos(p.yaw)), vehicle: model.vehicle });
   };
   p.render = (alpha) => {
     const s = prev.s + (b.s - prev.s) * alpha, x = prev.x + (b.x - prev.x) * alpha, y = prev.y + (b.y - prev.y) * alpha - (p.inSand ? 0.12 : 0);

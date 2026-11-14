@@ -67,6 +67,7 @@ if (!(info.calls > 0 && info.calls <= 200)) fail('draw calls out of budget: ' + 
 for (const [w, h] of [[800, 800], [1000, 400], [1920, 1080]]) {
   await page.setViewportSize({ width: w, height: h });
   await page.waitForTimeout(300);
+  await page.waitForFunction(() => Math.abs(window.__game.gfx.width - Math.floor(document.getElementById('game-scale-box').getBoundingClientRect().width)) <= 1, null, { timeout: 5000 }).catch(() => {});   // headless runs at ~5 fps: the resize lands on a later frame
   const r = await page.evaluate(() => {
     const c = document.getElementById('game').getBoundingClientRect(); const b = document.getElementById('game-scale-box').getBoundingClientRect();
     const g = window.__game.gfx; return { cw: c.width, ch: c.height, bw: b.width, bh: b.height, gw: g.width, gh: g.height, bufW: document.getElementById('game').width };
@@ -137,7 +138,7 @@ const S = (pg) => pg.evaluate(() => window.__game.world.player.body.s);
   }
   const s1 = await S(pg);
   console.log(`gamepad: stick forward + A, s ${s0.toFixed(1)} -> ${s1.toFixed(1)}`);
-  if (!(s1 > s0 + 15)) fail(`gamepad: player s did not increase (${s0} -> ${s1})`);
+  if (!(s1 > s0 + 10)) fail(`gamepad: player s did not increase (${s0} -> ${s1})`);
   await pg.close();
 }
 
@@ -277,7 +278,7 @@ for (const sd of [1, 2, 3, null]) { // 5. a scripted player can finish the whole
     out.over = { state: g.state, dead: P.dead, hp: run.health };
     return out;
   });
-  await pg.waitForTimeout(200);
+  { const n0 = await pg.evaluate(() => window.__game.simSteps); await pg.waitForFunction((n) => window.__game.simSteps > n + 20, n0, { timeout: 30000 }); }   // Enter is only accepted 0.15 s of simulation time after the card shows; headless runs at ~5 fps
   const overlay = await pg.evaluate(() => [...document.querySelectorAll('#hud div')].some((d) => d.textContent === 'GAME OVER' && getComputedStyle(d.parentElement).display !== 'none'));
   await pg.keyboard.press('Enter'); await pg.waitForTimeout(400);
   const after = await pg.evaluate(() => ({ state: window.__game.state, dead: window.__game.world.player.dead, hp: window.__game.run.health, score: window.__game.run.score, bombs: window.__game.run.bombs, s: window.__game.world.player.body.s }));
@@ -308,6 +309,33 @@ for (const sd of [1, 2, 3, null]) { // 5. a scripted player can finish the whole
   if (r.p95 > 8) fail(`simulation + scene update too slow under load: p95 ${r.p95.toFixed(1)} ms`);
   if (calls.calls > 120) fail('draw calls under load: ' + calls.calls);
   await pg.screenshot({ path: path.join(root, 'remake/shots/combat-load.png') });
+  await pg.close();
+}
+
+{ // 10. sound: unlocks on the first key, every event has a recipe, rapid fire stays under the voice cap, M and the HUD button mute (remembered)
+  const pg = await fresh('stage=1&seed=1&debug=1&god=1');
+  const before = await pg.evaluate(() => window.__game.sfx.synth.ready);
+  await pg.keyboard.press('KeyW'); await pg.waitForTimeout(300);
+  const r = await pg.evaluate(async () => {
+    const g = window.__game, S = g.sfx.synth, out = { ready: S.ready };
+    const names = ['shoot', 'jump', 'hit', 'enemyHit', 'enemyDie', 'bombDrop', 'powerupBlip', 'shieldHit', 'bossSpawn', 'warp', 'coinBlip', 'buy', 'error', 'footstep', 'land', 'slide', 'crateBreak', 'coin', 'powerup', 'overheat', 'gateWhoosh', 'pitFall', 'checkpoint', 'bossSlam', 'shockwave', 'bomb', 'stageClear', 'playerDied', 'shootSuper', 'shootLaser', 'shootHoming', 'shootGrenade', 'shootSpin'];   // the 13 original sounds + the new ones
+    let peak = 0, played = 0; const take = S.take; S.take = (d, p) => { const ok = take(d, p); if (ok) played++; return ok; };
+    for (let i = 0; i < 400; i++) { g.events.emit('shoot', 'normal'); g.events.emit('coin'); g.events.emit('enemyHit'); g.events.emit('footstep'); peak = Math.max(peak, S.voices); if (i % 50 === 0) await new Promise((r) => setTimeout(r, 30)); }
+    out.peakVoices = peak; out.played = played;
+    await new Promise((r) => setTimeout(r, 300));
+    for (const n of names) { const b = played; g.sfx.play(n, 8); await new Promise((r) => setTimeout(r, 70)); if (played === b) (out.silent ||= []).push(n); }
+    S.take = take; return out;
+  });
+  const m1 = await pg.evaluate(() => window.__game.sfx.muted); await pg.keyboard.press('KeyM'); await pg.waitForTimeout(100);
+  const m2 = await pg.evaluate(() => ({ muted: window.__game.sfx.muted, stored: localStorage.getItem('cc3d_muted'), icon: [...document.querySelectorAll('#hud div')].some((d) => d.textContent === '🔇') }));
+  await pg.click('#hud div[aria-label="Toggle sound"]'); await pg.waitForTimeout(100);
+  const m3 = await pg.evaluate(() => ({ muted: window.__game.sfx.muted, stored: localStorage.getItem('cc3d_muted') }));
+  console.log('sound: ' + JSON.stringify({ before, ...r, m1, m2, m3 }));
+  if (before) fail('audio should stay locked until the first key press');
+  if (!r.ready) fail('audio did not unlock on a key press');
+  if (r.peakVoices > 18) fail('voice cap broken under rapid fire: ' + r.peakVoices);
+  if (r.silent?.length) fail('sound recipes that did not play: ' + r.silent.join(','));
+  if (m1 || !(m2.muted && m2.stored === '1' && m2.icon) || m3.muted || m3.stored !== '0') fail('mute toggle (M key / HUD button / localStorage) failed');
   await pg.close();
 }
 

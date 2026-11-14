@@ -16,6 +16,7 @@ export const PRESETS = {
   smoke:     { n: 4,  life: [1.0, 1.8], speed: [0.2, 0.7], up: 1.0, spread: 0.5, grav: 0.4, drag: 0.9, size: [0.5, 0.9], grow: 1.6, shape: 'smoke', colors: ['#6a6070', '#8a8090'], alpha: 0.55, add: 0 },
   confetti:  { n: 40, life: [1.4, 2.4], speed: [2, 7], up: 5, spread: 1, grav: -7, drag: 1.8, size: [0.1, 0.18], grow: 0, shape: 'square', colors: ['#ff4d6d', '#ffd23a', '#3ad1ff', '#7cff6b', '#c06bff'], alpha: 1, add: 0, spin: 9, flutter: 1 },
   hitSpark:  { n: 9,  life: [0.12, 0.26], speed: [3, 8], up: 0.5, spread: 1, grav: 0, drag: 5, size: [0.12, 0.3], grow: -1.2, shape: 'star', colors: ['#ffffff', '#fff2a0', '#ffb347'], alpha: 1, add: 1, hdr: 3, spin: 8 },
+  trail:     { n: 1,  life: [0.12, 0.2], speed: [0, 0.2], up: 0, spread: 0.3, grav: 0, drag: 5, size: [0.12, 0.2], grow: -0.9, shape: 'soft', colors: ['#ffffff'], alpha: 0.85, add: 1, hdr: 1.5 },
   mote:      { n: 1,  life: [4, 7], speed: [0.1, 0.4], up: 0.1, spread: 1, grav: 0.0, drag: 0.5, size: [0.03, 0.07], grow: 0, shape: 'soft', colors: ['#ffd9a0', '#ffe9c0'], alpha: 0.7, add: 1, hdr: 1.4, wobble: 0.6 },
   coinBurst: { n: 14, life: [0.5, 0.9], speed: [2.5, 5.5], up: 4, spread: 1, grav: -10, drag: 0.6, size: [0.12, 0.24], grow: -0.1, shape: 'star', colors: ['#ffd23a', '#fff2a0', '#ffb800'], alpha: 1, add: 1, hdr: 2.4, spin: 6 },
 };
@@ -90,8 +91,8 @@ export function createParticles() {
       life[i] = P.life[0] + R() * (P.life[1] - P.life[0]); age[i] = 0;
       size[i] = (P.size[0] + R() * (P.size[1] - P.size[0])) * sc;
       rot[i] = R() * 6.2832; spin[i] = (P.spin ? (R() - 0.5) * 2 * P.spin : 0); seed[i] = R() * 100;
-      const c = o.color ? (tmp.set(o.color), [tmp.r, tmp.g, tmp.b]) : cols[(R() * cols.length) | 0];
-      cr[i] = c[0] * hdr; cg[i] = c[1] * hdr; cb[i] = c[2] * hdr;
+      if (o.color) { tmp.set(o.color); cr[i] = tmp.r * hdr; cg[i] = tmp.g * hdr; cb[i] = tmp.b * hdr; }   // no per-particle array
+      else { const c = cols[(R() * cols.length) | 0]; cr[i] = c[0] * hdr; cg[i] = c[1] * hdr; cb[i] = c[2] * hdr; }
       preset[i] = P;
     }
   }

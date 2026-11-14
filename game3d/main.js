@@ -9,6 +9,7 @@ import { createLookdev } from './world/lookdev.js';
 import { createStageCards } from './ui/stageCards.js';
 import { getStage, IMPLEMENTED } from './data/stages.js';
 import { createHud } from './ui/hud.js';
+import { initSfx } from './audio/sfx.js';
 import { createDebugPanel, createFreeCam } from './core/debug.js';
 
 const params = new URLSearchParams(location.search);
@@ -25,6 +26,7 @@ const quality = createQuality(params);
 const gfx = createRenderer(canvas, box, quality);
 const input = createInput();
 const hud = createHud(document.getElementById('hud'));
+const sfx = initSfx();   // synth sound effects: listens to the event bus, unlocks on the first key / tap
 const foes = params.get('foes') !== '0'; // ?foes=0: no enemies/obstacles (pure platformer, used by the platformer tests)
 // ?lookdev=1 shows the art-kit stage 1 scene (new toon look + animated hero) instead of the grey-box level.
 const lookdev = params.get('lookdev') === '1';
@@ -117,7 +119,7 @@ const loop = createLoop({
 // Hook for tests and debugging (house rule 8).
 window.__game = {
   ready: false, params: { debug, seed, stage: startStage, god: run.cheats.god, boss: bossJump },
-  run, fsm, input, quality, gfx, world, events,
+  run, fsm, input, quality, gfx, world, events, sfx,
   get frames() { return frameCount; }, get simSteps() { return simSteps; },
   get fps() { return debugPanel ? debugPanel.stats.fps : null; },
   get drawCalls() { return gfx.renderer.info.render.calls; },
