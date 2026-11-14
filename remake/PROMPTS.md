@@ -51,8 +51,8 @@ the screenshot. Commit. Report what you built and anything that deviates from th
 ## Prompt 1 — Track, player, camera (grey-box)
 
 ```
-Read remake/PLAN.md sections 2, 3 (all of it) and 5. Follow the house rules. Continue on
-branch remake-3d. Look at the existing game3d/ code before writing.
+Read remake/PLAN.md sections 2, 3 (all of it) and 5. Follow the house rules. Branch from the
+latest main. Look at the existing game3d/ code before writing.
 
 Build the grey-box platformer — no art yet, flat-coloured boxes are fine:
 1. world/track.js: a Catmull-Rom centreline with precomputed frames; toWorld(s, x, y)
@@ -121,7 +121,7 @@ report, listing any original behaviour you could not carry over and why.
 
 ```
 Read remake/PLAN.md sections 2, 4 (all) and 6 (row 1 only). Follow the house rules.
-Continue on branch remake-3d. For the hero's look read cleaningup.html lines 3540-3863
+Branch from the latest main. For the hero's look read cleaningup.html lines 3540-3863
 (player drawing) and 2833-2931 (portraits) only.
 
 Build the look of the game. Everything is generated in code — no asset files.
@@ -158,8 +158,8 @@ critically; fix what looks flat or ugly before finishing. Commit and report.
 ## Prompt 4 — Stage 1 vertical slice: Desert Scrub
 
 ```
-Read remake/PLAN.md sections 2, 3.3, 4, 6 and 7. Follow the house rules. Continue on
-branch remake-3d. Art and behaviour references in cleaningup.html — read only these:
+Read remake/PLAN.md sections 2, 3.3, 4, 6 and 7. Follow the house rules. Branch from the
+latest main. Art and behaviour references in cleaningup.html — read only these:
 7682-7754 (stage 1 background), 4549-4583 (boss1 behaviour), 5082-5350 (boss1 and stage
 1 enemy drawing — skim for colours and shapes), 6618-6700 (obstacles).
 
@@ -192,11 +192,66 @@ cheaper to fix now than after nine more stages are built on top.
 
 ---
 
+## Prompt 4b — Stage 1 feedback: gates, facing, hero look, ammo, sound
+
+```
+Read remake/PLAN.md sections 2, 4.1 and 4.2. Follow the house rules. Branch from the
+latest main. Look at the existing code before writing; keep every module under ~400
+lines and do not change gameplay numbers or hitboxes.
+
+1. Facing. Commit 4bcd07c on origin/claude/optimistic-mayer-q0dye2 ("Hero turns to face
+   the direction he is heading") was never merged — cherry-pick it if main lacks it.
+   Then verify: holding back makes the hero turn smoothly (about 0.15 s) to face the
+   camera and run toward it with the normal run animation, never a backwards walk;
+   sideways and diagonal input turn him too; the spray and aim-assist follow the facing.
+2. Slide-under gates. The 'barrier' solids from world/segments.js are drawn as plain red
+   boxes by world/trackBuilder.js. Add a theme hook (for example
+   theme.buildBarrier(rng, width, y0, y1)) with the box as fallback, and implement
+   stage 1 with at least three seeded variants: a timber ranch gate (two posts, heavy
+   crossbeam, hanging sign that sways), a hitching rail with rope and a lantern, and a
+   leaning rock slab propped on a boulder. The solid part must sit exactly on the
+   existing hitbox and the gap underneath must read as open from the default camera.
+   Do the same for any other stage 1 solid still drawn as a plain coloured box (walls,
+   ledges, beams).
+3. Hero look, in actors/playerModel.js, per PLAN 4.2: black button-up shirt with small
+   buttons and a collar, big gold oval belt buckle (slightly emissive), black bell-bottom
+   jeans that flare over black boots, uncovered face with blue eyes, eyebrows and a
+   simple mouth. Remove the bandana, vest, goggles, soap tanks and hose. Keep the hair
+   and the hat shape. Keep the hand-held spray gun. Leave a setBackpack(on) switch,
+   default off, for a later upgrade. Tune rim light and outline so the black outfit
+   stays readable against the dusk sky and in shadow.
+4. Projectiles, in actors/projectiles.js: replace the shared sphere with instanced
+   shapes oriented along velocity, one InstancedMesh per shape. normal/fourway: a
+   stubby soap cartridge (cylinder, rounded nose, gold rim); super: a larger red-hot
+   round; spread: small pellets; homing: a finned mini-rocket; grenade: a tumbling
+   canister; spin: a spinning sheriff star; laser: a long thin bolt. Enemy shots: dark
+   lumpy grime globs. A short tapered trail on player rounds using the existing
+   particle system. Budget: under ~60 triangles per shape, no lights, no more than 8
+   added draw calls, and the 30-enemies / 200-projectiles stress test must not get
+   slower — measure before and after and report both numbers.
+5. Sound. Create audio/sfx.js: read cleaningup.html lines 1416-1475 only and port every
+   sound in the original Sound object to a small WebAudio synth (oscillators and noise,
+   no audio files) with one master gain, unlocked on the first key press or tap. Add
+   sounds the 3D game needs that the original lacks: footsteps, jump, land, slide,
+   crate break, coin, powerup, overheat hiss, gate whoosh, pit fall, checkpoint, boss
+   slam and shockwave, stage clear. Wire them through the event bus rather than calling
+   sfx from gameplay code directly. Add a mute button to the HUD and an M key toggle,
+   remembered in localStorage. Vary pitch slightly on repeated sounds and cap
+   simultaneous voices so rapid fire never crackles.
+
+Done when: screenshots of each gate variant, the hero from the front and back, and each
+projectile kind look right (review them yourself and fix what does not); the smoke test
+passes with no console errors; the stress test is no slower than before. Commit and
+report.
+```
+
+---
+
 ## Prompt 5 — Game flow: title, story, store, casino, leaderboard
 
 ```
-Read remake/PLAN.md sections 1.1, 1.2, 2, 3.4 and 9. Follow the house rules. Continue on
-branch remake-3d. Read only these ranges of cleaningup.html: 1707-1822 (story), 1824-1870
+Read remake/PLAN.md sections 1.1, 1.2, 2, 3.4 and 9. Follow the house rules. Branch from the
+latest main. Read only these ranges of cleaningup.html: 1707-1822 (story), 1824-1870
 (cutscene flow), 2108-2236 (cheats, start, init), 2238-2396 (game over, prize, score
 submit), 2398-2545 (transition, store), 2547-2762 (casino), 2833-2931 (portraits),
 8905-9012 (Firebase). Also the DOM for those screens — find it by grepping for the ids
@@ -233,11 +288,11 @@ environment, say so and leave it wired). Commit and report.
 ## Prompt 6 — Jukebox: music in three modes
 
 ```
-Read remake/PLAN.md sections 2 and 8. Follow the house rules. Continue on branch
-remake-3d. Read cleaningup.html lines 1416-1507 only (SFX and saloon jingle).
+Read remake/PLAN.md sections 2 and 8. Follow the house rules. Branch from the latest
+main. Read cleaningup.html lines 1416-1507 only (SFX and saloon jingle).
 
-1. audio/sfx.js: port every sound in the original Sound object to a small WebAudio synth
-   with a master SFX gain. Unlock audio on first user gesture.
+1. audio/sfx.js already exists (prompt 4b). Add the saloon jingle to it and route its
+   master gain through the jukebox's volume settings; do not rewrite it.
 2. data/music.js: 13 slots (title, stage1..stage10, boss, saloon), each
    { title, spotifyUrl, file, bpm } with clearly marked placeholders for the owner.
 3. audio/jukebox.js with three sources:
@@ -279,7 +334,7 @@ Run this three times, replacing `{STAGES}` and the line ranges:
 ```
 Read remake/PLAN.md sections 2, 4, 6 and 7, and the "how to add a stage" note in
 game3d/data/stages.js. Study themes/stage01.js and actors/bosses/boss01.js — copy their
-structure. Follow the house rules. Continue on branch remake-3d.
+structure. Follow the house rules. Branch from the latest main.
 
 Build stages {STAGES}. References in cleaningup.html — read only: {BACKGROUND LINES} for
 scenery and palette, {BOSS BEHAVIOUR LINES} for boss patterns, {DRAWING LINES} skimmed
@@ -288,7 +343,9 @@ for enemy and boss colours and shapes, 4420-4540 for enemy stats not yet ported,
 
 For each stage, per its row in PLAN section 6:
 1. Theme: palette, sky, fog, lighting, colour grade, far parallax silhouettes, instanced
-   scenery, the gap fluid, the stage hazard, the rolling obstacle.
+   scenery, the gap fluid, the stage hazard, the rolling obstacle, and themed slide-under
+   gates and solids via the theme hook (at least three variants; no plain boxes — see
+   PLAN 4.2). New enemies, hazards and bosses get sounds through audio/sfx.js.
 2. Enemy models and behaviours for any type not built yet, reusing the shared part
    builders. Keep each recognisable from the original.
 3. The stage's set-piece.
@@ -313,8 +370,8 @@ in the charcoal streets.`
 ## Prompt 10 — Mobile, performance and polish
 
 ```
-Read remake/PLAN.md sections 2, 4, 4.1 and 5. Follow the house rules. Continue on branch
-remake-3d. Read cleaningup.html lines 1509-1615 (fullscreen and platform detection),
+Read remake/PLAN.md sections 2, 4, 4.1 and 5. Follow the house rules. Branch from the latest
+main. Read cleaningup.html lines 1509-1615 (fullscreen and platform detection),
 1962-2060 (touch controls) and 8607-8900 (juice layer) only.
 
 1. ui/touch.js: left virtual joystick, JUMP / SPRAY / BOMB / SLIDE buttons, sized for
@@ -342,7 +399,7 @@ smoke test using emulated touch, and no console errors appear across a full ten-
 ## Prompt 11 — Integration and launch
 
 ```
-Read remake/PLAN.md sections 2 and 9. Continue on branch remake-3d. This is the only
+Read remake/PLAN.md sections 2 and 9. Branch from the latest main. This is the only
 prompt allowed to touch index.html.
 
 1. In index.html, find the iframe that loads cleaningup.html and point it at

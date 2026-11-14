@@ -76,8 +76,9 @@ The corridor-platformer *genre* is the reference, nothing more specific.
 1. **Stack:** plain ES modules, no build step, no framework, no npm runtime dependencies.
    Three.js is vendored at `game3d/vendor/` and loaded through an import map. The site is
    static GitHub Pages; the whole repo is published on every push to `main`.
-2. **Work on the branch `remake-3d`.** Never edit `cleaningup.html` or `index.html`
-   until the final integration prompt. Pushing to `main` deploys to the live site.
+2. **Branch from the latest `main`** for each session. Never edit `cleaningup.html` or
+   `index.html` until the final integration prompt. Merging to `main` publishes the repo,
+   so `cleaningup3d.html` is reachable by direct URL but must stay unlinked until then.
 3. **No downloaded assets.** No image, model, font-file or audio-sample files. Geometry
    from code, textures from `CanvasTexture`/shaders, SFX from WebAudio oscillators and
    noise. The only exception is music under `game3d/music/` (§8). Google Fonts `Bangers`
@@ -234,6 +235,26 @@ costs little to render.
 - **Signature effect — "the clean wave":** scenery near the path starts desaturated and
   grimy; as the player passes, colour floods back (a shader uniform driven by player `s`).
   Beating the boss washes the whole stage clean. This is the game's story told visually.
+
+### 4.2 Standing art rules (owner feedback after stage 1)
+
+- **Cowboy Clean's look:** black button-up shirt (visible buttons and collar), big gold
+  oval belt buckle, black bell-bottom jeans flaring over black boots, cowboy hat, long
+  curly hair (as built), an ordinary uncovered face with blue eyes. No bandana, no vest,
+  no goggles, no tanks or pack on his back at the start. Because the outfit is black,
+  keep a strong rim light and a lighter outline so he reads against dark scenery.
+- **Facing:** the hero always turns to face the way he is moving. Holding back turns him
+  toward the camera and he runs at it; he never walks backwards. Spray follows facing.
+- **No plain boxes.** Every slide-under gate, wall, ledge and blocker is a themed object
+  supplied by the stage theme (stage 1: timber ranch gates, hitching rails, leaning rock
+  slabs). The visible shape must match the hitbox, and the gap to slide through must be
+  obviously open.
+- **Projectiles look like ammunition**, not balls: instanced low-poly shapes pointing
+  along their velocity, one draw call per kind, under ~60 triangles each, no per-shot
+  lights. Player rounds are clean and bright; enemy shots are dark, lumpy grime so the
+  two are never confused.
+- **Sound effects are part of every feature.** Anything new that moves, hits, breaks or
+  is collected gets a sound through `audio/sfx.js`.
 
 ### 4.1 Performance budget
 
