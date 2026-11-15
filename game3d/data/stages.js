@@ -14,7 +14,7 @@
 //   density[act]          share of each template's enemy slots that are kept
 //   weights[act]          segment template weights; templates live in world/segments.js
 //   act3Special           'chase' (toward-camera set piece) | 'hard' (platforming run) | 'either' | 'setpiece' (stages 2-7: act 3 holds the template named by
-//                         setPiece.template: 'vines' | 'reversal' | 'rooftops' | 'awnings' | 'lavaChase' | 'rainbowSlide', defined in world/segmentsX.js, Y, V, I)
+//                         setPiece.template: 'vines' | 'reversal' | 'rooftops' | 'awnings' | 'lavaChase' | 'rainbowSlide' | 'cloudRide', defined in world/segmentsX.js, Y, V, I, C)
 //   obstacle              rolling obstacle type (actors/obstacles.js)
 //   setPiece              the stage's set-piece: { id, template, name, warning (shouted when the player enters it), color } plus, for the chase, its speed / lag / damage.
 //                         Moving parts of a set-piece or hazard (vines, belts, pistons, traffic) live in world/haz*.js and read lists the template returns.
@@ -160,7 +160,26 @@ const STAGE7 = {
   palette: { ground: 0xd8b878, platform: 0xff9ad5, ledge: 0xffffff, beam: 0xaf52de, barrier: 0xff4a7a, wall: 0x8ad0a0, quicksand: 0xf4e2a8, mud: 0x8a5a32, slide: 0xffe135 },
 };
 
-export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6, STAGE7];
+const STAGE8 = {
+  id: 8, name: 'Cloud Dream', tagline: 'Soft, fluffy and secretly grimy.',
+  theme: 'stage08',
+  length: 1100, trackWidth: 8,
+  obstacle: 'sleep_sheep',     // rolling obstacle (original: a sleeping sheep, Zzz)
+  roster: [['storm_cloud'], ['bat'], ['pigeon']],   // PLAN 6: storm_cloud -> bat -> pigeon
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, cloudHop: 3, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 2.5, beam: 2, barrier: 2, cloudHop: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, cloudHop: 3 },
+  ],
+  setPiece: { id: 'cloudRide', template: 'cloudRide', name: 'RIDE!', warning: 'MOVING CLOUDS! STEER ONTO THE MIDDLE!', color: '#ffc2dc' },
+  boss: { id: 'boss8', name: 'THE EYE', intro: 'It sees everything. It never blinks. Only when it wants to.', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['SLUMBER ROW', 'PILLOW PEAKS'],
+  palette: { ground: 0xfff3f8, platform: 0xe6d4f5, ledge: 0xffffff, beam: 0xf4eefc, barrier: 0xc2e4ff, wall: 0xd9c2ff, quicksand: 0xfff3f8 },
+};
+
+export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6, STAGE7, STAGE8];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).

@@ -84,4 +84,16 @@ export const BOSS_PATTERNS = {
     p2: { tele: 1.5, sweep: 5.0, bombs: 5, volleys: 3, every: 0.9, bombDelay: 1.1, bombR: 1.7, bombDamage: 20, rest: 1.8, sweeps: 1, beams: 2, minions: 2 },
     rage: { time: 1.5 },
   },
+  // Original boss8 "CLOUD - Invincible Shield Eye" (cleaningup.html 4793-4827): hovers shielded and invulnerable for 200 frames calling lightning down around the player (every 40 frames),
+  // then opens for 100 frames (hittable) firing a laser every 15 frames, then shuts again.
+  // 3D: THE EYE hangs in a pearly shield bubble while storm bolts come down on marked circles at the player's feet; then the eyelids tremble and a laser lane is locked on the floor (>= 0.9 s);
+  // the shield pops, the eye opens (the ONLY time he can be hurt) and fires rounds down the lane at chest height. Phase two: five bolts a volley, three lanes, a shorter window, storm clouds at the rage.
+  boss8: {
+    name: 'THE EYE', color: 0xecf0f1, size: { hs: 1.5, hx: 1.5, h: 3.0 },
+    intro: { dropTime: 1.7, roar: 1.4, startHeight: 22 },
+    shieldY: 2.2, openY: 1.0, orbitR: 4.5, orbitSpeed: 0.4, laneW: 1.3,
+    p1: { shield: 2.8, bolts: 3, every: 0.9, boltDelay: 1.1, boltR: 1.7, boltDamage: 20, tele: 1.0, open: 4.0, shots: 8, shotEvery: 0.34, shotSpeed: 15, fan: 0 },
+    p2: { shield: 2.6, bolts: 5, every: 0.55, boltDelay: 1.0, boltR: 1.7, boltDamage: 20, tele: 0.85, open: 3.4, shots: 8, shotEvery: 0.26, shotSpeed: 17, fan: 0.3, minions: 2 },
+    rage: { time: 1.5 },
+  },
 };

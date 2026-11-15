@@ -3,17 +3,19 @@ import { createBelts } from './hazBelt.js';
 import { createTraffic } from './hazTraffic.js';
 import { createRocks } from './hazRocks.js';
 import { createCollapse } from './hazCollapse.js';
+import { createClouds } from './hazClouds.js';
 
 // Moving things attached to segments, one small module per kind (each returns null when the stage has none of its data):
 //   vines    stage 2 set-piece: hanging vines the player grabs and swings on         (hazVine.js)
 //   traffic  stage 4: taxis sweeping across the road                                 (hazTraffic.js)
 //   rocks    stage 6: falling boulders on marked circles                          (hazRocks.js)
 //   planks   stage 6: collapsing bridge planks                                    (hazCollapse.js)
+//   clouds   stage 8: drifting cloud platforms that carry the player           (hazClouds.js)
 //   belts    stage 3: conveyor belts that reverse, and crusher pistons over them     (hazBelt.js)
 // The generator copies each template's lists (seg.vines ...) with absolute s. Theme geometry comes from theme.hazards.
 // api: update(dt, input), render(alpha, t), reset(), dispose().
 export function createHazards(ctx, scene, track) {
-  const parts = [createVines(ctx, scene, track), createBelts(ctx, scene, track), createTraffic(ctx, scene, track), createRocks(ctx, scene, track), createCollapse(ctx, scene, track)].filter(Boolean);
+  const parts = [createVines(ctx, scene, track), createBelts(ctx, scene, track), createTraffic(ctx, scene, track), createRocks(ctx, scene, track), createCollapse(ctx, scene, track), createClouds(ctx, scene, track)].filter(Boolean);
   return {
     parts,
     update(dt, input) { for (const p of parts) p.update(dt, input); },

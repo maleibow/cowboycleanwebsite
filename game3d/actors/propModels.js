@@ -109,4 +109,18 @@ export const cloudBump = {
   },
   rock: 0.12, dust: false,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile, cloud_bump: cloudBump };
+
+// Sleeping sheep (original: a white #ecf0f1 wool ball with three wool bumps, a #34495e head, a closed eye and floating Zs): a plump woolly ball, dark face with a shut eye, rolled toward you
+// still fast asleep. Same unit extents as the cloud bump.
+export const sleepSheep = {
+  build: () => {
+    const b = new Builder().sphere(0.8, 0xfaf6ee, { p: [0, 0.05, 0], jitter: 0.07, ao: 0.1 });
+    for (const [x, y, z] of [[-0.3, 0.55, 0.1], [0.05, 0.68, -0.1], [0.4, 0.5, 0.15], [-0.5, 0.15, -0.35], [0.5, 0.0, -0.4]]) b.sphere(0.34, 0xffffff, { p: [x, y, z], jitter: 0.06, ao: 0.05 });
+    b.sphere(0.34, 0x34495e, { p: [-0.1, 0.12, 0.78], s: [1, 1, 0.9], jitter: 0.03, ao: 0.1 }).box(0.2, 0.04, 0.03, 0xecf0f1, { p: [-0.1, 0.16, 1.05], r: [0, 0, 0.15], radius: 0.01, ao: 0 });   // shut eye
+    for (const [x, c] of [[-0.38, 0x2a3a4e], [0.18, 0x2a3a4e]]) b.cone(0.1, 0.3, c, { p: [x, 0.3, 0.8], r: [0, 0, x * 1.2], seg: 5, ao: 0 });                                  // floppy ears
+    for (const [x, y, z, k] of [[0.5, 0.95, 0.4, 0.14], [0.68, 1.2, 0.36, 0.1]]) b.box(k, 0.03, 0.03, new THREE.Color(1.5, 1.6, 2.0), { p: [x, y, z], radius: 0.005, ao: 0 }).box(0.03, 0.03, k, new THREE.Color(1.5, 1.6, 2.0), { p: [x, y, z], radius: 0.005, ao: 0 });   // Zs
+    return b.build();
+  },
+  rock: 0.1, dust: false,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile, cloud_bump: cloudBump, sleep_sheep: sleepSheep };
