@@ -72,4 +72,20 @@ export const trashCan = {
   },
   rock: 0.18, dust: false,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan };
+
+// Café chair (original: an orange #d35400 bistro chair drawn as bent wire: four legs, a seat, a curved back): a bentwood bistro chair with a wicker seat, tipped and slid
+// toward you. Authored on the sand pile's unit extents (scaled to the 1 x 1 x 0.95 hit box).
+export const cafeChair = {
+  build: () => {
+    const b = new Builder(), OR = 0xd35400, W = 0xe8a050;
+    b.cyl(0.78, 0.78, 0.09, W, { p: [0, 0.5, 0], seg: 14, ao: 0.1, jitter: 0.01 }).add(new THREE.TorusGeometry(0.78, 0.07, 5, 16).rotateX(Math.PI / 2), OR, { p: [0, 0.5, 0], ao: 0 });
+    for (const [x, z] of [[-0.55, 0.5], [0.55, 0.5], [-0.55, -0.5], [0.55, -0.5]]) b.cyl(0.05, 0.065, 0.55, OR, { p: [x, 0.25, z], r: [z * 0.25, 0, -x * 0.25], seg: 5, ao: 0.05 });   // splayed legs
+    b.add(new THREE.TorusGeometry(0.2, 0.05, 5, 12).rotateX(Math.PI / 2), OR, { p: [0, 0.24, 0], s: [3, 1, 3], ao: 0 });                                                      // leg ring
+    b.add(new THREE.TorusGeometry(0.6, 0.06, 5, 16, Math.PI), OR, { p: [0, 0.78, -0.55], r: [0, 0, 0], s: [1, 0.55, 1], ao: 0 });                                          // the bentwood back: a loop
+    for (const x of [-0.58, 0.58]) b.cyl(0.05, 0.05, 0.62, OR, { p: [x, 0.82, -0.55], seg: 5, ao: 0 });
+    b.cyl(0.04, 0.04, 1.0, 0xb34600, { p: [0, 1.0, -0.55], r: [0, 0, Math.PI / 2], seg: 5, ao: 0 });
+    return b.build();
+  },
+  rock: 0.22, dust: false,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair };

@@ -8,7 +8,7 @@ import { placeMatrix } from './scenery.js';
 // in the box's own frame (x across, y absolute, z along the track, centred), so the visible shape sits on the hitbox.
 // geo is baked into world space here (per-vertex track frame, so long logs follow the path); `sway` parts
 // (a hanging sign, a lantern) become pivot groups whose matrix the builder animates: one extra draw call each. Returns null when the theme has no builder (plain box fallback).
-export const THEMED_KINDS = new Set(['barrier', 'ledge', 'beam', 'platform', 'conveyor']);
+export const THEMED_KINDS = new Set(['barrier', 'ledge', 'beam', 'platform', 'conveyor', 'bounce']);
 const FR = { p: new THREE.Vector3(), t: new THREE.Vector3(), r: new THREE.Vector3(), u: new THREE.Vector3() };
 const _v = new THREE.Vector3();
 

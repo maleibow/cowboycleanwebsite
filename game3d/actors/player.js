@@ -12,7 +12,7 @@ export const PHYS = {
   accelGround: 55, accelAir: 28, frictionGround: 60, frictionAir: 8, turnBoost: 1.5,
   height: 1.8, duckHeight: 1.0, slideHeight: 0.7, halfS: 0.4, halfX: 0.4,
   slideTime: 0.7, slideBoost: 1.3, slideCooldown: 0.25, slideMinSpeed: 2.5, duckSpeed: 0.35,
-  stepUp: 0.35, sandDrag: 0.5, pitY: -8, pitDamage: 20, pitInvuln: 1.5, hitInvuln: 1.0, backroom: 3,
+  stepUp: 0.35, sandDrag: 0.5, bounceSpeed: 19, pitY: -8, pitDamage: 20, pitInvuln: 1.5, hitInvuln: 1.0, backroom: 3,
 };
 const approach = (v, t, d) => (v < t ? Math.min(v + d, t) : Math.max(v - d, t));
 
@@ -81,7 +81,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     if (seg.lockX) xIn = 0;
     p.intentS = sIn; p.intentX = xIn; // read by the weapon to set the facing
     if (Math.hypot(sIn, xIn) > 0.2) { p.faceS = sIn; p.faceX = xIn; }   // the hero turns to face where he is heading (back button = turn around)
-    p.inSand = b.grounded && b.ground?.kind === 'quicksand';   // quicksand drags: half speed (the lane at the side is firm)
+    p.inSand = b.grounded && (b.ground?.kind === 'quicksand' || b.ground?.kind === 'mud');   // quicksand and mud drag: half speed (the lane at the side is firm)
     const max = p.maxSpeed() * (p.inSand ? PHYS.sandDrag : 1);
 
     // ---- slide / duck
@@ -127,6 +127,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     const wasGrounded = b.grounded, vyBefore = b.vy;
     moveBody(b, query(), dt, PHYS.stepUp);
     if (b.grounded && !wasGrounded && vyBefore < -4) { p.model.anim.land(-vyBefore); events.emit('land', -vyBefore); }
+    if (b.grounded && b.ground?.kind === 'bounce' && !wasGrounded && vyBefore < -2) { b.vy = PHYS.bounceSpeed * (input.jump ? 1.12 : 1); b.grounded = false; p.jumping = false; p.coyote = 0; p.model.anim.jump(); events.emit('bounce', p); }   // an awning (stage 5): springs the player up; holding jump springs higher
     if (b.grounded && b.ground?.belt && !p.sliding) b.s += b.ground.belt * dt;   // a conveyor belt (stage 3) drags whatever stands on it
     for (let i = 0; i < boxes.length; i++) { const o = boxes[i]; if (o.kind === 'barrier' && b.grounded && b.s > o.s0 - 0.4 && b.s < o.s1 + 0.4 && b.y + b.h <= o.y0 + 0.02 && p.lastGate !== o) { p.lastGate = o; events.emit('gateWhoosh', o); } }   // slid under a gate
     // The "no going back" ratchet is for the corridor only: in the boss arena the player roams the whole disc

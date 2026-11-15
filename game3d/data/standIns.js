@@ -2,7 +2,6 @@
 // name, tagline and enemy roster (PLAN section 6; tiers 1 -> 2 -> 3 on each act) so the whole loop can be tested.
 const R = (a, b, c) => [a, b, c];
 export const STAND_INS = {
-  5:  { name: 'Paris Nights',     tagline: 'The city of lights, in need of a polish.',            roster: R(['mime'], ['gargoyle'], ['bat']), boss: 'THE MIME' },
   6:  { name: 'Volcano Peak',     tagline: 'Hot, black and filthy. Bring the bleach.',            roster: R(['magma'], ['ember'], ['slag']), boss: 'MAGMA MAW' },
   7:  { name: 'Rainbow Island',   tagline: 'Pretty colours, real mud.',                           roster: R(['paint_blob'], ['mud_cloud'], ['frog']), boss: 'DOUBLE RAINBOW' },
   8:  { name: 'Cloud Dream',      tagline: 'Soft, fluffy and secretly grimy.',                    roster: R(['storm_cloud'], ['bat'], ['pigeon']), boss: 'THE EYE' },

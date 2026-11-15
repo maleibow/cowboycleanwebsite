@@ -47,4 +47,15 @@ export const BOSS_PATTERNS = {
     p2: { bombs: 8, every: 0.7, bombDelay: 1.0, bombR: 1.8, tele: 1.0, dive: 0.4, recover: 1.5, swoops: 2, minions: 2 },
     rage: { time: 1.5 }, swoopR: 2.7, swoopDamage: 25, bombDamage: 20,
   },
+  // Original boss5 "MIME - Teleport and rapid fire" (cleaningup.html 4681-4716): walks in, fires a bomb every 20 frames, vanishes (invulnerable) and reappears at a random x.
+  // 3D: THE MIME teleports around the arena edge. The destination is marked before he appears; once there he locks the line to the player (a lane on the floor for
+  // 1 s), then fires a burst of rounds down it. Between acts he is open to fire. Phase two: three lanes per burst, two teleports in a row, mimes at the rage.
+  boss5: {
+    name: 'THE MIME', color: 0xecf0f1, size: { hs: 0.9, hx: 0.9, h: 3.0 },
+    intro: { dropTime: 1.2, roar: 1.4, startHeight: 18 },
+    edgeR: 11, vanish: 0.5, appearTele: 1.0, appear: 0.5, open: 2.4,
+    p1: { aim: 1.0, shots: 5, every: 0.14, speed: 15, fan: 0, teleports: 1 },
+    p2: { aim: 0.9, shots: 5, every: 0.12, speed: 17, fan: 0.3, teleports: 2, minions: 2 },
+    rage: { time: 1.5 }, laneW: 1.2,
+  },
 };

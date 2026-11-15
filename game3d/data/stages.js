@@ -103,7 +103,26 @@ const STAGE4 = {
   palette: { ground: 0x4a4e5c, platform: 0x7a808e, ledge: 0x6a7080, beam: 0x9a7a4a, barrier: 0x8a4a3a, wall: 0x3a4252, quicksand: 0x4a4e5c },
 };
 
-export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4];
+const STAGE5 = {
+  id: 5, name: 'Paris Nights', tagline: 'The city of lights, in need of a polish.',
+  theme: 'stage05',
+  length: 1100, trackWidth: 8,
+  obstacle: 'cafe_chair',      // rolling obstacle (original: a bistro chair)
+  roster: [['mime'], ['gargoyle'], ['bat']],   // PLAN 6: mime -> gargoyle -> bat
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, bounceGap: 2.5, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 2, doubleGap: 2, steps: 2.5, beam: 2, barrier: 2, bounceGap: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, bounceGap: 3 },
+  ],
+  setPiece: { id: 'awningRun', template: 'awnings', name: 'BOUNCE!', warning: 'AWNINGS! BOUNCE ACROSS THE STREET!', color: '#ff9a7a' },
+  boss: { id: 'boss5', name: 'THE MIME', intro: 'The quietest thing in Paris. Not for long.', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['PONT NEUF', 'MONTMARTRE'],
+  palette: { ground: 0x4a5064, platform: 0xcdbfa4, ledge: 0x6f7f98, beam: 0x8a6a45, barrier: 0x8a4a3a, wall: 0x3a4252, quicksand: 0x4a5064, bounce: 0xc0392b },
+};
+
+export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).
