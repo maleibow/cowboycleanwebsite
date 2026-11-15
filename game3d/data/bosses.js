@@ -84,4 +84,44 @@ export const BOSS_PATTERNS = {
     p2: { tele: 1.5, sweep: 5.0, bombs: 5, volleys: 3, every: 0.9, bombDelay: 1.1, bombR: 1.7, bombDamage: 20, rest: 1.8, sweeps: 1, beams: 2, minions: 2 },
     rage: { time: 1.5 },
   },
+  // Original boss8 "CLOUD - Invincible Shield Eye" (cleaningup.html 4793-4827): hovers shielded and invulnerable for 200 frames calling lightning down around the player (every 40 frames),
+  // then opens for 100 frames (hittable) firing a laser every 15 frames, then shuts again.
+  // 3D: THE EYE hangs in a pearly shield bubble while storm bolts come down on marked circles at the player's feet; then the eyelids tremble and a laser lane is locked on the floor (>= 0.9 s);
+  // the shield pops, the eye opens (the ONLY time he can be hurt) and fires rounds down the lane at chest height. Phase two: five bolts a volley, three lanes, a shorter window, storm clouds at the rage.
+  boss8: {
+    name: 'THE EYE', color: 0xecf0f1, size: { hs: 1.5, hx: 1.5, h: 3.0 },
+    intro: { dropTime: 1.7, roar: 1.4, startHeight: 22 },
+    shieldY: 2.2, openY: 1.0, orbitR: 4.5, orbitSpeed: 0.4, laneW: 1.3,
+    p1: { shield: 2.8, bolts: 3, every: 0.9, boltDelay: 1.1, boltR: 1.7, boltDamage: 20, tele: 1.0, open: 4.0, shots: 8, shotEvery: 0.34, shotSpeed: 15, fan: 0 },
+    p2: { shield: 2.6, bolts: 5, every: 0.55, boltDelay: 1.0, boltR: 1.7, boltDamage: 20, tele: 0.85, open: 3.4, shots: 8, shotEvery: 0.26, shotSpeed: 17, fan: 0.3, minions: 2 },
+    rage: { time: 1.5 },
+  },
+  // Original boss9 "GHOST - Homing & Phasing" (cleaningup.html 4828-4861): drifts at the player at 1.5 px/frame; solid for 150 frames (a homing shot every 60), then phased out at 30% opacity and
+  // invulnerable for 150 frames, then solid again.
+  // 3D: HOLLOW GHOST glides after the player keeping 3 m off, charging a green wisp in his lantern (a lane on the floor points the way) and loosing a homing wisp (slow enough to outrun).
+  // Then his outline flickers (a marker shows where he will return), he goes translucent and invulnerable and slips across the arena while spectral hands burst from marked circles, then he
+  // re-forms. Phase two: three wisps a volley, five bursts, a jumpable wail ring when he re-forms, two ghosts at the rage.
+  boss9: {
+    name: 'HOLLOW GHOST', color: 0x2c3e50, size: { hs: 1.3, hx: 1.3, h: 3.6 },
+    intro: { rise: 2.0, roar: 1.5 },
+    drift: 1.9, standoff: 3.2, hoverY: 0.5,
+    p1: { haunt: 4.2, wisps: 1, fan: 0, wispEvery: 1.5, charge: 0.55, wispSpeed: 5, fade: 0.9, phase: 2.2, bursts: 3, burstEvery: 0.6, burstDelay: 1.2, burstR: 1.8, burstDamage: 20, appear: 0.5 },
+    p2: { haunt: 3.8, wisps: 3, fan: 0.35, wispEvery: 1.6, charge: 0.55, wispSpeed: 5.5, fade: 0.8, phase: 2.0, bursts: 5, burstEvery: 0.4, burstDelay: 1.1, burstR: 1.8, burstDamage: 20, appear: 0.5,
+          ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20 }, minions: 2 },
+    rage: { time: 1.5 },
+  },
+  // Original boss10 "VACANT SAVIOR - Charcoal Entity" (cleaningup.html 4862-4925): flies a hovering figure of eight (y = 100 + sin * 60, x drifting on a cosine), firing three ruby lasers every 50 frames;
+  // every 120 frames it swoops at the player's position (locked when the swoop starts), shedding acid every 10 frames, then returns. 300 HP.
+  // 3D: the SAVIOR weaves a figure of eight over the arena; every couple of seconds he stops, locks a fan of ruby-laser lanes on the floor and fires them. Then he rises, a reticle follows you,
+  // it locks, the dive line is drawn on the floor, and he swoops down it at speed, shedding acid that lands on marked circles along the line. He lands and rests (open to fire).
+  // Phase two: a faster eight, five-lane fans, two swoops in a row with a jumpable wail ring at each landing, shadow bats at the rage. He is hittable the whole time except in the rage.
+  boss10: {
+    name: 'VACANT SAVIOR', color: 0x36454f, size: { hs: 1.3, hx: 1.4, h: 3.8 },
+    intro: { dropTime: 1.8, roar: 1.6, startHeight: 24 },
+    hoverY: 2.4, restY: 0.7, pathA: 8.0, pathB: 4.8, laneW: 1.0,
+    p1: { weave: 5.0, period: 6.4, volleys: 2, volleyEvery: 2.2, fan: 0.4, lanes: 3, tele: 0.95, pulses: 3, pulseEvery: 0.22, laserSpeed: 14, swoops: 1, track: 0.7, lock: 1.0, swoopSpeed: 20, drips: 6, dripDelay: 1.0, dripR: 1.5, dripDamage: 15, rest: 2.8 },
+    p2: { weave: 4.2, period: 4.8, volleys: 3, volleyEvery: 1.5, fan: 0.34, lanes: 5, tele: 0.8, pulses: 3, pulseEvery: 0.2, laserSpeed: 16, swoops: 2, track: 0.55, lock: 0.85, swoopSpeed: 22, drips: 7, dripDelay: 0.95, dripR: 1.5, dripDamage: 15, rest: 2.2,
+          ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20 }, minions: 2 },
+    rage: { time: 1.6 },
+  },
 };

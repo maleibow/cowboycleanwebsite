@@ -5,6 +5,9 @@ import { spawnBoss04 } from './boss04.js';
 import { spawnBoss05 } from './boss05.js';
 import { spawnBoss06 } from './boss06.js';
 import { spawnBoss07 } from './boss07.js';
+import { spawnBoss08 } from './boss08.js';
+import { spawnBoss09 } from './boss09.js';
+import { spawnBoss10 } from './boss10.js';
 // Boss registry: data/stages.js names a boss id; the arena asks here for its spawn function.
 // A spawn function takes (ctx, arena, stageBoss) and returns the controller (see boss01.js for the contract).
-export const BOSS_FACTORIES = { boss1: spawnBoss01, boss2: spawnBoss02, boss3: spawnBoss03, boss4: spawnBoss04, boss5: spawnBoss05, boss6: spawnBoss06, boss7: spawnBoss07 };
+export const BOSS_FACTORIES = { boss1: spawnBoss01, boss2: spawnBoss02, boss3: spawnBoss03, boss4: spawnBoss04, boss5: spawnBoss05, boss6: spawnBoss06, boss7: spawnBoss07, boss8: spawnBoss08, boss9: spawnBoss09, boss10: spawnBoss10 };

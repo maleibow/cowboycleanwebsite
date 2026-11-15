@@ -102,7 +102,7 @@ try { const mod = await import(`./stageTests/stage${N}.mjs`); await mod.default(
   if (!r.bar) fail('boss health bar not shown'); if (!r.sealed) fail('the arena entrance should be sealed behind the player');
   if (!r.introInvuln || !r.introHp) fail('boss must be invulnerable during its intro');
   if (!r.vulnerable) fail('boss should be hittable after its intro');
-  if (r.maxHp !== (getStage(N) && ({ 2: 80, 3: 100, 4: 120, 5: 150, 6: 200, 7: 180 })[N])) fail('boss hp ' + r.maxHp + ' does not match PLAN 6');
+  if (r.maxHp !== (getStage(N) && ({ 2: 80, 3: 100, 4: 120, 5: 150, 6: 200, 7: 180, 8: 220, 9: 250, 10: 300 })[N])) fail('boss hp ' + r.maxHp + ' does not match PLAN 6');
   if (!(r.rage.sawRage && r.rage.phase === 2 && r.afterRage)) fail('phase two: ' + JSON.stringify(r.rage));
   const D = r.defeat;
   if (!(r.dying && D.done && D.gone && D.cleared)) fail('defeat sequence incomplete: ' + JSON.stringify(D));

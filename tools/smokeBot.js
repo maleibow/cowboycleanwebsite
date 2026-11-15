@@ -18,6 +18,9 @@ window.__bot = {
         const ahead = T.heightUnder(b.s + 0.9, b.x, 0.05);
         if (ahead === -Infinity || ahead < b.y - 0.6) jump = true;                              // edge of a pit
       }
+      // moving platforms (stage 8 clouds, stage 6 planks): steer to the middle of the pad under or just ahead of us, so a lateral drift or a hop onto a sideways-swinging pad still lands
+      let steer = 0; for (const o of boxes) if (o.kind === 'plank' && o.s1 > b.s - 0.5 && o.s0 < b.s + 7) { const cx = (o.x0 + o.x1) / 2; if (Math.abs(cx - b.x) > 0.6) steer = cx > b.x ? 1 : -1; break; }
+      set('KeyD', steer > 0); set('KeyA', steer < 0);
       if (jump) hold = 30; // hold jump through the apex (a tap is a short hop)
       set('Space', hold-- > 0);
       set('ShiftLeft', slide);
