@@ -82,6 +82,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     p.intentS = sIn; p.intentX = xIn; // read by the weapon to set the facing
     if (Math.hypot(sIn, xIn) > 0.2) { p.faceS = sIn; p.faceX = xIn; }   // the hero turns to face where he is heading (back button = turn around)
     p.inSand = b.grounded && (b.ground?.kind === 'quicksand' || b.ground?.kind === 'mud');   // quicksand and mud drag: half speed (the lane at the side is firm)
+    const inMud = p.inSand && b.ground?.kind === 'mud'; if (inMud && !p.wasMud) events.emit('mudSplat'); p.wasMud = inMud;   // stage 7: a squelch on wading into a mud pool
     const max = p.maxSpeed() * (p.inSand ? PHYS.sandDrag : 1);
 
     // ---- slide / duck

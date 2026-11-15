@@ -25,12 +25,13 @@ export const stage05 = {
   terrain: {
     height(s, x, env) {
       const ax = Math.abs(x), half = env.half;
-      let flat = 0, arena = 0;
-      for (const z of env.zones) { const k = smooth(z.s0 - 6, z.s0 + 2, s) * (1 - smooth(z.s1 - 2, z.s1 + 6, s)); flat = Math.max(flat, k); if (z.arena) arena = Math.max(arena, k); }
+      let flat = 0, arena = 0, ar = null;
+      for (const z of env.zones) { const k = smooth(z.s0 - 6, z.s0 + 2, s) * (1 - smooth(z.s1 - 2, z.s1 + 6, s)); flat = Math.max(flat, k); if (z.arena) { arena = Math.max(arena, k); ar = z.arena; } }
       let h = 0.1 * smooth(half + 0.2, half + 1.0, ax) - 2.4 * (1 - smooth(half - 0.3, half + 0.5, ax));   // pavement a hair above the cobbles; a sunken floor under the track (the Seine's trench)
       h += smooth(half + 1.5, half + 6, ax) * 0.15 * (1 - flat);
       h += smooth(arena ? 24 : 20, 30, ax) * (2 + 4 * Math.abs(Math.sin(s * 0.09 + x * 0.05))) * (arena ? 1 : 1 - 0.5 * flat);   // the blocks behind the street
       for (const q of env.gaps) if (s > q.s0 - 0.01 && s < q.s1 + 0.01) h -= 3.0 * smooth(half + 13, half + 2.5, ax);
+      if (ar) { const k = arena * (1 - smooth(ar.r - 0.5, ar.r + 1.5, Math.hypot(s - ar.s, x - ar.x))); h = h * (1 - k) - 0.08 * k; }   // the arena disc lies flat: no pavement or lawn pokes through it
       return h;
     },
     color(s, x, h, env, out) {

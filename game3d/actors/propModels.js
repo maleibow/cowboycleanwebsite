@@ -99,4 +99,14 @@ export const ashPile = {
   },
   rock: 0.3, dust: true,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile };
+
+// Cloud bump (original: a white #ecf0f1 puff with a #bdc3c7 outline, three lobes): a soft white cloud puff with two smaller lobes and a pastel sparkle, rolled toward you.
+export const cloudBump = {
+  build: () => {
+    const b = new Builder().sphere(0.9, 0xffffff, { p: [0, 0, 0], s: [1, 0.85, 1], jitter: 0.07, ao: 0.08 }).sphere(0.55, 0xf2f6ff, { p: [-0.65, -0.1, 0.1], jitter: 0.06, ao: 0.05 }).sphere(0.6, 0xffffff, { p: [0.62, -0.05, -0.1], jitter: 0.06, ao: 0.05 }).sphere(0.45, 0xeef4ff, { p: [0.05, 0.35, 0.3], jitter: 0.05, ao: 0 });
+    b.sphere(0.07, new THREE.Color(1.8, 1.7, 1.2), { p: [0.4, 0.6, 0.45], ao: 0 }).sphere(0.06, 0x7fd8ff, { p: [-0.5, 0.35, 0.5], ao: 0 }).sphere(0.06, 0xff9ad5, { p: [0.1, 0.8, 0.1], ao: 0 });
+    return b.build();
+  },
+  rock: 0.12, dust: false,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile, cloud_bump: cloudBump };

@@ -4,7 +4,7 @@
 //      Every field is read by the engine; nothing about a stage lives in engine code (PLAN house rule 5).
 //   2. Copy game3d/themes/stage01.js to themes/stageNN.js: palette, sky, fog, lights, colour grade, scatter
 //      props, edge props, far layers, set-piece dressing. Register it in themes/index.js.
-//      A theme may also supply: hazards { vine | piston | taxi } (geometry for world/haz*.js), beamGap, groundDoubleSide, groundRim, path.dash, edge.lampColor.
+//      A theme may also supply: hazards { vine | piston | taxi | plank }, chase (a custom chaser) (geometry for world/haz*.js), beamGap, groundDoubleSide, groundRim, path.dash, edge.lampColor.
 //   3. Boss: copy actors/bosses/boss01.js (a `pattern` object using the shared bossKit) and register it in
 //      actors/bosses/index.js. Its HP/size live in data/enemies.js (BOSSES).
 //   4. Add the stage to STAGES at the bottom. `getStage(n)` is the only lookup the engine uses.
@@ -13,8 +13,8 @@
 //   roster[act]           enemy types that first appear in act 1/2/3 (an act also gets all earlier tiers)
 //   density[act]          share of each template's enemy slots that are kept
 //   weights[act]          segment template weights; templates live in world/segments.js
-//   act3Special           'chase' (toward-camera set piece) | 'hard' (platforming run) | 'either' | 'setpiece' (stages 2-4: act 3 holds the template named by
-//                         setPiece.template: 'vines' | 'reversal' | 'rooftops', defined in world/segmentsX.js)
+//   act3Special           'chase' (toward-camera set piece) | 'hard' (platforming run) | 'either' | 'setpiece' (stages 2-7: act 3 holds the template named by
+//                         setPiece.template: 'vines' | 'reversal' | 'rooftops' | 'awnings' | 'lavaChase' | 'rainbowSlide', defined in world/segmentsX.js, Y, V, I)
 //   obstacle              rolling obstacle type (actors/obstacles.js)
 //   setPiece              the stage's set-piece: { id, template, name, warning (shouted when the player enters it), color } plus, for the chase, its speed / lag / damage.
 //                         Moving parts of a set-piece or hazard (vines, belts, pistons, traffic) live in world/haz*.js and read lists the template returns.
@@ -141,7 +141,26 @@ const STAGE6 = {
   palette: { ground: 0x3a3236, platform: 0x4a4246, ledge: 0x2a2428, beam: 0x2a1c16, barrier: 0xa83a22, wall: 0x2a2428, quicksand: 0x3a3236 },
 };
 
-export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6];
+const STAGE7 = {
+  id: 7, name: 'Rainbow Island', tagline: 'Pretty colours, real mud.',
+  theme: 'stage07',
+  length: 1100, trackWidth: 8,
+  obstacle: 'cloud_bump',      // rolling obstacle (original: a soft white cloud bump)
+  roster: [['paint_blob'], ['mud_cloud'], ['frog']],   // PLAN 6: paint_blob -> mud_cloud -> frog
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, mudPool: 3, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 2.5, beam: 3, barrier: 2, mudPool: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 3, barrier: 3, mudPool: 2.5 },
+  ],
+  setPiece: { id: 'rainbowSlide', template: 'rainbowSlide', name: 'WHEEE!', warning: 'RAINBOW SLIDE! HOLD ON AND JUMP THE CLOUDS!', color: '#ff9ad5' },
+  boss: { id: 'boss7', name: 'DOUBLE RAINBOW', intro: 'The prettiest thing on the island. And the angriest.', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['PALM BEACH', 'CANDY RIDGE'],
+  palette: { ground: 0xd8b878, platform: 0xff9ad5, ledge: 0xffffff, beam: 0xaf52de, barrier: 0xff4a7a, wall: 0x8ad0a0, quicksand: 0xf4e2a8, mud: 0x8a5a32, slide: 0xffe135 },
+};
+
+export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6, STAGE7];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).

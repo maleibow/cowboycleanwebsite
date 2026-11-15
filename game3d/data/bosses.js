@@ -72,4 +72,16 @@ export const BOSS_PATTERNS = {
           ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20 }, globs: 6, globR: 1.7, globDelay: 1.1, globDamage: 20, recover: 1.8, minions: 2 },
     rage: { time: 1.5 },
   },
+  // Original boss7 "RAINBOW - Figure-8 Sweep" (cleaningup.html 4776-4800): flies a figure of eight (x = sin t * 150, y = 150 + sin 2t * 100) and drops a fan of three bombs every 60 frames.
+  // 3D: DOUBLE RAINBOW (a storm-cloud with a rainbow halo) flies a figure of eight over the arena trailing a rainbow beam that scorches the floor under him. The whole path is
+  // drawn on the floor (a chain of markers) for >= 1.6 s before he starts, and the beam only lights once he is moving. Between sweeps he hovers and drops fans of three bombs on
+  // marked circles, then sinks low and rests (open to fire). Phase two: a second beam from the mirrored side of the eight, a faster sweep, five-bomb fans.
+  boss7: {
+    name: 'DOUBLE RAINBOW', color: 0xbdc3c7, size: { hs: 1.9, hx: 2.2, h: 2.4 },
+    intro: { dropTime: 1.8, roar: 1.4, startHeight: 22 },
+    hoverY: 4.6, restY: 2.3, pathA: 8.5, pathB: 5.2, beamR: 1.5, beamDamage: 20,
+    p1: { tele: 1.7, sweep: 6.5, bombs: 3, volleys: 3, every: 1.1, bombDelay: 1.2, bombR: 1.7, bombDamage: 20, rest: 2.6, sweeps: 1, beams: 1 },
+    p2: { tele: 1.5, sweep: 5.0, bombs: 5, volleys: 3, every: 0.9, bombDelay: 1.1, bombR: 1.7, bombDamage: 20, rest: 1.8, sweeps: 1, beams: 2, minions: 2 },
+    rage: { time: 1.5 },
+  },
 };
