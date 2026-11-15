@@ -10,6 +10,9 @@ export const DOOR_STAGE_CHANCE = 0.3;
 const hasDoor = (seed) => (Math.imul(seed ^ 0x9e3779b9, 2654435761) >>> 0) / 4294967296 < DOOR_STAGE_CHANCE;
 const isGap = (name) => name && TEMPLATES[name].cls === 'gap';
 
+// Per-segment hazard lists a template may return (read by world/hazards.js and the theme's dress hooks).
+const EXTRA_KEYS = ['vines', 'belts', 'pistons', 'traffic', 'holes'];
+
 function instantiate(name, s0, act, c, flags = {}) {
   const t = TEMPLATES[name], d = t.build(c);
   const seg = {
@@ -20,13 +23,14 @@ function instantiate(name, s0, act, c, flags = {}) {
   };
   for (const p of d.patches || []) seg.patches.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1 });
   if (d.arena) seg.arena = { ...d.arena, s: s0 + d.arena.s };
-  for (const p of d.spans || []) seg.boxes.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1, y0: p.top - p.depth, y1: p.top, kind: p.kind });
+  for (const p of d.spans || []) seg.boxes.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1, y0: p.top - p.depth, y1: p.top, kind: p.kind, ...(p.belt !== undefined ? { belt: p.belt } : {}) });
   for (const o of d.solids || []) seg.boxes.push({ ...o, s0: s0 + o.s0, s1: s0 + o.s1 });
   for (const o of d.deco || []) seg.deco.push({ ...o, s0: s0 + o.s0, s1: s0 + o.s1 });
   for (const g of d.gaps || []) seg.gaps.push({ s0: s0 + g.s0, s1: s0 + g.s1 });
   seg.slots = (d.slots || []).map((sl) => ({ ...sl, s: s0 + sl.s }));
   if (d.checkpoint != null) seg.checkpoint = s0 + d.checkpoint;
   if (d.gate != null) seg.gate = s0 + d.gate;
+  for (const key of EXTRA_KEYS) if (d[key]) seg[key] = d[key].map((o) => { const q = { ...o }; for (const k of ['s', 's0', 's1']) if (q[k] !== undefined) q[k] += s0; return q; });   // hazard data (vines, belts, pistons, traffic, holes) carries absolute s
   if (flags.noEnemies) seg.slots = seg.slots.filter((sl) => sl.kind !== 'enemy');
   return seg;
 }
@@ -62,6 +66,7 @@ export function generateStage(stageData, seed) {
     specialDone = false;
     const special = () => {
       if (act === 2) { add('side'); return; }
+      if (stageData.act3Special === 'setpiece') { add(stageData.setPiece.template); return; }   // stages 2-4: the stage's own set-piece (data/stages.js)
       const hard = stageData.act3Special === 'hard' || (stageData.act3Special === 'either' && rng.chance(0.5));
       if (!hard) { add('chase'); return; }
       add('steps'); add('flat'); add('doubleGap'); add('flat'); add('beam');
@@ -131,11 +136,12 @@ export function validateStage(layout, stageData) {
   for (const n of ['gap', 'barrier']) if (!segs.some((g) => g.act === 1 && g.name === n)) errs.push('act 1 lacks ' + n);
   if (layout.checkpoints.length !== 2) errs.push('want a checkpoint at each act boundary');
   if (segs.filter((g) => g.name === 'side').length !== 1) errs.push('want exactly one side section');
-  if (!segs.some((g) => g.name === 'chase') && !segs.some((g) => g.name === 'beam' && g.act === 3)) errs.push('act 3 lacks chase/hard run');
+  if (stageData.act3Special === 'setpiece') { if (!segs.some((g) => g.name === stageData.setPiece.template)) errs.push('act 3 lacks the set-piece ' + stageData.setPiece.template); }
+  else if (!segs.some((g) => g.name === 'chase') && !segs.some((g) => g.name === 'beam' && g.act === 3)) errs.push('act 3 lacks chase/hard run');
   const have = new Set(layout.slots.filter((sl) => sl.item).map((sl) => sl.item));
   for (const p of POWERUP_TYPES) if (!have.has(p)) errs.push('powerup never obtainable: ' + p);
   for (const g of segs) {
-    for (const gap of g.gaps) if (gap.s1 - gap.s0 > JUMP_MAX_GAP) errs.push(`gap too wide ${gap.s1 - gap.s0}`);
+    for (const gap of g.gaps) if (g.name !== 'vines' && gap.s1 - gap.s0 > JUMP_MAX_GAP) errs.push(`gap too wide ${gap.s1 - gap.s0}`);
     for (const sl of g.slots) if (sl.kind === 'enemy' && sl.tier > g.act) errs.push('enemy tier above act');
   }
   return errs;

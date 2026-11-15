@@ -26,6 +26,7 @@ import { createCombat } from '../actors/combat.js';
 import { createWeapon } from '../actors/weapon.js';
 import { createSpawner } from '../actors/spawner.js';
 import { createCasinoDoors } from '../actors/casinoDoor.js';
+import { createHazards } from './hazards.js';
 
 // Wires a generated, themed stage into a playable scene: sky + lights + look from the theme, the track builder
 // window, scenery chunks, player, camera, the chase hazard, combat actors, checkpoints, and the boss arena.
@@ -52,9 +53,10 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   scene.add(sun, sun.target);
   const particles = createParticles(); scene.add(particles.mesh);
 
-  const pathMat = createToon({ vertexColors: true });
+  const pathMat = createToon({ vertexColors: true, rimBoost: theme.groundRim ?? 1 });
   const builder = createTrackBuilder(track, scene, { palette: theme.pathPalette || stageData.palette, showSlots: /slots=1/.test(location.search), shadows: !!quality.tier.shadowMap, material: pathMat, style: theme.path, theme, seed: usedSeed });
   const scenery = createScenery(track, theme, { quality, scene, seed: usedSeed });
+  scenery.ctx.emit = (name, x, y, z, o) => particles.emit(name, x, y, z, o);   // theme dressing (manhole steam) can puff particles
   const player = createPlayer(track, { startS: layout.startS });
   const rig = createCameraRig(track);
   scene.add(player.mesh);
@@ -75,6 +77,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   ctx.spawner = createSpawner(ctx); ctx.spawner.enabled = foes;
   ctx.enemies.preload([...stageData.roster.flat(), 'dirt']);
   ctx.doors = createCasinoDoors(ctx, scene, track);
+  ctx.hazards = createHazards(ctx, scene, track);   // vines / conveyors / pistons / traffic (stages 2-4)
   const arena = createArena(ctx);
 
   // ---- the chase hazard: a giant angry dust ball that rolls up behind the player inside a `chase` segment
@@ -96,7 +99,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   const v3 = new THREE.Vector3(), fr = { p: new THREE.Vector3(), t: new THREE.Vector3(), r: new THREE.Vector3(), u: new THREE.Vector3() };
   const level = {
     scene, camera: rig.camera, rig, track, layout, player, builder, scenery, arena, particles, sky, stageData, theme, seed: usedSeed, hazard,
-    fx: ctx.fx, projectiles: ctx.projectiles, enemies: ctx.enemies, pickups: ctx.pickups, obstacles: ctx.obstacles,
+    hazards: ctx.hazards, fx: ctx.fx, projectiles: ctx.projectiles, enemies: ctx.enemies, pickups: ctx.pickups, obstacles: ctx.obstacles,
     combat: ctx.combat, weapon: ctx.weapon, spawner: ctx.spawner, doors: ctx.doors,
     finished: false, time: 0, runTime: 0, coinsAtStart: run.coins,
     update(dt, input) {
@@ -107,6 +110,8 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
       player.update(dt, input, rig.weights);
       const b = player.body, seg = player.seg;
       ctx.weapon.update(dt, input);
+      ctx.hazards.update(dt, input);
+      if (!level.announced && seg.name === stageData.setPiece?.template) { level.announced = true; cards?.shout(stageData.setPiece.warning, stageData.setPiece.color || '#7dff9a', 2200); events.emit('setPieceStart', stageData.setPiece.id); }
       ctx.spawner.update(dt); ctx.enemies.update(dt); ctx.projectiles.update(dt); ctx.combat.step(dt);
       ctx.pickups.update(dt); ctx.obstacles.update(dt); ctx.fx.update(dt);
       arena.update(dt); ctx.doors.update(dt);
@@ -137,7 +142,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
     render(alpha) {
       player.render(alpha); ctx.weapon.render(); rig.render(alpha);
       ctx.enemies.render(alpha); ctx.projectiles.render(); ctx.pickups.render(); ctx.obstacles.render(alpha); ctx.fx.render();
-      arena.render(level.time); ctx.doors.render(level.time); hud?.render();
+      arena.render(level.time); ctx.doors.render(level.time); ctx.hazards.render(alpha, level.time); hud?.render();
       if (hazard.active) ball.place(track, hazard.s, level.time, particles);
       const pp = player.mesh.position; sun.target.position.copy(pp); sun.position.set(pp.x + L.sunOffset[0], pp.y + L.sunOffset[1], pp.z + L.sunOffset[2]);
       sun.target.updateMatrixWorld();
@@ -151,12 +156,12 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
     restart() {
       run.score = run.stageStartScore; run.health = 100; run.bombs = BOMB.perStage;
       for (const a of [ctx.enemies, ctx.projectiles, ctx.pickups, ctx.obstacles, ctx.fx]) a.clear();
-      ctx.weapon.reset(); ctx.combat.reset(); ctx.spawner.reset(); hazard.active = false; ball.group.visible = false; arena.reset(); ctx.doors.reset();
+      ctx.weapon.reset(); ctx.combat.reset(); ctx.spawner.reset(); ctx.hazards.reset(); level.announced = false; hazard.active = false; ball.group.visible = false; arena.reset(); ctx.doors.reset();
       level.finished = false; level.gateTime = undefined; level.runTime = 0; level.coinsAtStart = run.coins;
       player.revive({ s: layout.startS, x: 0, y: 0 }); rig.reset(player.body); builder.update(player.body.s); hud?.reset();
       scenery.passed.clear(); for (const d of scenery.dressed.values()) d.reset?.();
     },
-    dispose() { offs.forEach((f) => f?.()); ctx.doors.dispose(); arena.dispose(); scenery.dispose(); builder.dispose(); ctx.enemies.models.dispose(); scene.remove(ball.group); },
+    dispose() { offs.forEach((f) => f?.()); ctx.hazards.dispose(); ctx.doors.dispose(); arena.dispose(); scenery.dispose(); builder.dispose(); ctx.enemies.models.dispose(); scene.remove(ball.group); },
     // Debug helpers (?debug=1 keys 1-5, and window.__game.world.debug in tests)
     debug: {
       spawnEnemies: (n = 10) => ctx.spawner.spawnDebug(n),

@@ -4,6 +4,7 @@
 //      Every field is read by the engine; nothing about a stage lives in engine code (PLAN house rule 5).
 //   2. Copy game3d/themes/stage01.js to themes/stageNN.js: palette, sky, fog, lights, colour grade, scatter
 //      props, edge props, far layers, set-piece dressing. Register it in themes/index.js.
+//      A theme may also supply: hazards { vine | piston | taxi } (geometry for world/haz*.js), beamGap, groundDoubleSide, groundRim, path.dash, edge.lampColor.
 //   3. Boss: copy actors/bosses/boss01.js (a `pattern` object using the shared bossKit) and register it in
 //      actors/bosses/index.js. Its HP/size live in data/enemies.js (BOSSES).
 //   4. Add the stage to STAGES at the bottom. `getStage(n)` is the only lookup the engine uses.
@@ -12,9 +13,11 @@
 //   roster[act]           enemy types that first appear in act 1/2/3 (an act also gets all earlier tiers)
 //   density[act]          share of each template's enemy slots that are kept
 //   weights[act]          segment template weights; templates live in world/segments.js
-//   act3Special           'chase' (toward-camera set piece) | 'hard' (platforming run) | 'either'
+//   act3Special           'chase' (toward-camera set piece) | 'hard' (platforming run) | 'either' | 'setpiece' (stages 2-4: act 3 holds the template named by
+//                         setPiece.template: 'vines' | 'reversal' | 'rooftops', defined in world/segmentsX.js)
 //   obstacle              rolling obstacle type (actors/obstacles.js)
-//   setPiece              tuning for the stage's set-piece segment (the chase's speed, lag and damage)
+//   setPiece              the stage's set-piece: { id, template, name, warning (shouted when the player enters it), color } plus, for the chase, its speed / lag / damage.
+//                         Moving parts of a set-piece or hazard (vines, belts, pistons, traffic) live in world/haz*.js and read lists the template returns.
 //   boss                  { id, name, intro line, arena size, phase threshold }
 //   (the stage's track title, Spotify link and audio file live in data/music.js, slot `stageN`)
 //   checkpoints           names shown on the checkpoint toasts, one per act boundary
@@ -43,7 +46,64 @@ const STAGE1 = {
   palette: { ground: 0xc9a066, platform: 0xe0b872, ledge: 0xb88a4e, beam: 0x9a6b43, barrier: 0xd94a3d, wall: 0x6b5b7a, quicksand: 0xd7a05a },
 };
 
-export const STAGES = [STAGE1];
+const STAGE2 = {
+  id: 2, name: 'Toxic Jungle', tagline: 'The jungle is oozing. Hose it down.',
+  theme: 'stage02',
+  length: 1100, trackWidth: 8,
+  obstacle: 'log',              // rolling obstacle (original: a log)
+  roster: [['slime', 'bloom'], ['bat'], ['frog', 'sludge', 'centipede']],   // PLAN 6: slime, bloom -> bat -> frog, sludge, centipede
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',      // act 3 holds the stage's own set-piece instead of the dust-ball chase
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, quicksand: 2, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 3, beam: 2, barrier: 2, quicksand: 2 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, quicksand: 1.5 },
+  ],
+  setPiece: { id: 'vineSwing', template: 'vines', name: 'SWING!', warning: 'VINES! JUMP AND GRAB ON!', color: '#7dff9a' },
+  boss: { id: 'boss2', name: 'BIG SLUDGE', intro: 'The slimiest thing in the jungle', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['SLUDGE RIVER', 'TEMPLE RUINS'],
+  palette: { ground: 0x6f9a52, platform: 0x7a5a38, ledge: 0x5d4037, beam: 0x5d4037, barrier: 0x6a4a2e, wall: 0x6f8a6a, quicksand: 0x6f8a2b },
+};
+
+const STAGE3 = {
+  id: 3, name: 'Neo-Scrap City', tagline: 'A city made of trash needs a very big mop.',
+  theme: 'stage03',
+  length: 1100, trackWidth: 8,
+  obstacle: 'barrel',          // rolling obstacle (original: a toxic barrel)
+  roster: [['smog', 'slag'], ['drone'], ['rat', 'trash', 'roach']],   // PLAN 6: smog, slag -> drone -> rat, trash, roach
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, conveyor: 2.5, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 2.5, beam: 2, barrier: 2, conveyor: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, conveyor: 2.5 },
+  ],
+  setPiece: { id: 'conveyorReversal', template: 'reversal', name: 'REVERSE!', warning: 'CONVEYOR! WATCH THE CRUSHERS!', color: '#25ffe6' },
+  boss: { id: 'boss3', name: 'TRASH KING', intro: 'The biggest heap in the city', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['SCRAPYARD', 'NEON ALLEY'],
+  palette: { ground: 0x4a4e68, platform: 0x59617a, ledge: 0x4a5068, beam: 0x6a6a7e, barrier: 0x4a5068, wall: 0x3e4660, quicksand: 0x4a5068 },
+};
+
+const STAGE4 = {
+  id: 4, name: 'New York City', tagline: 'The city that never sleeps is also never clean.',
+  theme: 'stage04',
+  length: 1100, trackWidth: 8,
+  obstacle: 'trash_can',       // rolling obstacle (original: a trash can)
+  roster: [['pizza', 'rat'], ['pigeon'], ['police']],   // PLAN 6: pizza, rat -> pigeon -> police
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, manholes: 2.5, crossing: 2.5, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 2.5, beam: 2, barrier: 2, manholes: 2.5, crossing: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, manholes: 2, crossing: 3 },
+  ],
+  setPiece: { id: 'rooftopDrop', template: 'rooftops', name: 'ROOFTOPS!', warning: 'UP THE FIRE ESCAPE! RUN THE ROOFTOPS!', color: '#ffd23a' },
+  boss: { id: 'boss4', name: 'PIZZA RAT', intro: 'The hungriest thing in the city', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['5TH AVENUE', 'TIMES SQUARE'],
+  palette: { ground: 0x4a4e5c, platform: 0x7a808e, ledge: 0x6a7080, beam: 0x9a7a4a, barrier: 0x8a4a3a, wall: 0x3a4252, quicksand: 0x4a4e5c },
+};
+
+export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).

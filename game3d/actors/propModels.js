@@ -30,4 +30,46 @@ export const sandPile = {
   },
   rock: 0.32, dust: true,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile };
+
+// Log (original: a #5d4037 end-on circle with bark ridges and a #795548 core): a fat mossy log lying across the path, rolled end over end.
+// Authored on the same unit extents as the sand pile (0.9 half-length, 0.9 tall) and scaled by the obstacle's hit box, so it ends up 2.4 m wide, 1 m tall.
+export const log = {
+  build: () => {
+    const g = new THREE.CylinderGeometry(0.9, 0.9, 1.8, 14).rotateZ(Math.PI / 2);
+    const b = new Builder().add(g, 0x5d4037, { p: [0, 0.45, 0], s: [1, 0.5, 1], jitter: 0.02, ao: 0.12 });
+    for (const s of [-1, 1]) b.add(new THREE.CylinderGeometry(0.88, 0.88, 0.06, 14).rotateZ(Math.PI / 2), 0xc9a672, { p: [s * 0.9, 0.45, 0], s: [1, 0.5, 1], ao: 0 }).add(new THREE.CylinderGeometry(0.5, 0.5, 0.07, 12).rotateZ(Math.PI / 2), 0x8d6e63, { p: [s * 0.92, 0.45, 0], s: [1, 0.5, 1], ao: 0 });   // cut ends with rings
+    for (const x of [-0.45, 0.1, 0.55]) b.add(new THREE.TorusGeometry(0.9, 0.04, 4, 14).rotateY(Math.PI / 2), 0x3e2723, { p: [x, 0.45, 0], s: [1, 0.5, 1], ao: 0 });        // bark ridges
+    b.sphere(0.4, 0x3f8a44, { p: [-0.3, 0.88, 0.1], s: [1.4, 0.35, 1.1], ao: 0, jitter: 0.04 }).sphere(0.3, 0x58d27a, { p: [0.4, 0.84, -0.15], s: [1.3, 0.3, 1], ao: 0, jitter: 0.04 });   // moss
+    for (const [x, z] of [[0.2, 0.3], [-0.6, -0.2]]) b.cyl(0.03, 0.05, 0.2, 0xe9f6d4, { p: [x, 0.95, z], seg: 4, ao: 0 });
+    return b.build();
+  },
+  rock: 0.1, dust: false,
+};
+
+// Barrel (original: a purple #8e44ad drum with lighter bands and a green toxic symbol, rolling): a toxic drum lying on its side that ROLLS toward you.
+// Authored centred on its own origin (m.lift raises it by its radius) and squashed on y / z so that after the obstacle's scale (hx .55, h 1.0, hs .55) it is
+// a true cylinder 1.1 m long and 1.0 m across; the batch's pitch then turns it about the lateral axis.
+export const barrel = {
+  build: () => {
+    const cyl = (r, len, seg = 14) => new THREE.CylinderGeometry(r, r, len, seg).rotateZ(Math.PI / 2), sy = 0.45 / 0.5, sz = 0.818 / 0.5, S = [1, sy, sz];
+    const b = new Builder().add(cyl(1, 1.8), 0x8e44ad, { s: S, jitter: 0.01, ao: 0 });
+    for (const x of [-0.62, 0, 0.62]) b.add(cyl(1.04, 0.16), 0xc58ae0, { p: [x, 0, 0], s: S, ao: 0 });                                  // hoops
+    for (const sg of [-1, 1]) b.add(cyl(0.96, 0.08), 0x5b2c6f, { p: [sg * 0.9, 0, 0], s: S, ao: 0 });                                   // rims
+    b.add(new THREE.CylinderGeometry(0.34, 0.34, 0.04, 14).rotateZ(Math.PI / 2), new THREE.Color(0.5, 3, 0.8), { p: [0.04, 0, 0.0], s: [1, 1.3, 1.6], r: [0, 0, 0], ao: 0 });
+    b.cyl(0.08, 0.08, 0.3, 0x2ecc71, { p: [0.0, 0.52, 0], seg: 5, ao: 0 });
+    return b.build();
+  },
+  rock: 0, dust: false, roll: true, lift: 0.45,
+};
+
+// Trash can (original: a #95a5a6 tapered can with ribs and a lid): a dented steel can with a loose lid, a banana peel, slid along the road. Unit extents like the sand pile.
+export const trashCan = {
+  build: () => {
+    const b = new Builder().cyl(0.85, 0.7, 0.8, 0x95a5a6, { p: [0, 0.4, 0], seg: 12, jitter: 0.02, ao: 0.15 }).cyl(0.95, 0.9, 0.12, 0xbdc3c7, { p: [0, 0.86, 0], seg: 12, ao: 0.05 }).cyl(0.28, 0.28, 0.1, 0x7f8c8d, { p: [0, 0.96, 0], seg: 8, ao: 0 });
+    for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; b.box(0.07, 0.7, 0.07, 0x7f8c8d, { p: [Math.cos(a) * 0.8, 0.4, Math.sin(a) * 0.8], r: [0, -a, 0], radius: 0.02, ao: 0 }); }
+    b.cyl(0.9, 0.9, 0.06, 0x5d6b6c, { p: [0, 0.03, 0], seg: 12, ao: 0 }).sphere(0.2, 0xe8d03a, { p: [0.55, 0.98, 0.3], s: [1.4, 0.3, 0.8], ao: 0, jitter: 0.02 });
+    return b.build();
+  },
+  rock: 0.18, dust: false,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan };

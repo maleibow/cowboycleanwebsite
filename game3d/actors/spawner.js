@@ -1,5 +1,5 @@
 import { run } from '../core/state.js';
-import { ENEMY_TYPES, ENEMIES } from '../data/enemies.js';
+import { ENEMIES } from '../data/enemies.js';
 
 // Turns the generator's slots into actors as the player approaches, and adds ambushes on a timer.
 // Original pacing (7125-7195): interval = max(30, 120 - diff) frames, diff = min(60, localScore/80) + 3*(stage-1) + 10*(loop-1);
@@ -65,11 +65,12 @@ export function createSpawner(ctx) {
     if (api.ambush()) api.ambushes++;
   };
 
-  // Debug: n enemies spread over all archetypes, 4-30 m ahead of the player.
+  // Debug: n enemies of this stage's roster (every archetype it has), 4-30 m ahead of the player. (All 35 types are modelled now, so spawning every type at once
+  // would blow the draw-call budget in the stress test: each modelled part is its own instanced draw.)
   api.spawnDebug = (n) => {
     const b = P(); let made = 0;
     for (let i = 0; i < n; i++) {
-      const type = ENEMY_TYPES[(i * 7 + api.slotSpawns) % ENEMY_TYPES.length], def = ENEMIES[type];
+      const pool = [...new Set(ctx.stageData.roster.flat())], type = pool[(i * 7 + api.slotSpawns) % pool.length], def = ENEMIES[type];
       const e = ctx.enemies.spawn(type, b.s + 4 + Math.random() * 26, b.x + (Math.random() - 0.5) * 6, b.y, { active: true, edgeX: def.climb ? 2 : undefined });
       if (e) made++;
     }

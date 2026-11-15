@@ -34,12 +34,12 @@ export function createScenery(track, theme, { quality, scene, seed = 1, lampMate
   const half = (track.layout.segments[0]?.width || 8) / 2;
   const chunks = new Map(), dressed = new Map();
   const api = { group, chunks, dressed, built: 0, disposed: 0, far: null, passed: new Set(), gateOpen: 0 };
-  const groundMat = createToon({ vertexColors: true, map: theme.ground?.texture ? getTexture(theme.ground.texture.type, theme.ground.texture) : null });
+  const groundMat = createToon({ rimBoost: theme.groundRim ?? 1, side: theme.groundDoubleSide ? THREE.DoubleSide : THREE.FrontSide, vertexColors: true, map: theme.ground?.texture ? getTexture(theme.ground.texture.type, theme.ground.texture) : null });
 
   // Shared geometry, built once per stage from the theme's recipes.
   const scatter = (theme.scatter || []).map((sc) => ({ ...sc, geo: sc.build(theme.colors), mat: createToon({ vertexColors: true }) }));
   const edge = theme.edge ? theme.edge.build(theme.colors) : null;
-  const edgeMats = edge ? { post: createToon({ vertexColors: true }), lamp: lampMaterial || createToon({ color: 0xffa640, emissive: 0xff8a20, emissiveIntensity: 3.2, grime: false, rim: false, tint: false }) } : null;
+  const edgeMats = edge ? { post: createToon({ vertexColors: true }), lamp: lampMaterial || createToon({ color: theme.edge?.lampColor ?? 0xffa640, emissive: theme.edge?.lampEmissive ?? 0xff8a20, emissiveIntensity: 3.2, grime: false, rim: false, tint: false }) } : null;
   const ctx = { track, theme, scene, half, rng: null, api, terrain: null, material: groundMat, createToon, getTexture };
 
   // ---- environment lists for a chunk: gaps / flat zones / patches the terrain function reacts to
@@ -49,6 +49,7 @@ export function createScenery(track, theme, { quality, scene, seed = 1, lampMate
       if (g.s1 < s0 - 8 || g.s0 > s1 + 8) continue;
       for (const q of g.gaps) env.gaps.push(q);
       for (const q of g.patches || []) env.patches.push(q);
+      if (theme.beamGap && g.name === 'beam') for (const bx of g.boxes) if (bx.kind === 'beam') env.gaps.push({ s0: bx.s0, s1: bx.s1 });   // a log bridge spans a real drop (stage 2+)
       if (g.mode === 'side') env.zones.push({ s0: g.s0, s1: g.s1, flat: true });
       if (g.arena) env.zones.push({ s0: g.s0, s1: g.s1, flat: true, arena: g.arena });
     }

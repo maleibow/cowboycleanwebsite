@@ -49,7 +49,8 @@ function addBox(track, sink, box, hex, style = {}) {
       let kk = 1 + (hh(Math.floor(box.s0 + i * 2), j + box.x0) - 0.5) * 2 * noise;
       if (style.rut && box.kind === 'ground' && Math.abs(Math.abs(xm) - style.rutX) < 0.45) kk *= 1 - style.rut;
       if (style.edge && (j === 0 || j === cols - 1) && cols > 2) kk *= style.edge;                 // kerb stones along both edges
-      sink.quad(P(i, xa, box.y1), P(i, xb, box.y1), P(i + 1, xb, box.y1), P(i + 1, xa, box.y1), hint, top.clone().multiplyScalar(kk));
+      const tc = style.dash && box.kind === 'ground' && Math.abs(xm) < 0.4 && i % 2 === 0 ? mix(style.dash, 1) : top.clone().multiplyScalar(kk);   // a dashed road line down the middle (stage 4)
+      sink.quad(P(i, xa, box.y1), P(i, xb, box.y1), P(i + 1, xb, box.y1), P(i + 1, xa, box.y1), hint, tc);
     }
     sink.quad(P(i, box.x0, box.y1), P(i, box.x0, box.y0), P(i + 1, box.x0, box.y0), P(i + 1, box.x0, box.y1), hint.copy(F[i].r).negate(), side);
     sink.quad(P(i, box.x1, box.y1), P(i, box.x1, box.y0), P(i + 1, box.x1, box.y0), P(i + 1, box.x1, box.y1), hint.copy(F[i].r), side);
