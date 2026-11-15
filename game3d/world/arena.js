@@ -5,6 +5,7 @@ import { BOSS_FACTORIES } from '../actors/bosses/index.js';
 import { createBossFx, easeOut, clamp01 } from '../actors/bosses/bossKit.js';
 import { Builder } from '../actors/modelKit.js';
 import { createToon } from '../render/materials.js';
+import { warm as warmShaders } from '../render/warm.js';
 
 // The boss encounter as a state machine (PLAN 3.2, 6). Everything after the gate:
 //   sealed -> (player reaches the gate) opening -> open -> (player walks into the disc) fight -> victory -> done
@@ -53,7 +54,17 @@ export function createArena(ctx) {
   const startFight = () => {
     api.state = 'fight'; api.fightT = 0; dyn(seal, true); sealMesh.visible = true; sealMesh.userData.rise = 0;
     sealMesh.position.set(0, -5, 0); sealMesh.matrixAutoUpdate = false;
+    const known = new Set(ctx.scene.children);
     api.boss = BOSS_FACTORIES[stageBoss.id](ctx, api, stageBoss);
+    // The boss's materials are new programs: compile them in the background and show the boss once they are ready (at most 0.8 s),
+    // so the moment it lands is not a frame-long freeze on a phone. Where parallel compile is missing this changes nothing.
+    if (ctx.gfx) {
+      const fresh = ctx.scene.children.filter((o) => !known.has(o) && o.visible);
+      for (const o of fresh) o.visible = false;
+      let shown = false; const reveal = () => { if (shown) return; shown = true; for (const o of fresh) o.visible = true; };
+      warmShaders(ctx.gfx.renderer, ctx.scene, ctx.rig.camera, 700).then(reveal, reveal);
+      setTimeout(reveal, 800);
+    }
     api.boss.onDefeated = () => victory();
     ctx.rig.addTrauma(0.4); events.emit('bossFight', { name: api.boss.name });
   };

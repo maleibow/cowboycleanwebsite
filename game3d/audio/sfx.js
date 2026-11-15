@@ -1,6 +1,7 @@
 import { events } from '../core/events.js';
 import { createSynth } from './synth.js';
 import { createSaloonMusic } from './saloon.js';
+import { settings, onSetting } from '../core/settings.js';
 
 // Every sound effect, synthesised (no files). Part 1 is the original game's `Sound` object (cleaningup.html 1416-1475)
 // ported one for one: same oscillator type, start / end frequency, length and volume. Part 2 is what the 3D game needs
@@ -12,6 +13,7 @@ const store = { get() { try { return localStorage.getItem(KEY); } catch { return
 export function initSfx() {
   const S = createSynth(), last = {};
   S.setMuted(store.get() === '1');
+  S.setMaster(settings.master); onSetting((k) => { if (k === 'master' || k === '*') S.setMaster(settings.master); });   // Settings screen master volume
 
   // Original `Sound.play(id, freq, type, duration, vol, slideFreq)` as a recipe.
   const P = (freq, type, dur, vol, slide = null, o = {}) => ({ dur, pv: 0.04, gap: 0.05, ...o, fn: (k) => S.tone({ f: freq * k, f2: slide && slide * k, type, dur, vol }) });
@@ -158,9 +160,11 @@ const SHOOT = { super: 'shootSuper', charcoal: 'shootSuper', laser: 'shootLaser'
   for (const [ev, fn] of Object.entries(MAP)) events.on(ev, fn);
 
   // ---- unlock on the first key press or tap, mute toggle (HUD button emits 'toggleMute', M key), remembered
-  const unlock = () => { S.unlock(); if (S.ready) off(); };   // resume() lands a moment later: keep listening until it has
-  const unlockEvents = ['keydown', 'pointerdown', 'touchstart'], off = () => unlockEvents.forEach((e) => removeEventListener(e, unlock, true));
-  unlockEvents.forEach((e) => addEventListener(e, unlock, true));
+  // The context is created / resumed by any key press or tap and, unlike before, the listeners stay: on iOS the context goes back to
+  // 'interrupted' after a call or the lock screen, and Android suspends it with the tab. iOS Safari only counts touchend / click.
+  const unlock = () => { S.unlock(); };
+  for (const e of ['keydown', 'pointerdown', 'touchstart', 'touchend', 'click']) addEventListener(e, unlock, true);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) S.unlock(); });
   const setMuted = (m) => { S.setMuted(m); store.set(m ? '1' : '0'); events.emit('muteChanged', S.muted); };
   events.on('toggleMute', () => setMuted(!S.muted));
   addEventListener('keydown', (e) => { if (e.code === 'KeyM' && !e.repeat && !/^(INPUT|TEXTAREA)$/.test(e.target?.tagName || '')) setMuted(!S.muted); });

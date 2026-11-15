@@ -10,6 +10,7 @@ export function createCombat(ctx) {
   const api = { combo, kills: 0, hurtCount: 0 };
 
   api.shake = (a) => ctx.rig?.addTrauma(a);
+  api.onCoin = (c) => ctx.hud?.coinFly?.(c.s, c.x, c.y);   // coin-to-counter arc (ui/juice.js)
 
   // Enemy contact / projectile hit on the player.
   api.damagePlayer = (dmg) => {

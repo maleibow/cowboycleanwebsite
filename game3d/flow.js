@@ -14,6 +14,8 @@ import { createCasino } from './ui/casino.js';
 import { createPauseMenu } from './ui/pauseMenu.js';
 import { createGameOver } from './ui/gameOver.js';
 import { createVictory } from './ui/victory.js';
+import { createSettingsPanel } from './ui/settingsPanel.js';
+import { stepHitStop, hitStopActive, clearHitStop } from './core/hitstop.js';
 import { testConnection } from './services/leaderboard.js';
 
 // The game-flow state machine (PLAN 10, prompt 5):
@@ -26,7 +28,7 @@ const HUD_STATES = new Set(['INTRO', 'PLAYING', 'PAUSED', 'STAGECLEAR', 'GAMEOVE
 const IDLE = { moveX: 0, moveY: 0, jump: false, spray: false, bomb: false, slide: false, pause: false, jumpPressed: false, bombPressed: false, pausePressed: false, anyPressed: false, keys: new Set() };
 
 export function createFlow(env) {
-  const { gfx, input, hud, cards, sfx, makeWorld, jukebox } = env, hudEl = document.getElementById('hud');
+  const { gfx, input, hud, cards, sfx, jukebox } = env, hudEl = document.getElementById('hud');
   const G = { world: null, fly: null, stats: null, overAge: 0, door: null, then: null };
   const fsm = { name: null, current: null };
 
@@ -35,13 +37,32 @@ export function createFlow(env) {
   const lazy = {}, once = (k, f) => lazy[k] || (lazy[k] = f());
   const saloon = () => once('saloon', createSaloon), slotRoom = () => once('slot', createSlotRoom);
   let store, casino;
-  const title = createTitle(env.ui, { onStart: () => startRun(1), onCheat: (c) => startRun(c.stage, c.vehicle), jukebox });
-  const pauseMenu = createPauseMenu(env.ui, { onResume: () => fsm.name === 'PAUSED' && go('PLAYING'), onRestart: () => { G.world.restart(); hud.reset(); cards.reset(); jukebox.bossOff(); go('PLAYING'); }, onQuit: () => toTitle(), jukebox });
+  const settingsPanel = createSettingsPanel(env.ui), openSettings = () => settingsPanel.show();
+  const title = createTitle(env.ui, { onStart: () => startRun(1), onCheat: (c) => startRun(c.stage, c.vehicle), jukebox, onSettings: openSettings });
+  const pauseMenu = createPauseMenu(env.ui, { onResume: () => fsm.name === 'PAUSED' && go('PLAYING'), onRestart: () => { G.world.restart(); hud.reset(); cards.reset(); jukebox.bossOff(); go('PLAYING'); }, onQuit: () => toTitle(), onSettings: openSettings, jukebox });
   const gameOver = createGameOver(env.ui, { onRetry: () => retry(), onQuit: () => toTitle(), jukebox });
   const victory = createVictory(env.ui, { onContinue: () => go('STORE'), jukebox });
 
-  const disposeWorld = () => { if (G.fly) { G.fly.dispose(); G.fly = null; } if (G.world) { G.world.dispose?.(); G.world = null; } hud.reset(); cards.reset(); };
-  const loadStage = (opts) => { disposeWorld(); G.world = makeWorld(opts); env.onWorld?.(G.world); };
+  const disposeWorld = () => { if (G.fly) { G.fly.dispose(); G.fly = null; } if (G.world) { G.world.dispose?.(); G.world = null; } G.loader = null; hud.reset(); cards.reset(); };
+  // Stages are built a slice at a time (world/level.js createLevelSteps): loadStage() starts the build, pump() spends a few ms of
+  // each frame on it (behind the title, a cutscene or the stage-intro card), and `worldReady` fires when the stage is playable.
+  // { sync: true } builds it all at once (dev URLs and tests that need the world immediately).
+  const loadStage = (opts, { sync = false } = {}) => {
+    disposeWorld();
+    sync = sync || !env.sliced;
+    G.loader = { gen: env.makeWorldSteps({ ...opts, warm: !sync }), steps: 0, ms: 0, worst: 0, t0: performance.now() };
+    if (sync) pump(Infinity);
+  };
+  const pump = (budget) => {
+    const L = G.loader; if (!L) return;
+    const t0 = performance.now(); let r;
+    let a = t0;
+    do { r = L.gen.next(); L.steps++; const b = performance.now(); L.worst = Math.max(L.worst, b - a); a = b; } while (!r.done && r.value !== 'wait' && a - t0 < budget);   // L.worst = the longest single slice (what the player would feel as a hitch)
+    L.ms += performance.now() - t0;
+    if (r.done) { G.world = r.value; G.loader = null; G.loadMs = L.ms; G.loadSteps = L.steps; G.loadWorst = L.worst; env.onWorld?.(G.world); fitCamera(); events.emit('worldReady', G.world); }
+  };
+  const loading = () => (G.loader ? 1 - 1 / (1 + G.loader.steps / 10) : null);   // a progress feel for the bar: the exact step count is not known up front
+  const fitCamera = () => { if (G.world) { G.world.camera.aspect = gfx.width / gfx.height; G.world.camera.updateProjectionMatrix(); } };
   const restoreLook = () => { const w = G.world; if (w) { setStageLook(w.theme.look); gfx.post.setStage(w.theme.grade); w.camera.aspect = gfx.width / gfx.height; w.camera.updateProjectionMatrix(); } };
 
   // ---- transitions
@@ -64,11 +85,11 @@ export function createFlow(env) {
   const idle = (dt) => G.world.update(dt, IDLE);
   const worldView = () => G.world;
   const states = {
-    BOOT: { enter() { if (env.skipTitle) { loadStage(); go(env.skipIntro ? 'PLAYING' : 'INTRO'); } else go('TITLE'); } },   // dev params (?stage, ?intro=0, ?boss=1, ?lookdev=1) start straight on a stage
+    BOOT: { enter() { if (env.skipTitle) { loadStage(undefined, { sync: env.skipIntro }); go(env.skipIntro ? 'PLAYING' : 'INTRO'); } else go('TITLE'); } },   // dev params (?stage, ?intro=0, ?boss=1, ?lookdev=1) start straight on a stage
     TITLE: {
-      enter() { loadStage({ foes: false }); G.fly = createTitleFly(G.world, env.ui, gfx); G.world.camera.aspect = gfx.width / gfx.height; title.show(); },
+      enter() { title.show(); loadStage({ foes: false }); },     // the menu is up at once; the fly-through appears when its stage has been built
       exit() { title.hide(); },
-      update(dt) { G.fly.update(dt); }, render() { G.fly.render(); }, view: worldView,
+      update(dt) { G.fly?.update(dt); }, render() { G.fly?.render(); }, view: worldView,
     },
     CUTSCENE: {
       enter({ id, then }) { bust.enter(gfx); G.then = then; cutscene.start(id, () => go(G.then)); },
@@ -76,17 +97,17 @@ export function createFlow(env) {
       update(dt) { cutscene.update(dt, input); bust.update(dt); }, view: () => bust,
     },
     INTRO: {
-      enter() { G.world.camera.aspect = gfx.width / gfx.height; cards.showIntro(getStage(run.stage), () => go('PLAYING')); },
-      update(dt) { cards.pollPad(input); idle(dt); }, render(a) { G.world.render(a); }, view: worldView,
+      enter() { fitCamera(); cards.showIntro(getStage(run.stage), () => go('PLAYING')); },   // the card waits for the stage to finish building
+      update(dt) { cards.pollPad(input); cards.setLoading(loading()); if (G.world) idle(dt); }, render(a) { G.world?.render(a); }, view: worldView,
     },
     PLAYING: {
       enter() { G.world.camera.aspect = gfx.width / gfx.height; },
-      update(dt) { G.world.update(dt, input); if (input.pausePressed) go('PAUSED'); },
-      render(a) { G.world.render(a); env.afterRender?.(); }, view: worldView,
+      update(dt) { if (!stepHitStop(dt)) G.world.update(dt, input); if (input.pausePressed) go('PAUSED'); },
+      render(a) { G.world.render(hitStopActive() ? 1 : a); env.afterRender?.(); }, view: worldView,
     },
     PAUSED: {
       enter() { events.emit('pause', true); pauseMenu.show(); }, exit() { events.emit('pause', false); pauseMenu.hide(); },
-      update() { if (input.pausePressed) go('PLAYING'); }, view: worldView,
+      update() { if (input.pausePressed && !settingsPanel.open && !settingsPanel.justClosed) go('PLAYING'); }, view: worldView,
     },
     STAGECLEAR: {
       enter() { cards.showClear(getStage(run.stage), G.stats, afterClear); },
@@ -114,6 +135,7 @@ export function createFlow(env) {
 
   function go(name, arg) {
     if (!states[name]) throw new Error('unknown state ' + name);
+    clearHitStop();
     fsm.current?.exit?.();
     fsm.name = name; fsm.current = states[name];
     hudEl.style.visibility = HUD_STATES.has(name) ? 'visible' : 'hidden';
@@ -122,6 +144,7 @@ export function createFlow(env) {
   }
 
   // ---- events from the game
+  events.on('worldReady', () => { if (fsm.name === 'TITLE' && G.world) { G.fly = createTitleFly(G.world, env.ui, gfx); fitCamera(); } });
   events.on('stageCleared', (stats) => { G.stats = stats; go('STAGECLEAR'); });
   events.on('playerDied', () => go('GAMEOVER'));
   events.on('casinoDoor', (door) => { if (fsm.name === 'PLAYING') { G.door = door; go('CASINO'); } });
@@ -129,9 +152,13 @@ export function createFlow(env) {
   testConnection();    // original: validate the Firestore connection on boot (warns in the console only)
 
   return {
-    fsm, go, startRun, toTitle, retry, G, title, cutscene, get store() { return store; }, get casino() { return casino; }, gameOver, victory, pauseMenu, bust,
+    fsm, go, startRun, settingsPanel, toTitle, retry, G, title, cutscene, get store() { return store; }, get casino() { return casino; }, gameOver, victory, pauseMenu, bust,
     get name() { return fsm.name; },
-    update(dt) { input.update(); fsm.current.update?.(dt); },
+    update(dt) {
+      input.update();
+      if (G.loader) pump(fsm.name === 'INTRO' ? 14 : fsm.name === 'CUTSCENE' ? 8 : 4);
+      fsm.current.update?.(dt);
+    },
     render(alpha) { fsm.current.render?.(alpha); const v = fsm.current.view?.() ?? G.world; if (v) gfx.render(v.scene, v.camera); },
     dispose() { disposeWorld(); },
   };

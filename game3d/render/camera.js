@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { reducedMotion } from '../core/settings.js';
 
 // Camera rig with four modes (PLAN 3.2). Everything is computed in track space relative to an
 // anchor that only ever advances, then mapped to the world, so it follows curves and climbs.
@@ -27,8 +28,10 @@ export function createCameraRig(track, { aspect = 16 / 9 } = {}) {
   const _p = new THREE.Vector3(), _l = new THREE.Vector3();
   let t = 0, first = true;
 
-  rig.addTrauma = (a) => { rig.trauma = Math.min(1, rig.trauma + a); };
-  rig.kickFov = (deg) => { rig.fovKick += deg; };
+  // Shake tuning: sources add with diminishing returns (a swarm of kills no longer pins the camera at maximum), the sum is capped
+  // below a full shake except for boss moments, and reduced motion removes it altogether (also the FOV kick).
+  rig.addTrauma = (a) => { if (reducedMotion()) return; rig.trauma = Math.min(a >= 0.5 ? 1 : 0.7, rig.trauma + a * (1 - rig.trauma * 0.6)); };
+  rig.kickFov = (deg) => { if (!reducedMotion()) rig.fovKick += Math.min(deg, 3); };
   rig.setMode = (m) => { rig.forced = m; };   // m = null returns control to the segment
   rig.reset = (pose) => { A.s = pose.s; A.x = pose.x; A.y = pose.y; rig.minClearance = Infinity; };
 
@@ -80,10 +83,10 @@ export function createCameraRig(track, { aspect = 16 / 9 } = {}) {
     _p.lerpVectors(pos.prev, pos.cur, alpha); _l.lerpVectors(look.prev, look.cur, alpha);
     if (rig.trauma > 0) { // cheap smooth noise, scaled by trauma^2
       const a = rig.trauma * rig.trauma, n = (k) => Math.sin(t * k) + Math.sin(t * k * 2.3 + 1.7) * 0.5;
-      _p.x += n(31) * 0.35 * a; _p.y += n(37) * 0.3 * a; _p.z += n(43) * 0.35 * a;
+      _p.x += n(31) * 0.28 * a; _p.y += n(37) * 0.24 * a; _p.z += n(43) * 0.28 * a;
     }
     camera.position.copy(_p); camera.up.set(0, 1, 0); camera.lookAt(_l);
-    if (rig.trauma > 0) camera.rotateZ(Math.sin(t * 29) * 0.03 * rig.trauma * rig.trauma);
+    if (rig.trauma > 0) camera.rotateZ(Math.sin(t * 29) * 0.02 * rig.trauma * rig.trauma);
     if (Math.abs(camera.fov - rig.fovTarget) > 0.01) { camera.fov += (rig.fovTarget - camera.fov) * 0.2; camera.updateProjectionMatrix(); }
   };
   return rig;

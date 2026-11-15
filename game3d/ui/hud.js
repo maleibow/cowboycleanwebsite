@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { run } from '../core/state.js';
 import { events } from '../core/events.js';
 import { POWERUPS, PROJ } from '../data/weapons.js';
+import { reducedMotion } from '../core/settings.js';
+import { createJuice } from './juice.js';
 
 // In-game HUD (DOM): score, coins, bombs, health, heat, stage/act, active powerups, combo, floating text,
 // boss bar, toast. (Game over lives in ui/gameOver.js.)
@@ -25,7 +27,7 @@ export function createHud(root) {
   };
   const hp = bar('HP', 190), heat = bar('HEAT', 190);
   const stage = div(root, `position:absolute;right:12px;top:10px;text-align:right;${TEXT}`);
-  const chips = div(root, 'position:absolute;right:12px;top:64px;display:flex;flex-direction:column;gap:4px;align-items:flex-end');
+  const chips = div(root, 'position:absolute;right:12px;top:64px;display:flex;flex-direction:column;gap:4px;align-items:flex-end'); chips.id = 'hud-chips';
   const chipEls = {};
   for (const k of [...TIMED, 'shield', 'laser', 'lasso']) {
     const c = div(chips, `${TEXT}font-size:15px;display:none;padding:2px 8px;border-radius:4px;background:rgba(0,0,0,.55);border-left:6px solid #fff;min-width:96px`);
@@ -33,13 +35,13 @@ export function createHud(root) {
   }
   const combo = div(root, `position:absolute;left:50%;top:64px;transform:translateX(-50%);text-align:center;${TEXT}font-size:34px;color:#ff7ad9;display:none`);
   const toast = div(root, `position:absolute;left:50%;top:26%;transform:translateX(-50%);${TEXT}font-size:36px;opacity:0;transition:opacity .25s`);
-  const bossBar = div(root, 'position:absolute;left:25%;right:25%;top:12px;display:none');
+  const bossBar = div(root, 'position:absolute;left:25%;right:25%;top:12px;display:none'); bossBar.id = 'hud-boss';
   const bossName = div(bossBar, `${TEXT}text-align:center;font-size:22px`), bossFill = div(div(bossBar, 'height:16px;background:rgba(0,0,0,.6);border:2px solid #000;border-radius:4px;overflow:hidden'), 'height:100%;background:#e74c3c;width:100%');
   const banner = div(root, `position:absolute;left:0;right:0;top:30%;text-align:center;${TEXT}font-size:64px;color:#ffd84a;display:none;letter-spacing:3px`, 'BOSS GATE');
   const hurt = div(root, 'position:absolute;inset:0;background:radial-gradient(transparent 55%,rgba(220,20,20,.55));opacity:0;transition:opacity .35s');
   // mute button (sfx.js owns the state: this only asks, and shows what muteChanged says). The M key does the same.
   const mute = div(root, `position:absolute;right:12px;bottom:12px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid #fff;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:auto;${TEXT}font-size:22px;user-select:none;-webkit-tap-highlight-color:transparent`, '🔊');
-  mute.title = 'Sound on/off  [M]'; mute.setAttribute('role', 'button'); mute.setAttribute('aria-label', 'Toggle sound');
+  mute.id = 'mute-btn'; mute.title = 'Sound on/off  [M]'; mute.setAttribute('role', 'button'); mute.setAttribute('aria-label', 'Toggle sound');
   mute.addEventListener('pointerdown', (e) => { e.stopPropagation(); events.emit('toggleMute'); });
   events.on('muteChanged', (m) => { mute.textContent = m ? '🔇' : '🔊'; mute.style.opacity = m ? 0.7 : 1; });
   const dbg = div(root, 'position:absolute;right:8px;bottom:62px;font:12px monospace;color:#7CFC7C;white-space:pre;text-align:right;display:none');
@@ -55,7 +57,9 @@ export function createHud(root) {
   h.toast = (text, color = 0xffffff) => { toast.textContent = text; toast.style.color = hex(color); toast.style.opacity = 1; toastT = 1.1; };
   h.showBoss = (name, hpNow, hpMax) => { bossBar.style.display = 'block'; bossName.textContent = name; bossFill.style.width = Math.max(0, (100 * hpNow) / hpMax) + '%'; };
   h.hideBoss = () => { bossBar.style.display = 'none'; };
-  h.flashHurt = () => { hurt.style.opacity = 1; setTimeout(() => (hurt.style.opacity = 0), 60); };
+  h.flashHurt = () => { if (reducedMotion()) return; hurt.style.opacity = 1; setTimeout(() => (hurt.style.opacity = 0), 60); };   // no flash with reduced motion
+  const juice = createJuice(root, h, { counterEl: rowInfo });   // speed lines, low-health vignette, coin arcs, clean wave, hit-stop
+  h.coinFly = juice.coinFly; h.juice = juice;
   h.attach = (level, camera) => { h.level = level; h.track = level.track; h.camera = camera; };
 
   const memo = {}; // write-if-changed
@@ -77,7 +81,12 @@ export function createHud(root) {
     };
     for (const k of TIMED) chip(k, w.timers[k] > 0, POWERUPS[k].label, POWERUPS[k].color, w.timers[k] / POWERUPS[k].time);
     chip('shield', w.shield, 'SHIELD', POWERUPS.shield.color, 1); chip('laser', run.upgrades.laser, 'LASER', PROJ.laser.color, 1); chip('lasso', run.upgrades.lasso, 'LASSO', PROJ.lasso.color, 1);
-    const cb = level.combat.combo; if (cb.n >= 2) { combo.style.display = 'block'; setText('cb', combo, `COMBO x${cb.n}`); } else if (combo.style.display !== 'none') combo.style.display = 'none';
+    const cb = level.combat.combo;
+    if (cb.n >= 2) {
+      combo.style.display = 'block';
+      if (memo.cb !== `COMBO x${cb.n}`) { setText('cb', combo, `COMBO x${cb.n}`); combo.style.color = `hsl(${(cb.n * 47) % 360},95%,66%)`; if (!reducedMotion()) { combo.style.animation = 'none'; void combo.offsetWidth; combo.style.animation = 'cc-pop .26s ease-out'; } }   // combo pop on every step up
+    } else if (combo.style.display !== 'none') { combo.style.display = 'none'; memo.cb = ''; }
+    juice.update(level, dt); juice.lowHealth(run.health, dt);
     const arenaState = level.arena?.state; banner.style.display = arenaState === 'opening' || arenaState === 'open' ? 'block' : 'none';
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) toast.style.opacity = 0; }
     if (dbg.style.display !== 'none') dbg.textContent = level.debugLine?.() || '';
@@ -87,6 +96,7 @@ export function createHud(root) {
   // Timers advance with the simulation; projection happens each rendered frame.
   h.tick = (dt) => { for (const f of FT) if (f.on) { f.t -= dt; if (f.t <= 0) { f.on = false; f.el.style.display = 'none'; } } };
   h.render = () => {
+    juice.render();
     const cam = h.camera; if (!cam) return; const W = root.clientWidth, H = root.clientHeight;
     for (const f of FT) {
       if (!f.on) continue;
@@ -96,6 +106,6 @@ export function createHud(root) {
       f.el.style.transform = `translate(${((_v.x * 0.5 + 0.5) * W).toFixed(0)}px,${((-_v.y * 0.5 + 0.5) * H).toFixed(0)}px) translate(-50%,-100%)`;
     }
   };
-  h.reset = () => { for (const f of FT) { f.on = false; f.el.style.display = 'none'; } h.hideBoss(); };
+  h.reset = () => { juice.reset(); for (const f of FT) { f.on = false; f.el.style.display = 'none'; } h.hideBoss(); };
   return h;
 }

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 // per-instance colour, no allocation. The mapping to the world follows the track frame, so actors sit
 // correctly on curves and climbs.
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _d = new THREE.Vector3();
+const FR = { p: new THREE.Vector3(), t: new THREE.Vector3(), r: new THREE.Vector3(), u: new THREE.Vector3() };
 const _x = new THREE.Vector3(), _y = new THREE.Vector3(), _z = new THREE.Vector3(), _c = new THREE.Color(), UP = new THREE.Vector3(0, 1, 0);
 
 export function createBatch(scene, track, geometry, material, cap) {
@@ -11,16 +12,20 @@ export function createBatch(scene, track, geometry, material, cap) {
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   mesh.frustumCulled = false; mesh.count = 0; scene.add(mesh);
   mesh.setColorAt(0, _c.setHex(0xffffff)); mesh.instanceColor.setUsage(THREE.DynamicDrawUsage);
-  let n = 0;
+  let n = 0; const v = new Float64Array(8);
   const b = {
     mesh, cap,
     begin() { n = 0; },
     // Upright instance at (s,x,y), scaled, optionally spun about the up axis by `spin` radians.
     // `pitch` rocks it about its lateral axis (a lump sliding or rolling toward you).
-    put(s, x, y, sx, sy, sz, color, spin = 0, pitch = 0) {
+    // Hot callers (coins, power-ups) skip the 9-argument call, which boxes every double argument into a heap object each time:
+    // they write s, x, y, sx, sy, sz, spin, pitch into `v` (a typed array: stores never allocate) and call putA(color).
+    put(s, x, y, sx, sy, sz, color, spin = 0, pitch = 0) { v[0] = s; v[1] = x; v[2] = y; v[3] = sx; v[4] = sy; v[5] = sz; v[6] = spin; v[7] = pitch; b.putA(color); },
+    v,
+    putA(color) {
       if (n >= cap) return;
-      const f = track.frameAt(s);
-      _p.copy(f.p).addScaledVector(f.r, x).addScaledVector(f.u, y);
+      const f = track.frameAt(v[0], FR), sx = v[3], sy = v[4], sz = v[5], spin = v[6], pitch = v[7];
+      _p.copy(f.p).addScaledVector(f.r, v[1]).addScaledVector(f.u, v[2]);
       const c = Math.cos(spin), sn = Math.sin(spin);
       _z.copy(f.t).negate();                                         // local +Z points back down the track
       _x.copy(f.r).multiplyScalar(c).addScaledVector(_z, sn);

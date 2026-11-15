@@ -357,8 +357,16 @@ for (const sd of [1, 2]) { // 9. a spraying scripted player clears stage 1: all 
 }
 
 await browser.close(); server.close();
+if (process.argv.includes('--main')) { if (failures.length) { console.error(`\nSMOKE (main body) FAILED (${failures.length})`); process.exit(1); } console.log('SMOKE (main body) PASSED'); process.exit(0); }   // --main: skip the per-stage suites below (they run in parallel in CI)
 // Stage 1 vertical slice (intro card, boss fight, stage clear, quicksand, enemy models...): its own script.
 { const { spawnSync } = await import('node:child_process'); const r = spawnSync(process.execPath, [path.join(root, 'tools/smokeStage1.mjs')], { stdio: 'inherit' }); if (r.status) fail('tools/smokeStage1.mjs failed'); }
 for (const n of [2, 3, 4, 5, 6, 7, 8, 9, 10]) { const { spawnSync } = await import('node:child_process'); const r = spawnSync(process.execPath, [path.join(root, 'tools/smokeStage.mjs'), String(n)], { stdio: 'inherit' }); if (r.status) fail(`tools/smokeStage.mjs ${n} failed`); }   // stages 2-10
+// Mobile / performance / polish prompt (PLAN 10, prompt 10): touch controls complete stage 1 with emulated fingers, robustness and
+// settings, the dynamic-resolution controller, the module preload list. The full ten-stage ?god=1 run is slow: add --full.
+{
+  const { spawnSync } = await import('node:child_process');
+  const sub = [['tools/preload.mjs', ['--check']], ['tools/qualityTest.mjs', []], ['tools/smokeTouch.mjs', []], ['tools/smokeRobust.mjs', []], ...(process.argv.includes('--full') ? [['tools/smokeTen.mjs', []]] : [])];
+  for (const [f, a] of sub) { const r = spawnSync(process.execPath, [path.join(root, f), ...a], { stdio: 'inherit' }); if (r.status) fail(`${f} failed`); }
+}
 if (failures.length) { console.error(`\nSMOKE FAILED (${failures.length})`); process.exit(1); }
 console.log('SMOKE PASSED');
