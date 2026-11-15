@@ -47,4 +47,41 @@ export const BOSS_PATTERNS = {
     p2: { bombs: 8, every: 0.7, bombDelay: 1.0, bombR: 1.8, tele: 1.0, dive: 0.4, recover: 1.5, swoops: 2, minions: 2 },
     rage: { time: 1.5 }, swoopR: 2.7, swoopDamage: 25, bombDamage: 20,
   },
+  // Original boss5 "MIME - Teleport and rapid fire" (cleaningup.html 4681-4716): walks in, fires a bomb every 20 frames, vanishes (invulnerable) and reappears at a random x.
+  // 3D: THE MIME teleports around the arena edge. The destination is marked before he appears; once there he locks the line to the player (a lane on the floor for
+  // 1 s), then fires a burst of rounds down it. Between acts he is open to fire. Phase two: three lanes per burst, two teleports in a row, mimes at the rage.
+  boss5: {
+    name: 'THE MIME', color: 0xecf0f1, size: { hs: 0.9, hx: 0.9, h: 3.0 },
+    intro: { dropTime: 1.2, roar: 1.4, startHeight: 18 },
+    edgeR: 11, vanish: 0.5, appearTele: 1.0, appear: 0.5, open: 2.4,
+    p1: { aim: 1.0, shots: 5, every: 0.14, speed: 15, fan: 0, teleports: 1 },
+    p2: { aim: 0.9, shots: 5, every: 0.12, speed: 17, fan: 0.3, teleports: 2, minions: 2 },
+    rage: { time: 1.5 }, laneW: 1.2,
+  },
+  // Original boss6 "MAGMA - Submerge and Erupt" (cleaningup.html 4717-4775): slides in lobbing two bombs every 40 frames, sinks (invulnerable) for 60 frames, reappears under the
+  // player's x and bursts out with a fan of five acid globs.
+  // 3D: MAGMA MAW lobs bombs onto marked circles, sinks into the floor, burrows (a marker follows the player, then LOCKS for >= 1.1 s) and erupts under the marker with a lava pillar,
+  // a jumpable shock ring and a rain of globs on marked circles; then he is open to fire for a few seconds. Phase two: two burrows in a row, more bombs and globs, magmas at the rage.
+  boss6: {
+    name: 'MAGMA MAW', color: 0x34495e, size: { hs: 2.0, hx: 2.2, h: 3.8 },
+    intro: { emerge: 1.8, roar: 1.5 },
+    walkSpeed: 2.4, lobRange: 12,
+    p1: { volleys: 2, lobs: 2, every: 0.95, lobDelay: 1.2, lobR: 1.8, lobDamage: 20, sink: 0.8, burrow: 2.0, lock: 1.3, burrows: 1, eruptR: 2.7, eruptDamage: 25,
+          ring: { speed: 8, thick: 1.1, height: 0.9, damage: 20 }, globs: 4, globR: 1.7, globDelay: 1.2, globDamage: 20, recover: 2.6 },
+    p2: { volleys: 3, lobs: 3, every: 0.75, lobDelay: 1.1, lobR: 1.8, lobDamage: 20, sink: 0.6, burrow: 1.8, lock: 1.15, burrows: 2, eruptR: 2.7, eruptDamage: 25,
+          ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20 }, globs: 6, globR: 1.7, globDelay: 1.1, globDamage: 20, recover: 1.8, minions: 2 },
+    rage: { time: 1.5 },
+  },
+  // Original boss7 "RAINBOW - Figure-8 Sweep" (cleaningup.html 4776-4800): flies a figure of eight (x = sin t * 150, y = 150 + sin 2t * 100) and drops a fan of three bombs every 60 frames.
+  // 3D: DOUBLE RAINBOW (a storm-cloud with a rainbow halo) flies a figure of eight over the arena trailing a rainbow beam that scorches the floor under him. The whole path is
+  // drawn on the floor (a chain of markers) for >= 1.6 s before he starts, and the beam only lights once he is moving. Between sweeps he hovers and drops fans of three bombs on
+  // marked circles, then sinks low and rests (open to fire). Phase two: a second beam from the mirrored side of the eight, a faster sweep, five-bomb fans.
+  boss7: {
+    name: 'DOUBLE RAINBOW', color: 0xbdc3c7, size: { hs: 1.9, hx: 2.2, h: 2.4 },
+    intro: { dropTime: 1.8, roar: 1.4, startHeight: 22 },
+    hoverY: 4.6, restY: 2.3, pathA: 8.5, pathB: 5.2, beamR: 1.5, beamDamage: 20,
+    p1: { tele: 1.7, sweep: 6.5, bombs: 3, volleys: 3, every: 1.1, bombDelay: 1.2, bombR: 1.7, bombDamage: 20, rest: 2.6, sweeps: 1, beams: 1 },
+    p2: { tele: 1.5, sweep: 5.0, bombs: 5, volleys: 3, every: 0.9, bombDelay: 1.1, bombR: 1.7, bombDamage: 20, rest: 1.8, sweeps: 1, beams: 2, minions: 2 },
+    rage: { time: 1.5 },
+  },
 };

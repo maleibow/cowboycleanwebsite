@@ -11,14 +11,14 @@ const hasDoor = (seed) => (Math.imul(seed ^ 0x9e3779b9, 2654435761) >>> 0) / 429
 const isGap = (name) => name && TEMPLATES[name].cls === 'gap';
 
 // Per-segment hazard lists a template may return (read by world/hazards.js and the theme's dress hooks).
-const EXTRA_KEYS = ['vines', 'belts', 'pistons', 'traffic', 'holes'];
+const EXTRA_KEYS = ['vines', 'belts', 'pistons', 'traffic', 'holes', 'rocks', 'planks'];
 
 function instantiate(name, s0, act, c, flags = {}) {
   const t = TEMPLATES[name], d = t.build(c);
   const seg = {
     name, cls: t.cls, act, s0, len: d.len, s1: s0 + d.len,
     yaw: d.yaw || 0, rise: d.rise || 0, mode: d.mode || 'behind', lockX: !!d.lockX,
-    width: d.width || c.w, chase: d.chase ? { ...d.chase, s0, s1: s0 + d.len } : null,
+    width: d.width || c.w, wide: !!d.wide, chase: d.chase ? { ...d.chase, s0, s1: s0 + d.len } : null,
     boxes: [], deco: [], gaps: [], patches: [], slots: [], checkpoint: null, gate: null, arena: null,
   };
   for (const p of d.patches || []) seg.patches.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1 });
@@ -141,7 +141,7 @@ export function validateStage(layout, stageData) {
   const have = new Set(layout.slots.filter((sl) => sl.item).map((sl) => sl.item));
   for (const p of POWERUP_TYPES) if (!have.has(p)) errs.push('powerup never obtainable: ' + p);
   for (const g of segs) {
-    for (const gap of g.gaps) if (g.name !== 'vines' && gap.s1 - gap.s0 > JUMP_MAX_GAP) errs.push(`gap too wide ${gap.s1 - gap.s0}`);
+    for (const gap of g.gaps) if (g.name !== 'vines' && !g.wide && gap.s1 - gap.s0 > JUMP_MAX_GAP) errs.push(`gap too wide ${gap.s1 - gap.s0}`);
     for (const sl of g.slots) if (sl.kind === 'enemy' && sl.tier > g.act) errs.push('enemy tier above act');
   }
   return errs;

@@ -81,9 +81,9 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   const arena = createArena(ctx);
 
   // ---- the chase hazard: a giant angry dust ball that rolls up behind the player inside a `chase` segment
-  const hazard = { active: false, s: 0, seg: null, hits: 0 }, ball = createDustBall();
+  const hazard = { active: false, s: 0, seg: null, hits: 0 }, ball = theme.chase?.() ?? createDustBall();   // the chaser: stage 1's dust ball, or the theme's own (stage 6: a lava wave)
   scene.add(ball.group);
-  const startHazard = (seg) => { hazard.active = true; hazard.seg = seg; hazard.s = player.body.s - seg.chase.lag; cards?.shout(stageData.setPiece.warning, '#ff9a52', 2000); events.emit('chaseStart', seg); };
+  const startHazard = (seg) => { hazard.active = true; hazard.seg = seg; hazard.s = player.body.s - seg.chase.lag; cards?.shout(stageData.setPiece.warning, '#ff9a52', 2000); events.emit('chaseStart', seg); if (theme.chase) events.emit('lavaWave'); };
   const offs = [];
   offs.push(events.on('respawn', () => { if (hazard.active) hazard.s = player.body.s - hazard.seg.chase.lag; rig.reset(player.body); }));
   offs.push(events.on('checkpoint', (i) => {
@@ -111,7 +111,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
       const b = player.body, seg = player.seg;
       ctx.weapon.update(dt, input);
       ctx.hazards.update(dt, input);
-      if (!level.announced && seg.name === stageData.setPiece?.template) { level.announced = true; cards?.shout(stageData.setPiece.warning, stageData.setPiece.color || '#7dff9a', 2200); events.emit('setPieceStart', stageData.setPiece.id); }
+      if (!level.announced && seg.name === stageData.setPiece?.template && !seg.chase) { level.announced = true; cards?.shout(stageData.setPiece.warning, stageData.setPiece.color || '#7dff9a', 2200); events.emit('setPieceStart', stageData.setPiece.id); }
       ctx.spawner.update(dt); ctx.enemies.update(dt); ctx.projectiles.update(dt); ctx.combat.step(dt);
       ctx.pickups.update(dt); ctx.obstacles.update(dt); ctx.fx.update(dt);
       arena.update(dt); ctx.doors.update(dt);
