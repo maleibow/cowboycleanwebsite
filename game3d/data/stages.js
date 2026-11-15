@@ -14,7 +14,7 @@
 //   density[act]          share of each template's enemy slots that are kept
 //   weights[act]          segment template weights; templates live in world/segments.js
 //   act3Special           'chase' (toward-camera set piece) | 'hard' (platforming run) | 'either' | 'setpiece' (stages 2-7: act 3 holds the template named by
-//                         setPiece.template: 'vines' | 'reversal' | 'rooftops' | 'awnings' | 'lavaChase' | 'rainbowSlide' | 'cloudRide' | 'lightsOut', defined in world/segmentsX.js, Y, V, I, C, G)
+//                         setPiece.template: 'vines' | 'reversal' | 'rooftops' | 'awnings' | 'lavaChase' | 'rainbowSlide' | 'cloudRide' | 'lightsOut' | 'risingTide', defined in world/segmentsX.js, Y, V, I, C, G, K)
 //   obstacle              rolling obstacle type (actors/obstacles.js)
 //   setPiece              the stage's set-piece: { id, template, name, warning (shouted when the player enters it), color } plus, for the chase, its speed / lag / damage.
 //                         Moving parts of a set-piece or hazard (vines, belts, pistons, traffic) live in world/haz*.js and read lists the template returns.
@@ -198,7 +198,26 @@ const STAGE9 = {
   palette: { ground: 0x3a3c44, platform: 0x4a4e58, ledge: 0x5a5e66, beam: 0x3d322a, barrier: 0x2a2e34, wall: 0x2a2e34, quicksand: 0x3a3c44, mud: 0x10201a },
 };
 
-export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6, STAGE7, STAGE8, STAGE9];
+const STAGE10 = {
+  id: 10, name: 'Charcoal Streets', tagline: 'Ruby water runs through the ash. End it here.',
+  theme: 'stage10',
+  length: 1100, trackWidth: 8,
+  obstacle: 'coal_pile',       // rolling obstacle (original: a heap of coal)
+  roster: [['ghost', 'shadow_bat', 'ruby_slime'], ['ember', 'zombie'], ['storm_cloud']],   // PLAN 6: ghost, shadow_bat, ruby_slime -> ember, zombie -> storm_cloud
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, canalStones: 3, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 3, beam: 2, barrier: 2, canalStones: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, canalStones: 3 },
+  ],
+  setPiece: { id: 'risingTide', template: 'risingTide', name: 'CLIMB!', warning: 'THE TIDE IS RISING! CLIMB!', color: '#ff4a6a' },
+  boss: { id: 'boss10', name: 'VACANT SAVIOR', intro: 'Nobody is coming to save you. It is already here.', phaseAt: 0.5, arena: { radius: 15 } },
+  checkpoints: ['THE HIGH STREET', 'THE FLOODED AVENUE'],
+  palette: { ground: 0x4a4a54, platform: 0x5a5a66, ledge: 0x6a6a76, beam: 0x3a3a44, barrier: 0x2a2a32, wall: 0x2a2a32, quicksand: 0x4a4a54 },
+};
+
+export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6, STAGE7, STAGE8, STAGE9, STAGE10];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).

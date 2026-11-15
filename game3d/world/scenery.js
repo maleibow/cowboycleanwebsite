@@ -131,6 +131,7 @@ export function createScenery(track, theme, { quality, scene, seed = 1, lampMate
     g.add(buildGround(c0, c1 + 2, env));
     buildScatter(ci, c0, c1, env, rng, g); buildEdge(c0, c1, env, g);
     const fluids = [];
+    if (theme.river) { const rv = theme.river(c0, c1 + 2, env, ctx); if (rv) { g.add(rv.object); fluids.push(...rv.fluids); } }   // e.g. stage 10: ruby canals along the streets
     for (const seg of track.segments) { // per-segment dressing belongs to the chunk holding the segment start
       if (seg.s0 < c0 || seg.s0 >= c1) continue;
       const d = theme.dress?.[seg.name]?.(seg, ctx, env); if (!d) continue;

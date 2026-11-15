@@ -1,8 +1,7 @@
-// Stages 2-10 are not built yet. Until their prompts land they play on stage 1's theme and track, but with their own
-// name, tagline and enemy roster (PLAN section 6; tiers 1 -> 2 -> 3 on each act) so the whole loop can be tested.
+// Every stage 1-10 is built now, so this table is empty. A stage number without data (an unbuilt stage, or a typo in ?stage=N) still plays on stage 1's theme and track under its own name
+// (`standIn` below); add an entry here to give such a placeholder a name, tagline, roster and boss.
 const R = (a, b, c) => [a, b, c];
 export const STAND_INS = {
-  10: { name: 'Charcoal Streets', tagline: 'Ruby water runs through the ash. End it here.',       roster: R(['ghost', 'shadow_bat', 'ruby_slime'], ['ember', 'zombie'], ['storm_cloud']), boss: 'VACANT SAVIOR' },
 };
 export function standIn(base, n) {
   const d = STAND_INS[n] || { name: `Stage ${n}`, tagline: '', roster: base.roster, boss: base.boss.name };

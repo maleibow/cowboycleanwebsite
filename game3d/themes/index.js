@@ -7,6 +7,7 @@ import { stage06 } from './stage06.js';
 import { stage07 } from './stage07.js';
 import { stage08 } from './stage08.js';
 import { stage09 } from './stage09.js';
+import { stage10 } from './stage10.js';
 // Theme registry: data/stages.js names a theme by key. Stages without a theme of their own fall back to stage 1's.
-export const THEMES = { stage01, stage02, stage03, stage04, stage05, stage06, stage07, stage08, stage09 };
+export const THEMES = { stage01, stage02, stage03, stage04, stage05, stage06, stage07, stage08, stage09, stage10 };
 export const getTheme = (key) => THEMES[key] || stage01;

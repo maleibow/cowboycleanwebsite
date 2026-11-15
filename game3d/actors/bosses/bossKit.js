@@ -33,7 +33,7 @@ export function createBossFx(scene, track, ctx = null) {
     fragmentShader: 'uniform float uT, uA, uLen; varying vec2 vUv; void main(){ float edge = smoothstep(0.0, 0.1, vUv.x) * smoothstep(1.0, 0.9, vUv.x); float ch = step(0.5, fract(vUv.y * uLen / 2.4 - uT * 2.5 + abs(vUv.x - 0.5) * 1.4)); vec3 col = mix(vec3(1.0, 0.12, 0.18), vec3(1.0, 0.85, 0.25), ch); gl_FragColor = vec4(col * 1.5, (0.2 + 0.45 * ch) * edge * uA); }',
   });
   const laneGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
-  const lanes = Array.from({ length: 3 }, () => ({ on: false, mesh: mk(laneGeo, laneMat()), s0: 0, x0: 0, s1: 0, x1: 0, w: 4, t: 0, dur: 1 }));
+  const lanes = Array.from({ length: 5 }, () => ({ on: false, mesh: mk(laneGeo, laneMat()), s0: 0, x0: 0, s1: 0, x1: 0, w: 4, t: 0, dur: 1 }));
   // ---- blob shadow under a flying boss
   const shadow = mk(discGeo, basic(0x000000, 0.4));
 

@@ -135,4 +135,17 @@ export const gravestone = {
   },
   rock: 0.12, dust: false,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile, cloud_bump: cloudBump, sleep_sheep: sleepSheep, gravestone };
+
+// Coal pile (original: a dark #2c3e50 heap with a lighter #34495e shoulder and grey #7f8c8d highlights): a lumpy heap of black coal with glinting facets and a ruby ember or two,
+// rolled toward you. Same unit extents as the sand pile (0.95 half-width, 0.9 tall).
+export const coalPile = {
+  build: () => {
+    const b = new Builder();
+    for (const [x, y, z, r, c] of [[0, 0, 0, 0.9, 0x1c1f26], [-0.3, 0.2, 0.2, 0.55, 0x2c3e50], [0.4, 0.05, -0.3, 0.45, 0x242831], [0.1, 0.4, 0.1, 0.4, 0x34495e]]) b.add(new THREE.IcosahedronGeometry(r, 0), c, { p: [x, y, z], s: [1.15, 0.85, 1], jitter: 0.08, ao: 0.12 });
+    for (const [x, y, z] of [[-0.35, 0.5, 0.45], [0.3, 0.55, 0.3], [-0.1, 0.35, 0.7], [0.55, 0.2, 0.55]]) b.box(0.16, 0.12, 0.14, 0x7f8c8d, { p: [x, y, z], r: [0.4, 0.6, 0.3], radius: 0.01, ao: 0 });
+    b.sphere(0.07, new THREE.Color(3.0, 0.35, 0.3), { p: [0.15, 0.62, 0.4], s: [1, 0.6, 1], ao: 0 }).sphere(0.05, new THREE.Color(3.0, 0.5, 0.2), { p: [-0.5, 0.3, 0.2], s: [1, 0.6, 1], ao: 0 });
+    return b.build();
+  },
+  rock: 0.3, dust: true,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile, cloud_bump: cloudBump, sleep_sheep: sleepSheep, gravestone, coal_pile: coalPile };

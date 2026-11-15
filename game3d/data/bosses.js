@@ -110,4 +110,18 @@ export const BOSS_PATTERNS = {
           ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20 }, minions: 2 },
     rage: { time: 1.5 },
   },
+  // Original boss10 "VACANT SAVIOR - Charcoal Entity" (cleaningup.html 4862-4925): flies a hovering figure of eight (y = 100 + sin * 60, x drifting on a cosine), firing three ruby lasers every 50 frames;
+  // every 120 frames it swoops at the player's position (locked when the swoop starts), shedding acid every 10 frames, then returns. 300 HP.
+  // 3D: the SAVIOR weaves a figure of eight over the arena; every couple of seconds he stops, locks a fan of ruby-laser lanes on the floor and fires them. Then he rises, a reticle follows you,
+  // it locks, the dive line is drawn on the floor, and he swoops down it at speed, shedding acid that lands on marked circles along the line. He lands and rests (open to fire).
+  // Phase two: a faster eight, five-lane fans, two swoops in a row with a jumpable wail ring at each landing, shadow bats at the rage. He is hittable the whole time except in the rage.
+  boss10: {
+    name: 'VACANT SAVIOR', color: 0x36454f, size: { hs: 1.3, hx: 1.4, h: 3.8 },
+    intro: { dropTime: 1.8, roar: 1.6, startHeight: 24 },
+    hoverY: 2.4, restY: 0.7, pathA: 8.0, pathB: 4.8, laneW: 1.0,
+    p1: { weave: 5.0, period: 6.4, volleys: 2, volleyEvery: 2.2, fan: 0.4, lanes: 3, tele: 0.95, pulses: 3, pulseEvery: 0.22, laserSpeed: 14, swoops: 1, track: 0.7, lock: 1.0, swoopSpeed: 20, drips: 6, dripDelay: 1.0, dripR: 1.5, dripDamage: 15, rest: 2.8 },
+    p2: { weave: 4.2, period: 4.8, volleys: 3, volleyEvery: 1.5, fan: 0.34, lanes: 5, tele: 0.8, pulses: 3, pulseEvery: 0.2, laserSpeed: 16, swoops: 2, track: 0.55, lock: 0.85, swoopSpeed: 22, drips: 7, dripDelay: 0.95, dripR: 1.5, dripDamage: 15, rest: 2.2,
+          ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20 }, minions: 2 },
+    rage: { time: 1.6 },
+  },
 };

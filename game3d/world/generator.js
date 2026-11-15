@@ -11,7 +11,7 @@ const hasDoor = (seed) => (Math.imul(seed ^ 0x9e3779b9, 2654435761) >>> 0) / 429
 const isGap = (name) => name && TEMPLATES[name].cls === 'gap';
 
 // Per-segment hazard lists a template may return (read by world/hazards.js and the theme's dress hooks).
-const EXTRA_KEYS = ['vines', 'belts', 'pistons', 'traffic', 'holes', 'rocks', 'planks', 'clouds', 'gates'];
+const EXTRA_KEYS = ['vines', 'belts', 'pistons', 'traffic', 'holes', 'rocks', 'planks', 'clouds', 'gates', 'tides'];
 
 function instantiate(name, s0, act, c, flags = {}) {
   const t = TEMPLATES[name], d = t.build(c);
