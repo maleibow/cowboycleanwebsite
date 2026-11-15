@@ -53,7 +53,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   scene.add(sun, sun.target);
   const particles = createParticles(); scene.add(particles.mesh);
 
-  const pathMat = createToon({ vertexColors: true });
+  const pathMat = createToon({ vertexColors: true, rimBoost: theme.groundRim ?? 1 });
   const builder = createTrackBuilder(track, scene, { palette: theme.pathPalette || stageData.palette, showSlots: /slots=1/.test(location.search), shadows: !!quality.tier.shadowMap, material: pathMat, style: theme.path, theme, seed: usedSeed });
   const scenery = createScenery(track, theme, { quality, scene, seed: usedSeed });
   const player = createPlayer(track, { startS: layout.startS });
@@ -98,7 +98,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   const v3 = new THREE.Vector3(), fr = { p: new THREE.Vector3(), t: new THREE.Vector3(), r: new THREE.Vector3(), u: new THREE.Vector3() };
   const level = {
     scene, camera: rig.camera, rig, track, layout, player, builder, scenery, arena, particles, sky, stageData, theme, seed: usedSeed, hazard,
-    fx: ctx.fx, projectiles: ctx.projectiles, enemies: ctx.enemies, pickups: ctx.pickups, obstacles: ctx.obstacles,
+    hazards: ctx.hazards, fx: ctx.fx, projectiles: ctx.projectiles, enemies: ctx.enemies, pickups: ctx.pickups, obstacles: ctx.obstacles,
     combat: ctx.combat, weapon: ctx.weapon, spawner: ctx.spawner, doors: ctx.doors,
     finished: false, time: 0, runTime: 0, coinsAtStart: run.coins,
     update(dt, input) {

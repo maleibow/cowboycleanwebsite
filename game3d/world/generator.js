@@ -23,7 +23,7 @@ function instantiate(name, s0, act, c, flags = {}) {
   };
   for (const p of d.patches || []) seg.patches.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1 });
   if (d.arena) seg.arena = { ...d.arena, s: s0 + d.arena.s };
-  for (const p of d.spans || []) seg.boxes.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1, y0: p.top - p.depth, y1: p.top, kind: p.kind });
+  for (const p of d.spans || []) seg.boxes.push({ s0: s0 + p.s0, s1: s0 + p.s1, x0: p.x0, x1: p.x1, y0: p.top - p.depth, y1: p.top, kind: p.kind, ...(p.belt !== undefined ? { belt: p.belt } : {}) });
   for (const o of d.solids || []) seg.boxes.push({ ...o, s0: s0 + o.s0, s1: s0 + o.s1 });
   for (const o of d.deco || []) seg.deco.push({ ...o, s0: s0 + o.s0, s1: s0 + o.s1 });
   for (const g of d.gaps || []) seg.gaps.push({ s0: s0 + g.s0, s1: s0 + g.s1 });

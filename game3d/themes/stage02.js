@@ -56,7 +56,7 @@ export const stage02 = {
     { key: 'rock', build: P.rock, perChunk: 16, band: [5.6, 28], scale: [0.6, 1.8], stretch: [0.8, 1.3], lift: -0.1 },
     { key: 'root', build: P.rootArch, perChunk: 5, band: [20, 32], scale: [1.6, 2.8], lift: -0.5 },
   ],
-  edge: { build: (C) => ({ post: P.bambooPost(C), lamp: P.sporeLamp() }), spacing: 20, offset: 1.5, lampHeight: 1.9 },
+  edge: { build: (C) => ({ post: P.bambooPost(C), lamp: P.sporeLamp() }), spacing: 20, offset: 1.5, lampHeight: 1.9, lampColor: 0x7dff9a, lampEmissive: 0x38ff7a },
   far: { build: P.farRing },
   hazards: { vine: P.vineGeo },
   buildBarrier, buildSolid,

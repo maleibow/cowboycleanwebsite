@@ -45,4 +45,20 @@ export const log = {
   },
   rock: 0.1, dust: false,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile, log };
+
+// Barrel (original: a purple #8e44ad drum with lighter bands and a green toxic symbol, rolling): a toxic drum lying on its side that ROLLS toward you.
+// Authored centred on its own origin (m.lift raises it by its radius) and squashed on y / z so that after the obstacle's scale (hx .55, h 1.0, hs .55) it is
+// a true cylinder 1.1 m long and 1.0 m across; the batch's pitch then turns it about the lateral axis.
+export const barrel = {
+  build: () => {
+    const cyl = (r, len, seg = 14) => new THREE.CylinderGeometry(r, r, len, seg).rotateZ(Math.PI / 2), sy = 0.45 / 0.5, sz = 0.818 / 0.5, S = [1, sy, sz];
+    const b = new Builder().add(cyl(1, 1.8), 0x8e44ad, { s: S, jitter: 0.01, ao: 0 });
+    for (const x of [-0.62, 0, 0.62]) b.add(cyl(1.04, 0.16), 0xc58ae0, { p: [x, 0, 0], s: S, ao: 0 });                                  // hoops
+    for (const sg of [-1, 1]) b.add(cyl(0.96, 0.08), 0x5b2c6f, { p: [sg * 0.9, 0, 0], s: S, ao: 0 });                                   // rims
+    b.add(new THREE.CylinderGeometry(0.34, 0.34, 0.04, 14).rotateZ(Math.PI / 2), new THREE.Color(0.5, 3, 0.8), { p: [0.04, 0, 0.0], s: [1, 1.3, 1.6], r: [0, 0, 0], ao: 0 });
+    b.cyl(0.08, 0.08, 0.3, 0x2ecc71, { p: [0.0, 0.52, 0], seg: 5, ao: 0 });
+    return b.build();
+  },
+  rock: 0, dust: false, roll: true, lift: 0.45,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel };

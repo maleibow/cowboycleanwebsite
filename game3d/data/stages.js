@@ -62,7 +62,26 @@ const STAGE2 = {
   palette: { ground: 0x6f9a52, platform: 0x7a5a38, ledge: 0x5d4037, beam: 0x5d4037, barrier: 0x6a4a2e, wall: 0x6f8a6a, quicksand: 0x6f8a2b },
 };
 
-export const STAGES = [STAGE1, STAGE2];
+const STAGE3 = {
+  id: 3, name: 'Neo-Scrap City', tagline: 'A city made of trash needs a very big mop.',
+  theme: 'stage03',
+  length: 1100, trackWidth: 8,
+  obstacle: 'barrel',          // rolling obstacle (original: a toxic barrel)
+  roster: [['smog', 'slag'], ['drone'], ['rat', 'trash', 'roach']],   // PLAN 6: smog, slag -> drone -> rat, trash, roach
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, conveyor: 2.5, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 2.5, beam: 2, barrier: 2, conveyor: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, conveyor: 2.5 },
+  ],
+  setPiece: { id: 'conveyorReversal', template: 'reversal', name: 'REVERSE!', warning: 'CONVEYOR! WATCH THE CRUSHERS!', color: '#25ffe6' },
+  boss: { id: 'boss3', name: 'TRASH KING', intro: 'The biggest heap in the city', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['SCRAPYARD', 'NEON ALLEY'],
+  palette: { ground: 0x4a4e68, platform: 0x59617a, ledge: 0x4a5068, beam: 0x6a6a7e, barrier: 0x4a5068, wall: 0x3e4660, quicksand: 0x4a5068 },
+};
+
+export const STAGES = [STAGE1, STAGE2, STAGE3];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).

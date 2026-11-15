@@ -26,6 +26,14 @@ export function createBossFx(scene, track, ctx = null) {
   // The marker is on the floor for the whole fall (`delay` seconds), so every strike is telegraphed. Used for acid rain, falling bombs...
   const dropGeo = new THREE.OctahedronGeometry(0.5, 1).scale(1, 1.7, 1), dropMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
   const strikes = Array.from({ length: 10 }, () => ({ on: false, mesh: mk(dropGeo, dropMat.clone()), s: 0, x: 0, r: 1, t: 0, dur: 1, hi: 16, damage: 20, color: 0x9bff3a, size: 0.6, mk: null }));
+  // ---- lanes: a long floor strip with moving chevrons from (s0,x0) toward (s1,x1): where a charge is going to run. Locked when created.
+  const laneMat = () => new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false, uniforms: { uT: { value: 0 }, uA: { value: 0 }, uLen: { value: 10 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform float uT, uA, uLen; varying vec2 vUv; void main(){ float edge = smoothstep(0.0, 0.1, vUv.x) * smoothstep(1.0, 0.9, vUv.x); float ch = step(0.5, fract(vUv.y * uLen / 2.4 - uT * 2.5 + abs(vUv.x - 0.5) * 1.4)); vec3 col = mix(vec3(1.0, 0.12, 0.18), vec3(1.0, 0.85, 0.25), ch); gl_FragColor = vec4(col * 1.5, (0.2 + 0.45 * ch) * edge * uA); }',
+  });
+  const laneGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  const lanes = Array.from({ length: 3 }, () => ({ on: false, mesh: mk(laneGeo, laneMat()), s0: 0, x0: 0, s1: 0, x1: 0, w: 4, t: 0, dur: 1 }));
   // ---- blob shadow under a flying boss
   const shadow = mk(discGeo, basic(0x000000, 0.4));
 
@@ -34,7 +42,7 @@ export function createBossFx(scene, track, ctx = null) {
   const _rot = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
   const api = {
-    markers, waves, group, strikes,
+    markers, waves, group, strikes, lanes,
     marker(s, x, y, r, dur) { const k = markers.find((q) => !q.on); if (!k) return null; Object.assign(k, { on: true, s, x, y, r, t: dur, dur }); return k; },
     shock(s, x, y, o = {}) { const k = waves.find((q) => !q.on); if (!k) return null; Object.assign(k, { on: true, s, x, y, r: 0.5, speed: 8, thick: 1.2, height: 1, damage: 20, delay: 0, hit: false, harmless: false, maxR: 24 }, o); if (!k.harmless && !k.delay) events.emit('shockwave'); return k; },
     // r = radius of the circle; delay = seconds until impact; o = { damage, color, size, height, splash(s, x) }
@@ -43,8 +51,11 @@ export function createBossFx(scene, track, ctx = null) {
       Object.assign(k, { on: true, s, x, r, t: delay, dur: delay, hi: o.height ?? 16, damage: o.damage ?? 20, color: o.color ?? 0x9bff3a, size: o.size ?? 0.6, splash: o.splash || null, delayLeft: o.after || 0 });
       k.mk = api.marker(s, x, 0, r, delay + k.delayLeft); k.mesh.material.color.setHex(k.color); return k;
     },
+    // lane: a charge path of width w, shown for `dur` seconds (the caller moves the boss when it ends)
+    lane(s0, x0, s1, x1, w, dur) { const k = lanes.find((q) => !q.on); if (!k) return null; Object.assign(k, { on: true, s0, x0, s1, x1, w, t: dur, dur }); events.emit('laneShown'); return k; },
     shadow(s, x, y, r, a) { if (r <= 0) { shadow.visible = false; return; } flat(shadow, s, x, y, r); shadow.material.opacity = a; },
     update(dt, player, combat) {
+      for (const k of lanes) if (k.on) { k.t -= dt; if (k.t <= -0.8) k.on = false; }
       for (const k of strikes) {
         if (!k.on) continue;
         if (k.delayLeft > 0) { k.delayLeft -= dt; continue; }
@@ -67,6 +78,12 @@ export function createBossFx(scene, track, ctx = null) {
       }
     },
     render(t) {
+      for (const k of lanes) {
+        if (!k.on) { k.mesh.visible = false; continue; }
+        const ds = k.s1 - k.s0, dx = k.x1 - k.x0, L = Math.hypot(ds, dx), u = 1 - Math.max(0, k.t) / k.dur;
+        placeMatrix(track, (k.s0 + k.s1) / 2, (k.x0 + k.x1) / 2, 0.05, Math.atan2(-dx, ds), k.w, 1, L, _m); k.mesh.matrixAutoUpdate = false; k.mesh.matrix.copy(_m); k.mesh.visible = true;
+        const un = k.mesh.material.uniforms; un.uT.value = t; un.uLen.value = L; un.uA.value = (k.t > 0 ? 0.35 + 0.65 * u : Math.max(0, 1 + k.t / 0.8)) * (0.75 + 0.25 * Math.sin(t * 22));
+      }
       for (const k of strikes) {
         if (!k.on || k.delayLeft > 0) { k.mesh.visible = false; continue; }
         const u = Math.max(0, k.t / k.dur), y = u * u * k.hi + 0.2;
@@ -85,7 +102,7 @@ export function createBossFx(scene, track, ctx = null) {
         w.base.material.opacity = 0.9 * Math.max(0, 1 - w.r / w.maxR);
       }
     },
-    clear() { for (const k of strikes) { k.on = false; k.mesh.visible = false; } for (const k of markers) { k.on = false; k.disc.visible = k.edge.visible = false; } for (const w of waves) { w.on = false; w.wall.visible = w.base.visible = false; } shadow.visible = false; },
+    clear() { for (const k of lanes) { k.on = false; k.mesh.visible = false; } for (const k of strikes) { k.on = false; k.mesh.visible = false; } for (const k of markers) { k.on = false; k.disc.visible = k.edge.visible = false; } for (const w of waves) { w.on = false; w.wall.visible = w.base.visible = false; } shadow.visible = false; },
     dispose() { scene.remove(group); },
   };
   return api;

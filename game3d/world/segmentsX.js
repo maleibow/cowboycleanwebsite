@@ -24,5 +24,33 @@ export function extraTemplates(K) {
     },
   };
 
+  // ---- Stage 3 hazard: CONVEYOR BELT. A belt across the whole path drags whatever stands on it (the box carries `belt` m/s, read by the
+  // player controller). Fixed direction per belt; running with it is quick, against it is a slog. The set-piece below reverses it.
+  T.conveyor = {
+    cls: 'easy',
+    build(c) {
+      const { rng, w } = c, a = r1(rng.range(9, 12)), L = r1(rng.range(16, 22)), len = a + L + r1(rng.range(11, 14)), v = rng.sign() * rng.range(3.2, 4.2);
+      const spans = [ground(0, a, w), { s0: a, s1: a + L, x0: -w / 2, x1: w / 2, top: 0, depth: 1.2, kind: 'conveyor', belt: v }, ground(a + L, len, w)];
+      const slots = [...populate(c, [ground(0, a, w), ground(a + L, len, w)], { items: 0, obstacle: true }), item(a + L / 2, rng.range(-0.25, 0.25) * w)];
+      for (let i = 0; i < 5; i++) slots.push(coin(a + 2 + (i * (L - 4)) / 4, 0));
+      return { len, spans, slots };
+    },
+  };
+
+  // ---- Stage 3 set-piece: CONVEYOR REVERSAL. A long belt with crusher pistons over it. Every 6 s the belt warns (flashing arrows, alarm) and then
+  // reverses; each piston lights its footprint, then slams down on one half of the belt (the other half is clear).
+  T.reversal = {
+    cls: 'special',
+    build(c) {
+      const { rng, w } = c, run = 11, L = 66, tail = 14, len = run + L + tail, v = 4.6, ps = [];
+      const spans = [ground(0, run, w), { s0: run, s1: run + L, x0: -w / 2, x1: w / 2, top: 0, depth: 1.2, kind: 'conveyor', belt: v }, ground(run + L, len, w)];
+      let side = rng.sign();
+      for (let i = 0; i < 3; i++) { ps.push({ s: run + 16 + i * 17, x0: side < 0 ? -w / 2 : 0.4, x1: side < 0 ? -0.4 : w / 2, period: 4.4, phase: i * 1.5, depth: 2.4 }); side = -side; }
+      const slots = [item(run + L * 0.5, 0, 0.9), foe(run + 24, rng.range(-0.3, 0.3) * w, 0, true), foe(run + 50, rng.range(-0.3, 0.3) * w, 0, true), foe(len - 5, 0)];
+      for (let i = 0; i < 9; i++) slots.push(coin(run + 4 + (i * (L - 8)) / 8, (i % 2 ? 1 : -1) * 1.6));
+      return { len, spans, belts: [{ s0: run, s1: run + L, v, period: 6.2, warn: 1.0 }], pistons: ps, slots };
+    },
+  };
+
   return T;
 }

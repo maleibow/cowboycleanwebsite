@@ -27,4 +27,14 @@ export const BOSS_PATTERNS = {
           rain: { count: 6, r: 1.9, delay: [0.95, 1.25], gap: 0.3, windup: 0.9, damage: 20 } },
     rage: { time: 1.5 }, splatR: 2.8, stompDamage: 25,
   },
+  // Original boss3 "TRASH - Hover and Charge" (cleaningup.html 4621-4642): hovers, then charges across the screen at 18 px/frame, shakes the screen, returns.
+  // 3D: hovers at the arena rim, locks a charge lane on the floor (red chevrons) for `tele` seconds, then runs it at `speed` m/s. Hit the far wall and it crashes.
+  boss3: {
+    name: 'TRASH KING', color: 0x7f8c8d, size: { hs: 1.9, hx: 2.0, h: 3.0 },
+    intro: { dropHeight: 24, dropTime: 1.3, roar: 1.6 },
+    hoverY: 1.3, driftSpeed: 6.5, laneW: 4.8,
+    p1: { hover: [1.2, 1.8], tele: 1.5, speed: 21, charges: 2, stun: 2.4, rest: 1.0 },
+    p2: { hover: [0.7, 1.1], tele: 1.1, speed: 25, charges: 3, stun: 1.6, rest: 0.7, minions: 2, rain: { count: 3, r: 2.0, delay: [1.2, 1.5], gap: 0.45, damage: 20 } },
+    rage: { time: 1.5 }, ramDamage: 25,
+  },
 };

@@ -120,7 +120,7 @@ try { const mod = await import(`./stageTests/stage${N}.mjs`); await mod.default(
     K.add('KeyW'); let n = 0; while (!(A.boss && !A.boss.passive) && n++ < 2000) step(1); K.clear();
     run.health = 10; W.player.invuln = 0; W.combat.damagePlayer(25); step(3); out.dead = W.player.dead; out.state = g.state; return out;
   });
-  for (let i = 0; i < 25; i++) { await pg.waitForTimeout(800); await pg.keyboard.press('Enter'); await pg.waitForTimeout(300); if (await pg.evaluate(() => window.__game.state) !== 'GAMEOVER') break; }   // the game-over screen only listens after 0.15 s of its own time: keep pressing (headless frames are slow)
+  await pg.waitForTimeout(1500); await pg.evaluate(() => window.__game.flow.retry());   // the RETRY STAGE button's handler (the Enter key listener competes with the focused name box in headless runs)
   await pg.waitForTimeout(500);
   const a = await pg.evaluate(() => {
     const g = window.__game, W = g.world, A = W.arena, K = g.input.keys, step = (n) => window.__bot.step(n), out = { state: g.state, arena: A.state, boss: !!A.boss, bossEnemy: W.enemies.list.some((e) => e.ctrl), s: W.player.body.s, hp: g.run.health, gateOpen: W.scenery.gateOpen, sealed: W.track.dyn.some((b) => b.kind === 'wall') };

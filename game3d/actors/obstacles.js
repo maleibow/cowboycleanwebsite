@@ -81,7 +81,7 @@ export function createObstacles(ctx, scene, track) {
       const d = o.def, s = o.p0s + (o.s - o.p0s) * alpha, m = OBSTACLE_MODELS[o.type];
       if (m && models[o.type]) {   // modelled: a rolling one rocks forward and back as it slides in, shedding dust
         const rock = o.rolling && o.started ? Math.sin(o.spin * 1.6) * m.rock : 0;
-        models[o.type].put(s, o.x, o.y, d.hx / 0.9, d.h / 0.9, d.hs / 0.9, 0xffffff, o.rolling ? Math.sin(o.spin * 0.5) * 0.25 : 0, rock);
+        models[o.type].put(s, o.x, o.y + (m.lift || 0) * (d.h / 0.9), d.hx / 0.9, d.h / 0.9, d.hs / 0.9, 0xffffff, m.roll ? 0 : o.rolling ? Math.sin(o.spin * 0.5) * 0.25 : 0, m.roll ? (o.rolling && o.started ? o.s * 0.9 / d.hs : 0) : rock);   // m.roll: a drum lying on its side turns with the distance it has rolled
         if (m.dust && o.rolling && o.started && ctx.particles && Math.random() < 0.25) { track.toWorld(s, o.x, o.y + 0.15, _w); ctx.particles.emit('dust', _w.x, _w.y, _w.z, { count: 0.5, scale: 0.9 }); }
         continue;
       }
