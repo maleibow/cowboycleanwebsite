@@ -125,20 +125,43 @@ export function createScenery(track, theme, { quality, scene, seed = 1, lampMate
     out.add(pm, lm);
   };
 
-  const buildChunk = (ci) => {
+  // A chunk is built in small steps (ground ribbon, each scatter kind, edge posts, river, each segment's dressing) so streaming a
+  // new 120 m chunk never costs one long frame. `jobs` holds chunks in progress; `pump` runs steps nearest-first within a time budget.
+  const jobs = new Map();                                           // ci -> { gen, g }
+  function* chunkSteps(ci, job) {
     const c0 = ci * CHUNK, c1 = c0 + CHUNK, env = envFor(c0 - 4, c1 + 4), rng = createRng(seed * 7919 + ci * 104729 + 13);
-    const g = new THREE.Group(); g.name = 'chunk' + ci; ctx.rng = rng;
-    g.add(buildGround(c0, c1 + 2, env));
-    buildScatter(ci, c0, c1, env, rng, g); buildEdge(c0, c1, env, g);
+    const g = job.g = new THREE.Group(); g.name = 'chunk' + ci; ctx.rng = rng;
+    g.add(buildGround(c0, c1 + 2, env)); yield;
+    buildScatter(ci, c0, c1, env, rng, g); yield;
+    buildEdge(c0, c1, env, g); yield;
     const fluids = [];
-    if (theme.river) { const rv = theme.river(c0, c1 + 2, env, ctx); if (rv) { g.add(rv.object); fluids.push(...rv.fluids); } }   // e.g. stage 10: ruby canals along the streets
+    if (theme.river) { const rv = theme.river(c0, c1 + 2, env, ctx); if (rv) { g.add(rv.object); fluids.push(...rv.fluids); } yield; }   // e.g. stage 10: ruby canals along the streets
     for (const seg of track.segments) { // per-segment dressing belongs to the chunk holding the segment start
       if (seg.s0 < c0 || seg.s0 >= c1) continue;
       const d = theme.dress?.[seg.name]?.(seg, ctx, env); if (!d) continue;
-      g.add(d.object); dressed.set(seg, d); if (d.fluids) fluids.push(...d.fluids);
+      g.add(d.object); dressed.set(seg, d); job.dressed.push(seg); if (d.fluids) fluids.push(...d.fluids); yield;
     }
     g.userData = { fluids, ci }; group.add(g); chunks.set(ci, g); api.built++;
+  }
+  const startChunk = (ci) => { const job = { ci, g: null, dressed: [] }; job.gen = chunkSteps(ci, job); jobs.set(ci, job); };
+  const dropJob = (ci) => {                                         // a chunk left the window before it finished: release what it made
+    const job = jobs.get(ci); if (!job) return; jobs.delete(ci); job.gen.return();
+    job.g?.traverse((o) => { if (o.isInstancedMesh) o.dispose?.(); if (o.geometry && o.name === 'ground') o.geometry.dispose(); });
+    for (const seg of job.dressed) { dressed.get(seg)?.dispose?.(); dressed.delete(seg); }
   };
+  let focus = 0;
+  // Run build steps until the budget (ms) is spent. At least one step runs whenever work is waiting, so a queue always drains.
+  api.pump = (budgetMs = 2) => {
+    const t0 = performance.now(); let did = false;
+    while (jobs.size) {
+      let best = null; for (const j of jobs.values()) if (!best || Math.abs(j.ci * CHUNK + CHUNK / 2 - focus) < Math.abs(best.ci * CHUNK + CHUNK / 2 - focus)) best = j;
+      if (best.gen.next().done) jobs.delete(best.ci);
+      did = true; if (performance.now() - t0 >= budgetMs) break;
+    }
+    return did;
+  };
+  Object.defineProperty(api, 'pending', { get() { return jobs.size; } });
+  api.flush = () => { while (jobs.size) api.pump(1e9); };
   const disposeChunk = (ci) => {
     const g = chunks.get(ci); group.remove(g);
     g.traverse((o) => { if (o.isInstancedMesh) o.dispose?.(); if (o.geometry && o.name === 'ground') o.geometry.dispose(); });
@@ -171,17 +194,24 @@ export function createScenery(track, theme, { quality, scene, seed = 1, lampMate
     };
   }
 
-  api.update = (s, t, camPos, dt) => {
-    const lo = Math.floor((s - WINDOW.behind) / CHUNK), hi = Math.floor((s + WINDOW.ahead) / CHUNK);
-    for (let ci = Math.max(0, lo); ci <= Math.min(hi, Math.floor(track.length / CHUNK)); ci++) if (!chunks.has(ci)) buildChunk(ci);
-    for (const ci of [...chunks.keys()]) if (ci < lo - 0 || ci > hi) disposeChunk(ci);
-    for (const g of chunks.values()) for (const f of g.userData.fluids) f.update(t);
+  let lastS = null; const stale = [];
+  api.update = (s, t, camPos, dt, budget = 2) => {
+    focus = s;
+    const lo = Math.floor((s - WINDOW.behind) / CHUNK), hi = Math.floor((s + WINDOW.ahead) / CHUNK), top = Math.floor(track.length / CHUNK);
+    for (let ci = Math.max(0, lo); ci <= Math.min(hi, top); ci++) if (!chunks.has(ci) && !jobs.has(ci)) startChunk(ci);
+    stale.length = 0; for (const ci of chunks.keys()) if (ci < lo || ci > hi) stale.push(ci); for (const ci of stale) disposeChunk(ci);
+    stale.length = 0; for (const ci of jobs.keys()) if (ci < lo || ci > hi) stale.push(ci); for (const ci of stale) dropJob(ci);
+    // after a teleport (respawn, checkpoint, ?boss=1, tests) the chunk under the player must exist now, not a few frames from now
+    if (lastS !== null && Math.abs(s - lastS) > 40) for (const ci of jobs.keys()) if (Math.abs(ci * CHUNK + CHUNK / 2 - s) < CHUNK * 1.2) { const j = jobs.get(ci); while (!j.gen.next().done); jobs.delete(ci); }
+    lastS = s;
+    if (jobs.size) api.pump(budget);
+    for (const g of chunks.values()) { const fl = g.userData.fluids; for (let i = 0; i < fl.length; i++) fl[i].update(t); }
     for (const d of dressed.values()) d.update?.(t, s, dt);
     api.far?.update(camPos, t);
     api.tumble?.update(s, t, dt);
   };
-  api.buildAll = () => { for (let ci = 0; ci <= Math.floor(track.length / CHUNK); ci++) if (!chunks.has(ci)) buildChunk(ci); };
-  api.dispose = () => { api.tumble?.dispose(); for (const ci of [...chunks.keys()]) disposeChunk(ci); scene.remove(group); if (api.far) scene.remove(api.far.group); };
+  api.buildAll = () => { for (let ci = 0; ci <= Math.floor(track.length / CHUNK); ci++) if (!chunks.has(ci) && !jobs.has(ci)) startChunk(ci); api.flush(); };
+  api.dispose = () => { api.tumble?.dispose(); for (const ci of [...jobs.keys()]) dropJob(ci); for (const ci of [...chunks.keys()]) disposeChunk(ci); scene.remove(group); if (api.far) scene.remove(api.far.group); };
   api.ctx = ctx;
   return api;
 }

@@ -12,6 +12,7 @@ const M = `font-family:${MONO};text-shadow:none;`;
 
 export function createGameOver(root, { onRetry, onQuit, jukebox }) {
   const ui = screen(root, `${TEXT}background:rgba(14,0,0,.82);overflow:auto;padding:14px 0;box-sizing:border-box;gap:10px;justify-content:flex-start;`);
+  ui.el.dataset.scroll = '1'; ui.el.style.touchAction = 'pan-y';   // lets a finger scroll the leaderboard / prize form on a short phone screen
   div(ui.el, 'font-size:clamp(46px,8vw,84px);color:#e74c3c;text-shadow:3px 3px 0 #000,6px 6px 0 #c0392b;margin-top:auto', 'GRIME OVERLOAD');
   const score = div(ui.el, 'font-size:32px;color:#ffd84a');
   const cols = div(ui.el, 'display:flex;gap:26px;flex-wrap:wrap;justify-content:center;align-items:flex-start;width:94%');

@@ -1,12 +1,23 @@
-// Keyboard + gamepad (touch comes later) -> one `input` object. Mapping per PLAN section 5.
+// Keyboard + gamepad + touch (ui/touch.js) -> one `input` object. Mapping per PLAN section 5; keys are remappable (core/settings.js).
 // Call input.update() once per simulation step; `*Pressed` flags are true for that step only.
-const KEYS = {
+import { settings, onSetting } from './settings.js';
+
+// Default key codes per action. Players can remap them (ui/settingsPanel.js); the saved map in settings.keys overrides these.
+export const DEFAULT_KEYS = {
   left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'],
   up: ['KeyW', 'ArrowUp'], down: ['KeyS', 'ArrowDown'],
   jump: ['Space'], spray: ['KeyJ'], bomb: ['KeyK', 'KeyE'],
   slide: ['ShiftLeft', 'ShiftRight', 'KeyC'], pause: ['Escape', 'KeyP'],
 };
-const GAME_KEYS = new Set(Object.values(KEYS).flat());
+export const ACTIONS = Object.keys(DEFAULT_KEYS);
+// The live key map and the set of keys the browser must not act on (page scroll, find-as-you-type...). Rebuilt when settings change.
+export const KEYS = {};
+export const GAME_KEYS = new Set();
+const rebuildKeys = () => {
+  GAME_KEYS.clear();
+  for (const a of ACTIONS) { KEYS[a] = settings.keys[a]?.length ? settings.keys[a] : DEFAULT_KEYS[a]; for (const c of KEYS[a]) GAME_KEYS.add(c); }
+};
+rebuildKeys(); onSetting((k) => { if (k === 'keys' || k === '*') rebuildKeys(); });
 const DEAD = 0.18;
 
 export function createInput(target = window) {
@@ -17,6 +28,8 @@ export function createInput(target = window) {
     jump: false, spray: false, bomb: false, slide: false, pause: false,
     jumpPressed: false, bombPressed: false, pausePressed: false, anyPressed: false,
     keys: down, source: 'keyboard',
+    // Filled by ui/touch.js (virtual joystick + buttons); merged with keys / pad in update(). Several fingers can hold different controls.
+    touch: { moveX: 0, moveY: 0, jump: false, spray: false, bomb: false, slide: false, pause: false },
   };
   const prev = { jump: false, bomb: false, pause: false };
 
@@ -25,8 +38,8 @@ export function createInput(target = window) {
     down.add(e.code);
   });
   target.addEventListener('keyup', (e) => down.delete(e.code));
-  target.addEventListener('blur', () => { down.clear(); mouseSpray = false; });
-  target.addEventListener('mousedown', (e) => { if (e.button === 0) mouseSpray = true; });
+  target.addEventListener('blur', () => { down.clear(); mouseSpray = false; const t = input.touch; t.moveX = t.moveY = 0; t.jump = t.spray = t.bomb = t.slide = t.pause = false; });
+  target.addEventListener('mousedown', (e) => { if (e.button === 0 && !e.sourceCapabilities?.firesTouchEvents) mouseSpray = true; });   // not the compatibility mouse event a tap leaves behind
   target.addEventListener('mouseup', (e) => { if (e.button === 0) mouseSpray = false; });
 
   const held = (a) => { for (const c of a) if (down.has(c)) return true; return false; };
@@ -49,6 +62,9 @@ export function createInput(target = window) {
       slide = slide || b(3) || b(6); pause = pause || b(9);
       if (b(14)) mx = -1; if (b(15)) mx = 1; if (b(12)) my = 1; if (b(13)) my = -1;
     }
+    const t = input.touch;
+    if (t.moveX || t.moveY) { mx = t.moveX; my = t.moveY; input.source = 'touch'; }
+    jump = jump || t.jump; spray = spray || t.spray; bomb = bomb || t.bomb; slide = slide || t.slide; pause = pause || t.pause;
     const len = Math.hypot(mx, my);
     if (len > 1) { mx /= len; my /= len; }
     input.moveX = mx; input.moveY = my;

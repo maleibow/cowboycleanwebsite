@@ -2,7 +2,7 @@
 // The AudioContext is created on the first key press or tap (browsers keep it suspended until then, and a context built
 // earlier logs a console warning). Voices are capped, so rapid fire never stacks into crackle.
 export function createSynth({ maxVoices = 14, volume = 0.8 } = {}) {
-  let ac = null, master = null, music = null, noiseBuf = null, muted = false, sfxVol = 1, musicVol = 1, musicOn = true;
+  let masterVol = 1, ac = null, master = null, music = null, noiseBuf = null, muted = false, sfxVol = 1, musicVol = 1, musicOn = true;
   const ends = [];                                    // audio-clock end time of every sound still playing
   const api = {
     get ready() { return !!ac && ac.state === 'running'; },
@@ -22,15 +22,17 @@ export function createSynth({ maxVoices = 14, volume = 0.8 } = {}) {
         noiseBuf = ac.createBuffer(1, Math.floor(ac.sampleRate * 1.5), ac.sampleRate);
         const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       }
-      if (ac.state === 'suspended') ac.resume().catch(() => {});
+      if (ac.state !== 'running' && ac.state !== 'closed') ac.resume().catch(() => {});   // 'suspended' (autoplay policy) or iOS 'interrupted' (call, lock screen)
       return ac.state !== 'closed';
     },
+    suspend() { if (ac && ac.state === 'running') ac.suspend().catch(() => {}); },   // tab hidden: stop the audio clock
     setMuted(m) { muted = !!m; api.applyGains(); },
+    setMaster(v) { masterVol = Math.min(1, Math.max(0, v)); api.applyGains(); },   // the Settings screen's master volume: scales SFX and music together
     // Jukebox volumes (0..1): SFX level, music level, and whether music is audible at all (false in Spotify mode).
     setLevels({ sfx = sfxVol, music: m = musicVol, musicAudible = musicOn }) { sfxVol = sfx; musicVol = m; musicOn = musicAudible; api.applyGains(); },
     applyGains(now = false) {
       if (!master) return; const t = ac.currentTime, set = (n, v) => (now ? (n.gain.value = v) : n.gain.setTargetAtTime(v, t, 0.03));
-      set(master, muted ? 0 : volume * sfxVol); set(music, muted || !musicOn ? 0 : musicVol);
+      set(master, muted ? 0 : volume * sfxVol * masterVol); set(music, muted || !musicOn ? 0 : musicVol * masterVol);
     },
     // Reserve a voice for `dur` seconds. Returns false when the cap is reached (priority sounds may exceed it a little).
     take(dur, prio = 0) {

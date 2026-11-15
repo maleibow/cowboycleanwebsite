@@ -98,26 +98,48 @@ export function createTrackBuilder(track, scene, { palette, showSlots = true, sh
   const sways = new Set();                         // { group, base, amp, speed, phase } of live segments
   const _rz = new THREE.Matrix4(), _rx = new THREE.Matrix4();
   const drop = (m) => { for (const e of m.userData.sways || []) sways.delete(e); disposeTree(m); };
-  api.update = (s, t = 0) => {
+  // Segment meshes are built one per step, nearest first, within a time budget, so crossing into new ground never costs one long
+  // frame. After a teleport (respawn, ?boss=1, tests) the segments around the player are built at once.
+  const queue = []; let lastS = null, focus = 0;
+  const build = (i) => {
+    const g = track.segments[i], out = { sway: [] }, m = new THREE.Mesh(buildSegmentGeometry(track, g, palette, showSlots, style, theme ? { theme, ordinal, seed, out } : null), material);
+    m.castShadow = m.receiveShadow = shadows; m.frustumCulled = true; m.name = `seg${i}:${g.name}`;
+    m.userData.sways = out.sway.map((w) => {
+      const grp = new THREE.Group(); grp.matrixAutoUpdate = false; grp.matrix.copy(w.base); grp.matrixWorldNeedsUpdate = true; m.add(grp);
+      const c = new THREE.Mesh(w.geo, material); c.castShadow = shadows; c.frustumCulled = false; grp.add(c);
+      const e = { group: grp, base: w.base, amp: w.amp, speed: w.speed, phase: w.phase }; sways.add(e); return e;
+    });
+    scene.add(m); live.set(i, m); api.built++;
+  };
+  const dist = (i) => { const g = track.segments[i]; return Math.abs((g.s0 + g.s1) / 2 - focus); };
+  api.pump = (budgetMs = 2) => {
+    const t0 = performance.now();
+    while (queue.length) {
+      let bi = 0; for (let k = 1; k < queue.length; k++) if (dist(queue[k]) < dist(queue[bi])) bi = k;
+      const i = queue[bi]; queue[bi] = queue[queue.length - 1]; queue.pop();
+      if (!live.has(i)) build(i);
+      if (performance.now() - t0 >= budgetMs) break;
+    }
+  };
+  Object.defineProperty(api, 'pending', { get() { return queue.length; } });
+  api.flush = () => { while (queue.length) api.pump(1e9); };
+  api.update = (s, t = 0, budget = 2) => {
+    focus = s;
     for (const e of sways) { const a = e.amp * Math.sin(t * e.speed + e.phase); e.group.matrix.copy(e.base).multiply(_rz.makeRotationZ(a)).multiply(_rx.makeRotationX(a * 0.35)); e.group.matrixWorldNeedsUpdate = true; }
     const segs = track.segments;
     for (let i = 0; i < segs.length; i++) {
       const g = segs[i], want = g.s1 > s - WINDOW.behind && g.s0 < s + WINDOW.ahead, mesh = live.get(i);
-      if (want && !mesh) {
-        const out = { sway: [] }, m = new THREE.Mesh(buildSegmentGeometry(track, g, palette, showSlots, style, theme ? { theme, ordinal, seed, out } : null), material);
-        m.castShadow = m.receiveShadow = shadows; m.frustumCulled = true; m.name = `seg${i}:${g.name}`;
-        m.userData.sways = out.sway.map((w) => {
-          const grp = new THREE.Group(); grp.matrixAutoUpdate = false; grp.matrix.copy(w.base); grp.matrixWorldNeedsUpdate = true; m.add(grp);
-          const c = new THREE.Mesh(w.geo, material); c.castShadow = shadows; c.frustumCulled = false; grp.add(c);
-          const e = { group: grp, base: w.base, amp: w.amp, speed: w.speed, phase: w.phase }; sways.add(e); return e;
-        });
-        scene.add(m); live.set(i, m); api.built++;
-      } else if (!want && mesh) {
-        scene.remove(mesh); drop(mesh); live.delete(i); api.disposed++;
+      if (want && !mesh) { if (!queue.includes(i)) queue.push(i); }
+      else if (!want) {
+        if (mesh) { scene.remove(mesh); drop(mesh); live.delete(i); api.disposed++; }
+        const q = queue.indexOf(i); if (q >= 0) { queue[q] = queue[queue.length - 1]; queue.pop(); }
       }
     }
+    if (lastS !== null && Math.abs(s - lastS) > 40) { for (let k = queue.length - 1; k >= 0; k--) if (dist(queue[k]) < 60) { const i = queue[k]; queue.splice(k, 1); if (!live.has(i)) build(i); } }
+    lastS = s;
+    if (queue.length) api.pump(budget);
   };
   api.invalidate = (i) => { const m = live.get(i); if (m) { scene.remove(m); drop(m); live.delete(i); } };   // rebuilt on the next update (e.g. the gate wall opened)
-  api.dispose = () => { for (const m of live.values()) { scene.remove(m); drop(m); } live.clear(); sways.clear(); material.dispose(); };
+  api.dispose = () => { for (const m of live.values()) { scene.remove(m); drop(m); } live.clear(); queue.length = 0; sways.clear(); material.dispose(); };
   return api;
 }

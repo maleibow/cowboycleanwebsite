@@ -4,6 +4,8 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 // Colour grade (lift / gamma / gain + saturation), vignette and light film grain in ONE pass.
 // Each part is switched by the quality tier: tier.vignette, tier.grade, tier.grain.
 // Bloom lives in renderer.js (tuned with a >1.0 threshold so only HDR emissives glow).
+// This is also the LAST pass: it applies the renderer's tone mapping and the sRGB conversion itself (what OutputPass did), so a frame
+// costs one full-screen pass fewer. Because it does that job it is never disabled; tiers switch its effects off through uniforms.
 const GradeShader = {
   uniforms: {
     tDiffuse: { value: null },
@@ -25,12 +27,14 @@ const GradeShader = {
       c *= 1.0 - uVignette * smoothstep(0.08, 0.42, v);
       c += (h(vUv * 1000.0) - 0.5) * uGrain * (0.5 + l_(c));
       gl_FragColor = vec4(c, t.a);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
     }`.replace('l_(c)', 'dot(c, vec3(0.33))'),
 };
 
-export function createPost(composer, quality, insertBefore) {
+export function createPost(composer, quality) {
   const pass = new ShaderPass(GradeShader);
-  composer.insertPass(pass, composer.passes.indexOf(insertBefore));   // before the OutputPass: grade in linear HDR
+  composer.addPass(pass);                                              // last: grade in linear HDR, then tone map + sRGB in the same shader
   const u = pass.uniforms;
   const api = {
     pass,
@@ -46,7 +50,7 @@ export function createPost(composer, quality, insertBefore) {
       u.uGradeOn.value = t.grade ? 1 : 0;
       u.uVignette.value = t.vignette ? b.vignette : 0;
       u.uGrain.value = t.grain ? b.grain : 0;
-      pass.enabled = !!(t.grade || t.vignette || t.grain);
+      pass.enabled = true;   // always on: it is the pass that tone maps and converts to sRGB
     },
     update(t) { u.uTime.value = (t * 7.31) % 17; },
   };

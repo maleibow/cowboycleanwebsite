@@ -5,6 +5,8 @@ import { POWERUPS, POWERUP_LIST, DROPS } from '../data/weapons.js';
 import { createBatch, shapes } from './instanced.js';
 import { groundAt } from './enemyAI.js';
 import { coinGeo, crateGeo, coinMaterial, pickupMaterial } from './propModels.js';
+import { powerShapes } from './pickupShapes.js';
+import { settings } from '../core/settings.js';
 
 // Coins (magnet to the player), the nine powerups, and breakable soap crates that hold coins or a powerup.
 // Original: coin pickup +5, powerup drop 15%/kill, dropped powerups hop and last 400 frames (3041-3108, 7435-7490).
@@ -18,6 +20,7 @@ export function createPickups(ctx, scene, track) {
   const crates = Array.from({ length: 48 }, () => ({ on: false, s: 0, x: 0, y: 0, hitT: 0, loot: '', coinsN: 0 }));
   const pg = new THREE.SphereGeometry(0.5, 14, 10), basic = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const cb = createBatch(scene, track, coinGeo(), coinMaterial(), 256), pb = createBatch(scene, track, pg, basic, 96), xb = createBatch(scene, track, crateGeo(), pickupMaterial(), 48);
+  const shapeGeo = powerShapes(), sb = {}; for (const t of POWERUP_LIST) sb[t] = createBatch(scene, track, shapeGeo[t], basic, 16);   // one silhouette batch per power-up type
   const api = { coins, powerups: pows, crates };
   let time = 0, coinAcc = 0, coinTimer = 0;
   const P = () => ctx.player.body;
@@ -109,17 +112,19 @@ export function createPickups(ctx, scene, track) {
 
   api.render = () => {
     cb.begin();
-    for (const c of coins) if (c.on) cb.put(c.s, c.x, c.y + Math.sin(time * 3 + c.ph) * (c.fixed ? 0.08 : 0), 1, 1, 1, 0xffffff, time * 4 + c.ph);
+    const V = cb.v; for (let i = 0; i < coins.length; i++) { const c = coins[i]; if (!c.on) continue; V[0] = c.s; V[1] = c.x; V[2] = c.y + Math.sin(time * 3 + c.ph) * (c.fixed ? 0.08 : 0); V[3] = V[4] = V[5] = 1; V[6] = time * 4 + c.ph; V[7] = 0; cb.putA(0xffffff); }   // typed-array arguments: no boxing, no garbage (actors/instanced.js)
     cb.end();
-    pb.begin();
+    const shaped = settings.shapes;
+    pb.begin(); for (const t of POWERUP_LIST) sb[t].begin();
     for (const p of pows) if (p.on) {
       const blink = p.t < 1 && Math.floor(time * 10) % 2 === 0; if (blink) continue;
-      const k = 0.55 + Math.sin(time * 5 + p.ph) * 0.06, col = POWERUPS[p.type].color;
-      pb.put(p.s, p.x, p.y + 0.2 + Math.sin(time * 3 + p.ph) * 0.12, k, k, k, col);
-      pb.put(p.s, p.x, p.y + 0.2 + Math.sin(time * 3 + p.ph) * 0.12, k * 1.0, k * 0.12, k * 1.0, 0xffffff, time * 2);
+      const k = 0.55 + Math.sin(time * 5 + p.ph) * 0.06, col = POWERUPS[p.type].color, y = p.y + 0.2 + Math.sin(time * 3 + p.ph) * 0.12;
+      if (shaped) { const q = k * 1.5; sb[p.type].put(p.s, p.x, y, q, q, q, col, time * 1.6 + p.ph); }
+      else pb.put(p.s, p.x, y, k, k, k, col);
+      pb.put(p.s, p.x, y, k, k * 0.12, k, 0xffffff, time * 2);
     }
-    for (const c of crates) if (c.on && c.loot) pb.put(c.s, c.x, c.y + 1.25 + Math.sin(time * 3 + c.s) * 0.08, 0.28, 0.28, 0.28, POWERUPS[c.loot].color); // what is inside
-    pb.end();
+    for (const c of crates) if (c.on && c.loot) { const y = c.y + 1.25 + Math.sin(time * 3 + c.s) * 0.08; if (shaped) sb[c.loot].put(c.s, c.x, y, 0.42, 0.42, 0.42, POWERUPS[c.loot].color, time * 1.6); else pb.put(c.s, c.x, y, 0.28, 0.28, 0.28, POWERUPS[c.loot].color); }   // what is inside
+    pb.end(); for (const t of POWERUP_LIST) { sb[t].end(); sb[t].mesh.visible = sb[t].count > 0; }
     xb.begin();
     for (const c of crates) if (c.on) xb.put(c.s, c.x, c.y, 0.9 + c.hitT * 0.4, 0.9 - c.hitT * 0.3, 0.9 + c.hitT * 0.4, 0xffffff, 0.3 + Math.sin(c.hitT * 60) * 0.2 * c.hitT);
     xb.end();

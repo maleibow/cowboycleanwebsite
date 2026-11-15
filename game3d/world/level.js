@@ -11,6 +11,7 @@ import { createCameraRig } from '../render/camera.js';
 import { createSky } from '../render/sky.js';
 import { createParticles } from '../render/particles.js';
 import { createToon, setStageLook, grime } from '../render/materials.js';
+import { warm as warmShaders } from '../render/warm.js';
 import { Builder } from '../actors/modelKit.js';
 import { eyes } from '../actors/partKit.js';
 import { createRng } from '../core/rng.js';
@@ -31,15 +32,21 @@ import { createHazards } from './hazards.js';
 // Wires a generated, themed stage into a playable scene: sky + lights + look from the theme, the track builder
 // window, scenery chunks, player, camera, the chase hazard, combat actors, checkpoints, and the boss arena.
 // `foes: false` (?foes=0) gives the pure platformer. gfx = the renderer wrapper (for the colour grade).
-export function createLevel(quality, { stage = 1, seed = null, debug = false, hud = null, foes = true, gfx = null, cards = null } = {}) {
+export function createLevel(quality, opts) {          // synchronous build (tests, lookdev, ?stage= dev starts): runs every step at once
+  const g = createLevelSteps(quality, { ...opts, warm: false }); let r; while (!(r = g.next()).done);
+  return r.value;
+}
+// The same build as a generator: every `yield` is a point where the game may draw a frame (flow.js spends a few ms per frame on
+// it behind the stage-intro card), so a stage never freezes the page while it loads.
+export function* createLevelSteps(quality, { stage = 1, seed = null, debug = false, hud = null, foes = true, gfx = null, cards = null, warm = !!gfx } = {}) {
   const stageData = getStage(stage), theme = getTheme(stageData.theme);
   const usedSeed = seed ?? stageSeed(stage, run.stageLoop);
   const layout = generateStage(stageData, usedSeed);
-  const track = createTrack(layout);
+  const track = createTrack(layout); yield;
 
   // ---- look: sky, fog, lights, colour grade, all from the theme
   const scene = new THREE.Scene();
-  const sky = createSky(theme.sky); scene.add(sky.mesh);
+  const sky = createSky(theme.sky); scene.add(sky.mesh); yield;
   scene.background = new THREE.Color(theme.fog.color);
   scene.fog = new THREE.Fog(theme.fog.color, theme.fog.near, theme.fog.far);
   setStageLook(theme.look); gfx?.post.setStage(theme.grade);
@@ -51,13 +58,16 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
     const c = sun.shadow.camera; c.left = c.bottom = -22; c.right = c.top = 22; c.near = 1; c.far = 90; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3;
   }
   scene.add(sun, sun.target);
-  const particles = createParticles(); scene.add(particles.mesh);
+  const particles = createParticles(); scene.add(particles.mesh); yield;
 
   const pathMat = createToon({ vertexColors: true, rimBoost: theme.groundRim ?? 1 });
+  yield;
   const builder = createTrackBuilder(track, scene, { palette: theme.pathPalette || stageData.palette, showSlots: /slots=1/.test(location.search), shadows: !!quality.tier.shadowMap, material: pathMat, style: theme.path, theme, seed: usedSeed });
   const scenery = createScenery(track, theme, { quality, scene, seed: usedSeed });
+  yield;
   scenery.ctx.emit = (name, x, y, z, o) => particles.emit(name, x, y, z, o);   // theme dressing (manhole steam) can puff particles
-  const player = createPlayer(track, { startS: layout.startS });
+  yield;
+  const player = createPlayer(track, { startS: layout.startS }); yield;
   const rig = createCameraRig(track);
   scene.add(player.mesh);
   run.bombs = BOMB.perStage; run.stageStartScore = run.score;
@@ -66,19 +76,20 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false, fog: false }));
   blob.rotation.x = -Math.PI / 2; blob.renderOrder = 2; blob.visible = !quality.tier.shadowMap; scene.add(blob);
 
-  const ctx = { track, scene, sky, player, rig, hud, cards, stageData, theme, layout, rng: createRng(usedSeed + 7), spawnEnabled: foes, level: null, particles, scenery, shadows: !!quality.tier.shadowMap };
+  const ctx = { quality, gfx, track, scene, sky, player, rig, hud, cards, stageData, theme, layout, rng: createRng(usedSeed + 7), spawnEnabled: foes, level: null, particles, scenery, shadows: !!quality.tier.shadowMap };
   ctx.fx = createFx(track, scene);
-  ctx.projectiles = createProjectiles(ctx, scene, track);
-  ctx.enemies = createEnemies(ctx, scene, track);
-  ctx.pickups = createPickups(ctx, scene, track);
-  ctx.obstacles = createObstacles(ctx, scene, track);
+  yield;
+  ctx.projectiles = createProjectiles(ctx, scene, track); yield;
+  ctx.enemies = createEnemies(ctx, scene, track); yield;
+  ctx.pickups = createPickups(ctx, scene, track); yield;
+  ctx.obstacles = createObstacles(ctx, scene, track); yield;
   ctx.combat = createCombat(ctx);
   ctx.weapon = createWeapon(ctx);
   ctx.spawner = createSpawner(ctx); ctx.spawner.enabled = foes;
-  ctx.enemies.preload([...stageData.roster.flat(), 'dirt']);
+  yield; for (const t of [...stageData.roster.flat(), 'dirt']) { ctx.enemies.models.ensure(t); yield; }   // one enemy model per step
   ctx.doors = createCasinoDoors(ctx, scene, track);
-  ctx.hazards = createHazards(ctx, scene, track);   // vines / conveyors / pistons / traffic (stages 2-4)
-  const arena = createArena(ctx);
+  ctx.hazards = createHazards(ctx, scene, track); yield;   // vines / conveyors / pistons / traffic (stages 2-4)
+  const arena = createArena(ctx); yield;
 
   // ---- the chase hazard: a giant angry dust ball that rolls up behind the player inside a `chase` segment
   const hazard = { active: false, s: 0, seg: null, hits: 0 }, ball = theme.chase?.() ?? createDustBall();   // the chaser: stage 1's dust ball, or the theme's own (stage 6: a lava wave)
@@ -92,7 +103,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
     hud?.toast('CHECKPOINT  ·  ' + (stageData.checkpoints?.[i] || i + 1), 0x6dffb0);
   }));
   player.model.anim.onFootstep = () => { if (Math.abs(player.body.vs) > 4) { events.emit('footstep'); const p = player.mesh.position; particles.emit('dust', p.x, p.y + 0.05, p.z, { count: 0.45, scale: player.inSand ? 1.1 : 0.7 }); } };
-  player.model.anim.onLand = (imp) => { const p = player.mesh.position; particles.emit('dust', p.x, p.y + 0.05, p.z, { count: 1.4, scale: 0.8 + Math.min(1, imp / 14) }); };
+  player.model.anim.onLand = (imp) => { const p = player.mesh.position; const k = Math.min(1, imp / 14); particles.emit('dust', p.x, p.y + 0.05, p.z, { count: 1 + 2.2 * k, scale: 0.8 + k }); };   // a harder landing kicks up a bigger puff
   offs.push(events.on('bossIntro', (o) => cards?.showBoss(o.name, o.line)), events.on('bossRage', () => cards?.shout('IT\'S FURIOUS!', '#ff7a3a', 1400)));
   offs.push(events.on('slide', () => { const p = player.mesh.position; particles.emit('dust', p.x, p.y + 0.05, p.z, { count: 1, scale: 1 }); }));
 
@@ -128,7 +139,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
       if (player.reachedGate && !level.finished) { level.finished = true; level.gateTime = level.time; }
       rig.update(dt, player);
       builder.update(b.s, level.time); scenery.update(b.s, level.time, rig.camera.position, dt);
-      if (Math.random() < dt * theme.ambient.rate) { const p = player.mesh.position; particles.emit(theme.ambient.preset, p.x + (Math.random() - 0.5) * 16, p.y + 0.5 + Math.random() * 5, p.z + (Math.random() - 0.5) * 16, { count: 1 }); }
+      if (Math.random() < dt * theme.ambient.rate * quality.tier.density) { const p = player.mesh.position; particles.emit(theme.ambient.preset, p.x + (Math.random() - 0.5) * 16, p.y + 0.5 + Math.random() * 5, p.z + (Math.random() - 0.5) * 16, { count: 1 }); }
       particles.update(dt, rig.camera);
       level.wave();
       if (hud) { hud.tick(dt); hud.update(level, dt); }
@@ -180,7 +191,11 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   ctx.level = level;
   if (hud) { hud.attach(level, rig.camera); if (debug) hud.enableDebug(); }
   rig.reset(player.body);
-  builder.update(player.body.s); scenery.update(player.body.s, 0, rig.camera.position, 0);
+  builder.update(player.body.s, 0); scenery.update(player.body.s, 0, rig.camera.position, 0);   // queues the first 150 m of track and scenery...
+  while (builder.pending || scenery.pending) { builder.pump(6); scenery.pump(6); yield; }          // ...and builds it a slice at a time
+  // Compile every shader program now (in parallel where the browser allows it) instead of on the first frame, which would freeze for
+  // a moment on a phone. The loader (flow.js) draws frames while this waits: `yield 'wait'` tells it to stop spending the frame's budget.
+  if (warm && gfx) { let done = false; const fin = () => { done = true; }; warmShaders(gfx.renderer, scene, rig.camera).then(fin, fin); while (!done) yield 'wait'; }
   return level;
 }
 

@@ -20,7 +20,7 @@ export function createEnemies(ctx, scene, track) {
   const list = [];
   const lit = new THREE.MeshLambertMaterial({ color: 0xffffff });
   const batches = {}; for (const [name, mk] of Object.entries(shapes)) batches[name] = createBatch(scene, track, mk(), lit, CAP);
-  const models = createModelRenderer(scene, track, { shadows: !!ctx.shadows });
+  const models = createModelRenderer(scene, track, { shadows: !!ctx.shadows, outline: ctx.quality?.tier?.enemyOutline !== 0 });   // the lowest tier draws enemies without the outline hull
   const api = { list, models, get count() { return list.length; }, preload: (types) => types.forEach((t) => models.ensure(t)) };
   const P = () => ctx.player.body;
 

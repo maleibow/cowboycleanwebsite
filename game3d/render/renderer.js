@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { createPost } from './post.js';
+import { events } from '../core/events.js';
 
 // WebGLRenderer + bloom composer. `box` is the 16:9 element whose size we track.
 export function createRenderer(canvas, box, quality) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; // applied by OutputPass when composing
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; // applied by the final grade pass (render/post.js)
   renderer.toneMappingExposure = 1.0;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.info.autoReset = false; // we reset once per frame so composer passes sum up
@@ -17,11 +17,14 @@ export function createRenderer(canvas, box, quality) {
   const composer = new EffectComposer(renderer);
   const renderPass = new RenderPass(new THREE.Scene(), new THREE.PerspectiveCamera());
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.5, 1.05); // threshold >1 = only HDR emissives glow
-  const output = new OutputPass();
-  composer.addPass(renderPass); composer.addPass(bloom); composer.addPass(output);
-  const post = createPost(composer, quality, output);
+  composer.addPass(renderPass); composer.addPass(bloom);
+  const post = createPost(composer, quality);        // grade + vignette + grain + tone mapping + sRGB in ONE final pass (render/post.js)
 
-  const api = { renderer, composer, bloom, renderPass, post, width: 0, height: 0, pixelRatio: 1 };
+  const api = { renderer, composer, bloom, renderPass, post, width: 0, height: 0, pixelRatio: 1, lost: false };
+  // WebGL context loss (a phone backgrounding the tab, a GPU reset): stop drawing, tell the game (it pauses and shows a notice),
+  // and carry on when the context returns. three.js rebuilds its GPU state itself; geometry, textures and targets re-upload lazily.
+  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); api.lost = true; events.emit('glLost'); });
+  canvas.addEventListener('webglcontextrestored', () => { api.lost = false; api.resize(true); events.emit('glRestored'); });
 
   api.applyQuality = () => {
     const t = quality.tier;
@@ -49,6 +52,7 @@ export function createRenderer(canvas, box, quality) {
 
   api.render = (scene, camera) => {
     api.camera = camera;
+    if (api.lost) return;
     renderPass.scene = scene; renderPass.camera = camera;
     renderer.info.reset();
     composer.render();
@@ -56,7 +60,7 @@ export function createRenderer(canvas, box, quality) {
 
   new ResizeObserver(() => api.resize()).observe(box);
   window.addEventListener('resize', () => api.resize());
-  quality.onChange = () => api.resize(true);
+  quality.onChange = (effectsChanged) => (effectsChanged ? api.applyQuality() : api.resize(true));   // scale step: just resize; an effect shed / restored or a tier change: re-apply bloom / post
   api.applyQuality();
   return api;
 }

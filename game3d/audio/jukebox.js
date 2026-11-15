@@ -97,6 +97,11 @@ export function createJukebox({ sfx, box }) {
   };
   api.info = () => ({ voice: voice.kind, key: voice.key, source: cfg.source, spotifyShown: dock.visible, failed: [...failed], src: voice.deck?.audio.src || null, playing: voice.deck ? !voice.deck.audio.paused : voice.kind === 'synth' ? !!synthMusic.m?.playing : voice.kind === 'jingle' ? sfx.saloon.playing : false });   // for tests
   api.resetHeard = () => { api.heard.length = 0; };
+  api.setActive = (on) => {                              // tab hidden / shown: pause the music files and the audio clock, resume them on return
+    if (!ac) return;
+    if (on) { synth.unlock(); if (voice.kind === 'file' && voice.deck.audio.paused) voice.deck.audio.play().catch(() => { retryAt = performance.now() + 700; }); }
+    else { for (const d of decks) d.audio.pause(); synth.suspend(); }
+  };
   api.bossOff = () => { bossOn = false; sync(); };
   Object.defineProperty(api, 'nowPlaying', { get() {
     const k = cfg.source === 'spotify' ? spotKey : key || 'title', slot = MUSIC[k] || MUSIC.title;

@@ -4,6 +4,7 @@ import { ARTIST, ARTIST_URL, slotFor, listenUrl } from '../data/music.js';
 const FONT = 'Bangers,cursive';
 const css = (el, s) => { el.style.cssText = s; return el; };
 const div = (parent, s, text = '') => { const d = css(document.createElement('div'), s); if (text) d.textContent = text; parent?.appendChild(d); return d; };
+import { reducedMotion } from '../core/settings.js';
 const TEXT = `font-family:${FONT};color:#fff;letter-spacing:2px;text-shadow:3px 3px 0 #000;`;
 const fmtTime = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 
@@ -18,21 +19,38 @@ export function createStageCards(root) {
   const links = div(intro, 'display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;justify-content:center');
   const spLink = (label, bg) => { const a = document.createElement('a'); a.textContent = label; a.target = '_blank'; a.rel = 'noopener'; a.style.cssText = `${TEXT}font-size:20px;padding:4px 16px;border-radius:20px;background:${bg};color:#000;text-shadow:none;text-decoration:none;cursor:pointer;pointer-events:auto`; a.addEventListener('pointerdown', (e) => e.stopPropagation()); a.addEventListener('pointerenter', () => clearTimeout(introTimer)); a.addEventListener('pointerleave', () => { if (api.introOpen) introTimer = setTimeout(closeIntro, 2500); }); links.appendChild(a); return a; };
   const listenA = spLink('Listen on Spotify', '#1ed760'), followA = spLink('Follow', '#fff'); followA.href = ARTIST_URL;
-  div(intro, 'font-size:16px;opacity:.65;margin-top:18px', 'press any key');
+  const hint = div(intro, 'font-size:16px;opacity:.65;margin-top:18px', 'tap or press any key');
+  const loadBar = div(intro, 'width:min(320px,60%);height:12px;margin-top:16px;background:rgba(0,0,0,.55);border:2px solid #fff;border-radius:8px;overflow:hidden;display:none'), loadFill = div(loadBar, 'height:100%;width:0;background:#ffd84a;transition:width .15s');
   let introDone = null, introTimer = 0;
-  const closeIntro = () => { if (!api.introOpen) return; api.introOpen = false; intro.style.opacity = 0; setTimeout(() => { intro.style.display = 'none'; }, 500); clearTimeout(introTimer); removeEventListener('keydown', closeIntro); intro.removeEventListener('pointerdown', closeIntro); const f = introDone; introDone = null; f?.(); };
+  let loading = null, wantClose = false;      // the stage is still being built (0..1): the card stays up until it is ready
+  const closeIntro = () => { if (!api.introOpen) return; if (loading !== null) { wantClose = true; return; } api.introOpen = false; intro.style.opacity = 0; setTimeout(() => { intro.style.display = 'none'; }, 500); clearTimeout(introTimer); removeEventListener('keydown', closeIntro); intro.removeEventListener('pointerdown', closeIntro); const f = introDone; introDone = null; f?.(); };
   api.showIntro = (stage, onDone, secs = 3.6) => {
     iNum.textContent = `STAGE ${stage.id}`; iName.textContent = stage.name.toUpperCase(); iTag.textContent = stage.tagline || '';
     const track = slotFor(stage.id); iTrack.textContent = `♪  ${track.title}  —  ${ARTIST}`; listenA.href = listenUrl(track);
     intro.style.display = 'flex'; intro.style.opacity = 1; api.introOpen = true; introDone = onDone;
     introTimer = setTimeout(closeIntro, secs * 1000); setTimeout(() => { if (api.introOpen) addEventListener('keydown', closeIntro); }, 350); intro.addEventListener('pointerdown', closeIntro);
   };
+  api.setLoading = (f) => {
+    if (f === loading) return; loading = f;
+    if (f === null) { loadBar.style.display = 'none'; hint.textContent = 'tap or press any key'; if (wantClose) { wantClose = false; closeIntro(); } return; }
+    loadBar.style.display = 'block'; loadFill.style.width = Math.round(f * 100) + '%'; hint.textContent = 'building the stage...';
+  };
   api.pollPad = (input) => { if (api.introOpen && (input.jumpPressed || input.bombPressed || input.pausePressed)) closeIntro(); };
 
   // ---- boss title: slides in when the boss lands
-  const boss = div(root, `position:absolute;left:0;right:0;top:34%;text-align:center;${TEXT}opacity:0;transform:scale(1.4);transition:opacity .35s,transform .35s;pointer-events:none`);
+  const boss = div(root, `position:absolute;left:0;right:0;top:34%;text-align:center;${TEXT}opacity:0;transform:scale(1.4);transition:opacity .35s,transform .35s;pointer-events:none`); if (reducedMotion()) boss.style.transform = 'none';
   const bName = div(boss, 'font-size:110px;line-height:1;color:#e74c3c;text-shadow:4px 4px 0 #000,0 0 30px rgba(190,60,220,.8)'), bLine = div(boss, 'font-size:28px;color:#ffd84a;margin-top:4px');
-  api.showBoss = (name, line) => { bName.textContent = name; bLine.textContent = line || ''; boss.style.opacity = 1; boss.style.transform = 'scale(1)'; setTimeout(() => { boss.style.opacity = 0; boss.style.transform = 'scale(.9)'; }, 2300); };
+  // cinematic bars: slide in while the name card shows (plain fade with reduced motion)
+  const bar = (pos) => div(root, `position:absolute;left:0;right:0;${pos}:0;height:11%;background:#000;pointer-events:none;transform:translateY(${pos === 'top' ? '-100%' : '100%'});transition:transform .4s ease-out,opacity .4s`);
+  const barT = bar('top'), barB = bar('bottom');
+  let bossT = 0, barsT = 0;
+  api.showBoss = (name, line) => {
+    bName.textContent = name; bLine.textContent = line || ''; boss.style.opacity = 1; boss.style.transform = reducedMotion() ? 'none' : 'scale(1)';
+    for (const b of [barT, barB]) { b.style.opacity = 1; b.style.transform = 'translateY(0)'; }
+    clearTimeout(bossT); clearTimeout(barsT);
+    bossT = setTimeout(() => { boss.style.opacity = 0; boss.style.transform = reducedMotion() ? 'none' : 'scale(.9)'; }, 2300);
+    barsT = setTimeout(() => { barT.style.transform = 'translateY(-100%)'; barB.style.transform = 'translateY(100%)'; }, 2500);
+  };
 
   // ---- a big shout in the middle of the screen (chase warning, "RUN!", "CHECKPOINT")
   const shout = div(root, `position:absolute;left:0;right:0;top:22%;text-align:center;${TEXT}font-size:72px;color:#ff5a3a;opacity:0;transition:opacity .2s;pointer-events:none`);
@@ -63,6 +81,6 @@ export function createStageCards(root) {
     cancelAnimationFrame(raf); raf = requestAnimationFrame(step);
   };
   api.hideClear = () => { api.clearOpen = false; clear.style.display = 'none'; cancelAnimationFrame(raf); };
-  api.reset = () => { api.hideClear(); closeIntro(); boss.style.opacity = 0; shout.style.opacity = 0; };
+  api.reset = () => { api.hideClear(); loading = null; wantClose = false; loadBar.style.display = 'none'; closeIntro(); boss.style.opacity = 0; shout.style.opacity = 0; clearTimeout(bossT); clearTimeout(barsT); barT.style.transform = 'translateY(-100%)'; barB.style.transform = 'translateY(100%)'; };
   return api;
 }

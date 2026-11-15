@@ -6,15 +6,16 @@ import { createJukeboxPanel } from './jukeboxPanel.js';
 
 // Title screen over the stage-1 fly-through: START, LEADERBOARD (global top 5) and ENTER SECRET CODE (the cheat modal).
 // onStart() begins a run; onCheat({ stage, vehicle }) starts the cheat run. Cheat parsing lives in core/cheats.js.
-export function createTitle(root, { onStart, onCheat, jukebox }) {
+export function createTitle(root, { onStart, onCheat, jukebox, onSettings }) {
   const ui = screen(root, `${TEXT}background:linear-gradient(90deg,rgba(15,5,25,.78),rgba(15,5,25,.25) 55%,transparent);align-items:flex-start;padding-left:7%;box-sizing:border-box;`);
   const h = div(ui.el, 'font-size:clamp(46px,9vw,112px);line-height:.9;color:#ffd84a;text-shadow:5px 5px 0 #000,0 0 30px rgba(255,150,50,.6);-webkit-text-stroke:2px #8a4a10', 'COWBOY CLEAN');
   div(ui.el, 'font-size:clamp(20px,3.2vw,40px);margin:4px 0 18px 4px;color:#fff;text-shadow:3px 3px 0 #000', 'ULTIMATE WORLD TOUR');
   const menu = div(ui.el, 'display:flex;flex-direction:column;gap:12px;align-items:stretch;min-width:min(300px,60%)');
   const start = button(menu, 'START', () => go(), { bg: '#2ecc71', border: '#27ae60', size: 34 });
   button(menu, 'LEADERBOARD', () => toggleBoard(true), { bg: '#3498db', border: '#2980b9', size: 24 });
+  button(menu, 'SETTINGS', () => onSettings?.(), { bg: '#8e44ad', border: '#6c3483', size: 22 });
   button(menu, 'SECRET CODE', () => openCheat(), { bg: '#34495e', border: '#95a5a6', size: 22 });
-  div(ui.el, `font:10px/1.8 ${MONO};color:#fff;text-shadow:2px 2px 0 #000;margin-top:18px;background:rgba(0,0,0,.55);padding:8px 12px;border-radius:8px;border:2px dashed #34dbcc`, '[WASD] MOVE  [SPACE] JUMP  [J] SPRAY  [K] BOMB  [SHIFT] SLIDE');
+  div(ui.el, `font:10px/1.8 ${MONO};color:#fff;text-shadow:2px 2px 0 #000;margin-top:18px;background:rgba(0,0,0,.55);padding:8px 12px;border-radius:8px;border:2px dashed #34dbcc`, '[WASD] MOVE  [SPACE] JUMP  [J] SPRAY  [K] BOMB  [SHIFT] SLIDE').id = 'title-keys';
 
   createJukeboxPanel(ui.el, jukebox, 'position:absolute;right:3%;bottom:5%;width:min(250px,34%);box-sizing:border-box');
 
