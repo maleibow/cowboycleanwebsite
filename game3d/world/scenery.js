@@ -74,11 +74,11 @@ export function createScenery(track, theme, { quality, scene, seed = 1, lampMate
     for (let i = 0; i < rows.length - 1; i++) for (let j = 0; j < nx - 1; j++) {
       const a = i * nx + j, b = a + 1, c = a + nx, d = c + 1;
       if (XS[j] < 0 && XS[j + 1] > 0) continue;
-      idx.push(a, c, b, b, c, d);
+      idx.push(a, b, c, b, d, c);
     }
     // centre strip (x from the last negative column to the first positive one) is covered by the path: bridge it so gaps show their floor
     const jn = XS.findIndex((x) => x > 0) - 1;
-    for (let i = 0; i < rows.length - 1; i++) { const a = i * nx + jn, b = a + 1, c = a + nx, d = c + 1; idx.push(a, c, b, b, c, d); }
+    for (let i = 0; i < rows.length - 1; i++) { const a = i * nx + jn, b = a + 1, c = a + nx, d = c + 1; idx.push(a, b, c, b, d, c); }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     g.setIndex(idx); g.computeVertexNormals(); g.computeBoundingSphere();
