@@ -56,6 +56,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   const pathMat = createToon({ vertexColors: true, rimBoost: theme.groundRim ?? 1 });
   const builder = createTrackBuilder(track, scene, { palette: theme.pathPalette || stageData.palette, showSlots: /slots=1/.test(location.search), shadows: !!quality.tier.shadowMap, material: pathMat, style: theme.path, theme, seed: usedSeed });
   const scenery = createScenery(track, theme, { quality, scene, seed: usedSeed });
+  scenery.ctx.emit = (name, x, y, z, o) => particles.emit(name, x, y, z, o);   // theme dressing (manhole steam) can puff particles
   const player = createPlayer(track, { startS: layout.startS });
   const rig = createCameraRig(track);
   scene.add(player.mesh);

@@ -3,6 +3,7 @@ import { Builder } from './modelKit.js';
 import { blob, eyes, wing, leg, foot, ear, spike, ring } from './partKit.js';
 import { MODELS2 } from './enemyModels2.js';
 import { MODELS3 } from './enemyModels3.js';
+import { MODELS4 } from './enemyModels4.js';
 
 // Procedural enemy models (PLAN 4, 7). A model is a list of parts, each an own InstancedMesh (see enemyRender.js):
 //   { size:[w,h], root(S,p), parts:[{ name, build() -> Builder, pose(S,p) }] }
@@ -123,7 +124,7 @@ export const MODELS = {
   },
 };
 
-Object.assign(MODELS, MODELS2, MODELS3);   // stage 2-4 types live in enemyModels2/3/4.js
+Object.assign(MODELS, MODELS2, MODELS3, MODELS4);   // stage 2-4 types live in enemyModels2/3/4.js
 
 // Eight legs in two tripod sets: set 0 = L0 R1 L2 R3, set 1 = R0 L1 R2 L3 (front to back).
 function legSet(set) {

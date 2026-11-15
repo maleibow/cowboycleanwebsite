@@ -52,5 +52,57 @@ export function extraTemplates(K) {
     },
   };
 
+  // ---- Stage 4 hazard: OPEN MANHOLES. Three 3.4 x 2.4 m holes in the road (a real pit: -20 and back to the last safe ground), different lanes, so there is
+  // always a way round; coins arc over each one. The ground boxes are cut around the holes.
+  T.manholes = {
+    cls: 'easy',
+    build(c) {
+      const { rng, w } = c, len = r1(rng.range(34, 42)), holes = [];
+      for (let i = 0; i < 3; i++) { const x = (i % 2 ? -1 : 1) * rng.sign() * rng.range(0.3, w / 2 - 1.4), s = 9 + i * 10 + rng.range(-1, 1); holes.push({ s0: s - 1.7, s1: s + 1.7, x0: x - 1.2, x1: x + 1.2 }); }   // 3.4 x 2.4 m: a runner covers 2 m in 0.2 s, too short to sink past the 0.35 m step-up, so the hole has to be longer than the body plus a stride. 10 m apart: always a clear lane
+      const spans = []; let cur = 0;
+      for (const h of holes) {
+        spans.push(ground(cur, h.s0, w));
+        if (h.x0 > -w / 2 + 0.05) spans.push({ s0: h.s0, s1: h.s1, x0: -w / 2, x1: h.x0, top: 0, depth: 3, kind: 'ground' });
+        if (h.x1 < w / 2 - 0.05) spans.push({ s0: h.s0, s1: h.s1, x0: h.x1, x1: w / 2, top: 0, depth: 3, kind: 'ground' });
+        cur = h.s1;
+      }
+      spans.push(ground(cur, len, w));
+      const near = (sl) => holes.some((h) => sl.s > h.s0 - 1.2 && sl.s < h.s1 + 1.2 && sl.x > h.x0 - 1.2 && sl.x < h.x1 + 1.2);
+      const slots = populate(c, [ground(0, len, w)], { items: 1, obstacle: false }).filter((sl) => !near(sl));
+      for (const h of holes) for (let k = 0; k < 3; k++) slots.push(coin(h.s0 - 0.6 + k * 1.1, (h.x0 + h.x1) / 2, 1.0 + Math.sin(((k + 0.5) / 3) * Math.PI) * 1.2));
+      return { len, spans, holes, slots };
+    },
+  };
+
+  // ---- Stage 4 hazard: TRAFFIC CROSSING. Three lanes of taxis sweep across the road at 12.5 m/s, one every few seconds per lane. Each car honks and shows
+  // its headlights as it enters (the cars start well outside the corridor), and clips you for 15 if you are still in its way: jump over it (1.5 m) or time the gap.
+  T.crossing = {
+    cls: 'easy',
+    build(c) {
+      const { rng, w } = c, len = r1(rng.range(38, 44)), traffic = [];
+      for (let i = 0; i < 3; i++) traffic.push({ s: 13 + i * 6.5, dir: i % 2 ? -1 : 1, speed: 12.5, period: 4.9 + i * 0.35, phase: i * 1.6 + rng.range(0, 1), hs: 0.95, hx: 2.1, h: 1.5 });
+      const spans = [ground(0, len, w)], slots = populate(c, spans, { items: 1, obstacle: false }).filter((sl) => !traffic.some((q) => Math.abs(sl.s - q.s) < 2.2));
+      slots.push(coin(11, 0), coin(12, 0), coin(len - 9, 0), foe(len - 6, rng.range(-0.3, 0.3) * w));
+      return { len, spans, traffic, slots };
+    },
+  };
+
+  // ---- Stage 4 set-piece: ROOFTOP-TO-STREET DROP. Up three fire-escape landings, over three rooftops (4.4 m alleys between them), then step off the last
+  // roof and drop 5 m back to the street. The alleys and the street below are the gaps (flooded subway trench), so a miss is a normal pit fall.
+  T.rooftops = {
+    cls: 'special',
+    build(c) {
+      const { rng, w } = c, TOP = 5.1, spans = [ground(0, 8, w)], gaps = [], slots = [];
+      const pad = (a, b, top, kind, ww, depth) => spans.push({ s0: a, s1: b, x0: -ww / 2, x1: ww / 2, top, depth, kind });
+      [[10, 14.2, 1.7], [16.7, 20.9, 3.4], [23.4, 27.6, TOP]].forEach(([a, b, top], i) => { gaps.push({ s0: i ? [14.2, 20.9][i - 1] : 8, s1: a }); pad(a, b, top, 'platform', 3.6, top + 3); slots.push(coin((a + b) / 2, 0, top + 0.9)); });
+      const roofs = [[29.8, 46], [50.4, 64.4], [68.8, 82]];
+      roofs.forEach(([a, b], i) => { gaps.push({ s0: i ? roofs[i - 1][1] : 27.6, s1: a }); pad(a, b, TOP, 'ledge', 7.2, TOP + 3); for (let k = 0; k < 4; k++) slots.push(coin(a + 3 + k * ((b - a - 6) / 3), (k % 2 ? 1 : -1) * 1.2, TOP + 0.8)); });
+      for (const [a, g] of [[27.6, 2.2], [46, 4.4], [64.4, 4.4]]) for (let k = 0; k < 3; k++) slots.push(coin(a + 0.4 + k * (g / 2.4), 0, TOP + 0.9 + Math.sin(((k + 0.5) / 3) * Math.PI) * 1.2));
+      slots.push(item(57, 0, TOP + 0.9), foe(38, 0, TOP, true), foe(74, rng.range(-0.4, 0.4) * 3, TOP, true));
+      spans.push(ground(82, 98, w)); slots.push(coin(85, 0, 0.9), coin(87, 0, 0.9), foe(92, 0));
+      return { len: 98, spans, gaps, slots };
+    },
+  };
+
   return T;
 }

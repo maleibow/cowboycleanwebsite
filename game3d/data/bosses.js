@@ -37,4 +37,14 @@ export const BOSS_PATTERNS = {
     p2: { hover: [0.7, 1.1], tele: 1.1, speed: 25, charges: 3, stun: 1.6, rest: 0.7, minions: 2, rain: { count: 3, r: 2.0, delay: [1.2, 1.5], gap: 0.45, damage: 20 } },
     rage: { time: 1.5 }, ramDamage: 25,
   },
+  // Original boss4 "PIZZA - Hover bomb drop + Swoop" (cleaningup.html 4643-4678): hovers near the top, dropping a bomb every 40 frames, then swoops to the player's position.
+  // 3D: PIZZA RAT orbits the arena on his flying pizza box, dropping pepperoni bombs onto marked circles; then locks a target (a marker for the whole telegraph + dive) and swoops.
+  boss4: {
+    name: 'PIZZA RAT', color: 0x4b5320, size: { hs: 1.7, hx: 1.9, h: 2.6 },
+    intro: { swoopTime: 1.8, roar: 1.4, startHeight: 24 },
+    hoverY: 4.4, orbitR: 7.5, orbitSpeed: 0.55, flySpeed: 14,
+    p1: { bombs: 6, every: 0.95, bombDelay: 1.15, bombR: 1.8, tele: 1.3, dive: 0.45, recover: 2.2, swoops: 1 },
+    p2: { bombs: 8, every: 0.7, bombDelay: 1.0, bombR: 1.8, tele: 1.0, dive: 0.4, recover: 1.5, swoops: 2, minions: 2 },
+    rage: { time: 1.5 }, swoopR: 2.7, swoopDamage: 25, bombDamage: 20,
+  },
 };

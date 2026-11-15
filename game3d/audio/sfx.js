@@ -72,6 +72,13 @@ export function initSfx() {
     bossCharge: { dur: 1.0, pv: 0.03, gap: 0.4, prio: 2, fn: (k) => { S.tone({ f: 70 * k, f2: 260 * k, type: 'sawtooth', dur: 0.8, vol: 0.2 }); S.noise({ dur: 0.9, vol: 0.18, filter: 'bandpass', f: 300, f2: 2200, q: 0.9, attack: 0.15 }); } },
     bossCrash: { dur: 0.9, pv: 0.03, gap: 0.3, prio: 2, fn: (k) => { S.tone({ f: 70 * k, f2: 24, type: 'sine', dur: 0.7, vol: 0.42 }); S.noise({ dur: 0.7, vol: 0.34, filter: 'lowpass', f: 2000, f2: 150 }); S.tone({ f: 1100, f2: 400, type: 'square', dur: 0.2, vol: 0.08 }); } },
     junkLand: { dur: 0.4, pv: 0.15, gap: 0.05, fn: (k) => { S.noise({ dur: 0.22, vol: 0.2, filter: 'bandpass', f: 1500 * k, f2: 500, q: 1.2 }); S.tone({ f: 140 * k, f2: 60, type: 'square', dur: 0.15, vol: 0.12 }); S.tone({ f: 2100 * k, f2: 1400, type: 'triangle', dur: 0.15, vol: 0.05 }); } },
+    // ---- stage 4: New York City (traffic, manholes, Pizza Rat)
+    carHorn: { dur: 0.5, pv: 0.04, gap: 0.3, prio: 1, fn: (k) => { S.tone({ f: 330 * k, type: 'square', dur: 0.4, vol: 0.06 }); S.tone({ f: 415 * k, type: 'square', dur: 0.4, vol: 0.06 }); S.tone({ f: 660 * k, type: 'sawtooth', dur: 0.4, vol: 0.02 }); } },
+    carHit: { dur: 0.4, pv: 0.05, gap: 0.2, prio: 1, fn: (k) => { S.noise({ dur: 0.25, vol: 0.22, filter: 'bandpass', f: 1200 * k, f2: 300, q: 0.9 }); S.tone({ f: 120 * k, f2: 50, type: 'square', dur: 0.2, vol: 0.14 }); S.tone({ f: 1800 * k, f2: 700, type: 'triangle', dur: 0.15, vol: 0.05 }); } },
+    manholeSteam: { dur: 0.7, pv: 0.1, gap: 1.5, fn: (k) => S.noise({ dur: 0.65, vol: 0.035, filter: 'highpass', f: 2500 * k, f2: 1500, attack: 0.1 }) },
+    bossDrop: { dur: 0.6, pv: 0.1, gap: 0.12, fn: (k) => { S.tone({ f: 1000 * k, f2: 260, type: 'triangle', dur: 0.5, vol: 0.07 }); S.noise({ dur: 0.1, vol: 0.06, filter: 'highpass', f: 2500, f2: 1200 }); } },
+    bossSwoop: { dur: 0.9, pv: 0.03, gap: 0.4, prio: 2, fn: (k) => { S.tone({ f: 300 * k, f2: 1300 * k, type: 'sawtooth', dur: 0.6, vol: 0.14 }); S.noise({ dur: 0.7, vol: 0.14, filter: 'bandpass', f: 600, f2: 3000, q: 1.2, attack: 0.1 }); S.tone({ f: 90, f2: 40, type: 'sine', dur: 0.4, vol: 0.28, at: 0.5 }); } },
+    bossLock: { dur: 0.6, pv: 0.02, gap: 0.4, prio: 1, fn: () => { for (let i = 0; i < 3; i++) S.tone({ f: 600 + i * 220, type: 'square', dur: 0.09, vol: 0.06, at: i * 0.16 }); } },
     enemyHop: { dur: 0.2, pv: 0.2, gap: 0.12, fn: (k, type) => { if (type === 'frog') { S.tone({ f: 140 * k, f2: 240 * k, type: 'sawtooth', dur: 0.1, vol: 0.06 }); S.tone({ f: 260 * k, f2: 130 * k, type: 'square', dur: 0.09, vol: 0.04, at: 0.09 }); } else S.tone({ f: 300 * k, f2: 520 * k, type: 'sine', dur: 0.1, vol: 0.05 }); } },
     enemyDive: { dur: 0.3, pv: 0.15, gap: 0.2, fn: (k, type) => { if (type === 'bat') { S.tone({ f: 1500 * k, f2: 2600 * k, type: 'square', dur: 0.1, vol: 0.035 }); S.tone({ f: 2400 * k, f2: 1300 * k, type: 'square', dur: 0.1, vol: 0.03, at: 0.1 }); } else S.noise({ dur: 0.26, vol: 0.06, filter: 'bandpass', f: 900 * k, f2: 2200 * k, q: 1.5, attack: 0.02 }); } },
   };
@@ -92,6 +99,7 @@ const SHOOT = { super: 'shootSuper', charcoal: 'shootSuper', laser: 'shootLaser'
     bomb: () => play('bomb'), crateBreak: () => play('crateBreak'), coin: () => play('coin'), powerup: () => play('powerup'), overheat: () => play('overheat'),
     gateWhoosh: () => play('gateWhoosh'), pitFall: () => play('pitFall'), checkpoint: () => play('checkpoint'),
     vineGrab: () => play('vineGrab'), vineRelease: () => play('vineRelease'), bossHop: () => play('bossHop'), bossSpit: () => play('bossSpit'), bossEmerge: () => play('bossEmerge'),
+    carHorn: () => play('carHorn'), carHit: () => play('carHit'), manholeSteam: () => play('manholeSteam'), bossDrop: () => play('bossDrop'), bossSwoop: () => play('bossSwoop'), bossLock: () => play('bossLock'),
     strikeLand: (kind) => play(kind === 'junk' ? 'junkLand' : 'strikeLand'), beltWarn: () => play('beltWarn'), beltReverse: () => play('beltReverse'), pistonWarn: () => play('pistonWarn'), pistonSlam: () => play('pistonSlam'),
     bossSiren: () => play('bossSiren'), bossCharge: () => play('bossCharge'), bossCrash: () => play('bossCrash'), enemyHop: (t) => play('enemyHop', t), enemyDive: (t) => play('enemyDive', t),
     bossIntro: () => play('bossSpawn'), bossRage: () => play('bossSpawn'), bossSlam: () => play('bossSlam'), shockwave: () => play('shockwave'),

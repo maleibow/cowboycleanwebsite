@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Builder } from '../actors/modelKit.js';
-import { frame, toon, mesh, glowToon, checkpointFlagFor, bossGateFor, arenaFor, fluidDress } from './dressKit.js';
+import { frame, toon, mesh, glowToon, glowBasic, checkpointFlagFor, bossGateFor, arenaFor, fluidDress } from './dressKit.js';
 import { CYAN, MAG, AMBER } from './stage03Props.js';
 
 // Set dressing for Neo-Scrap City: the neon back-alley (side section), checkpoint beacons, the blast-door boss gate, the arena, the acid
@@ -44,7 +44,7 @@ export function neonAlley(seg, ctx) {
   const props = B();
   for (const z of [-3, -22, -44, -63]) { props.box(0.9, 0.9, 1.5, 0x2a6a4a, { p: [-2.7, 0.45, z], radius: 0.05 }).box(0.95, 0.12, 1.55, 0x1a4a30, { p: [-2.7, 0.92, z], radius: 0.03 }); }       // dumpsters
   for (const z of [-13, -35, -55]) { props.cyl(0.35, 0.35, 0.9, 0x7a2e8a, { p: [-2.6, 0.45, z], seg: 8 }); props.cyl(0.04, 0.04, 2.6, 0x9aa0b0, { p: [-2.2, 1.3, z + 0.8], seg: 4, ao: 0 }); }
-  mesh(props, toon(ctx), g, true); mesh(glow, glowToon(0xffffff, 0xffffff, 0.8), g); mesh(wall, toon(ctx), g, true);
+  mesh(props, toon(ctx), g, true); mesh(glow, glowBasic(), g); mesh(wall, toon(ctx), g, true);
   return { object: g, dispose() { signs.forEach((x) => x.dispose?.()); } };
 }
 

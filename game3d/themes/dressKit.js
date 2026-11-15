@@ -13,6 +13,8 @@ export const frame = (seg, ctx) => {
 };
 export const toon = (ctx) => (ctx.api.toonMat ??= createToon({ vertexColors: true }));
 export const glowToon = (color, emissive, k = 3) => createToon({ color, emissive, emissiveIntensity: k, grime: false, rim: false, tint: false });
+// unlit vertex-coloured glow for windows and neon: the colours (above 1.0 for the bloom) come from the geometry
+export const glowBasic = () => new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false });
 export const mesh = (b, mat, parent, shadow = false) => { const m = new THREE.Mesh(b.build ? b.build() : b, mat); m.castShadow = shadow; parent.add(m); return m; };
 
 // ---- checkpoint flag: pole + a cloth that is grey until passed, then fills with colour and waves faster
