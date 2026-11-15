@@ -359,6 +359,6 @@ for (const sd of [1, 2]) { // 9. a spraying scripted player clears stage 1: all 
 await browser.close(); server.close();
 // Stage 1 vertical slice (intro card, boss fight, stage clear, quicksand, enemy models...): its own script.
 { const { spawnSync } = await import('node:child_process'); const r = spawnSync(process.execPath, [path.join(root, 'tools/smokeStage1.mjs')], { stdio: 'inherit' }); if (r.status) fail('tools/smokeStage1.mjs failed'); }
-for (const n of [2, 3, 4, 5, 6, 7, 8]) { const { spawnSync } = await import('node:child_process'); const r = spawnSync(process.execPath, [path.join(root, 'tools/smokeStage.mjs'), String(n)], { stdio: 'inherit' }); if (r.status) fail(`tools/smokeStage.mjs ${n} failed`); }   // stages 2-5 (add the stage number here as each lands)
+for (const n of [2, 3, 4, 5, 6, 7, 8, 9]) { const { spawnSync } = await import('node:child_process'); const r = spawnSync(process.execPath, [path.join(root, 'tools/smokeStage.mjs'), String(n)], { stdio: 'inherit' }); if (r.status) fail(`tools/smokeStage.mjs ${n} failed`); }   // stages 2-5 (add the stage number here as each lands)
 if (failures.length) { console.error(`\nSMOKE FAILED (${failures.length})`); process.exit(1); }
 console.log('SMOKE PASSED');

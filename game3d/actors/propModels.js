@@ -123,4 +123,16 @@ export const sleepSheep = {
   },
   rock: 0.1, dust: false,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile, cloud_bump: cloudBump, sleep_sheep: sleepSheep };
+
+// Gravestone (original: a grey #95a5a6 slab with a rounded top and a cross, edged #34495e): a stubby rounded headstone with a carved cross and a tuft of moss, tumbled down the path on its back.
+// Same unit extents as the others (0.6 half-width, 1.0 tall).
+export const gravestone = {
+  build: () => {
+    const b = new Builder().box(1.2, 0.7, 0.5, 0x95a5a6, { p: [0, -0.15, 0], radius: 0.1, jitter: 0.02, ao: 0.15 }).add(new THREE.CylinderGeometry(0.6, 0.6, 0.5, 14, 1, false, 0, Math.PI).rotateX(Math.PI / 2).rotateZ(Math.PI), 0xa7b5b6, { p: [0, 0.2, 0], ao: 0.08 });
+    b.box(0.12, 0.62, 0.06, 0x34495e, { p: [0, 0.12, 0.27], radius: 0.01, ao: 0 }).box(0.4, 0.1, 0.06, 0x34495e, { p: [0, 0.3, 0.27], radius: 0.01, ao: 0 });
+    b.sphere(0.2, 0x3f5a42, { p: [-0.35, -0.5, 0.2], s: [1.5, 0.45, 1], jitter: 0.03, ao: 0 }).sphere(0.16, 0x3f5a42, { p: [0.42, 0.52, -0.1], s: [1.4, 0.4, 1], jitter: 0.03, ao: 0 });
+    return b.build();
+  },
+  rock: 0.12, dust: false,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile, cloud_bump: cloudBump, sleep_sheep: sleepSheep, gravestone };

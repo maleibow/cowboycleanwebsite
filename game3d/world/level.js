@@ -66,7 +66,7 @@ export function createLevel(quality, { stage = 1, seed = null, debug = false, hu
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), new THREE.MeshBasicMaterial({ map: blobTexture(), transparent: true, depthWrite: false, fog: false }));
   blob.rotation.x = -Math.PI / 2; blob.renderOrder = 2; blob.visible = !quality.tier.shadowMap; scene.add(blob);
 
-  const ctx = { track, scene, player, rig, hud, cards, stageData, theme, layout, rng: createRng(usedSeed + 7), spawnEnabled: foes, level: null, particles, scenery, shadows: !!quality.tier.shadowMap };
+  const ctx = { track, scene, sky, player, rig, hud, cards, stageData, theme, layout, rng: createRng(usedSeed + 7), spawnEnabled: foes, level: null, particles, scenery, shadows: !!quality.tier.shadowMap };
   ctx.fx = createFx(track, scene);
   ctx.projectiles = createProjectiles(ctx, scene, track);
   ctx.enemies = createEnemies(ctx, scene, track);

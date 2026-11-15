@@ -96,4 +96,18 @@ export const BOSS_PATTERNS = {
     p2: { shield: 2.6, bolts: 5, every: 0.55, boltDelay: 1.0, boltR: 1.7, boltDamage: 20, tele: 0.85, open: 3.4, shots: 8, shotEvery: 0.26, shotSpeed: 17, fan: 0.3, minions: 2 },
     rage: { time: 1.5 },
   },
+  // Original boss9 "GHOST - Homing & Phasing" (cleaningup.html 4828-4861): drifts at the player at 1.5 px/frame; solid for 150 frames (a homing shot every 60), then phased out at 30% opacity and
+  // invulnerable for 150 frames, then solid again.
+  // 3D: HOLLOW GHOST glides after the player keeping 3 m off, charging a green wisp in his lantern (a lane on the floor points the way) and loosing a homing wisp (slow enough to outrun).
+  // Then his outline flickers (a marker shows where he will return), he goes translucent and invulnerable and slips across the arena while spectral hands burst from marked circles, then he
+  // re-forms. Phase two: three wisps a volley, five bursts, a jumpable wail ring when he re-forms, two ghosts at the rage.
+  boss9: {
+    name: 'HOLLOW GHOST', color: 0x2c3e50, size: { hs: 1.3, hx: 1.3, h: 3.6 },
+    intro: { rise: 2.0, roar: 1.5 },
+    drift: 1.9, standoff: 3.2, hoverY: 0.5,
+    p1: { haunt: 4.2, wisps: 1, fan: 0, wispEvery: 1.5, charge: 0.55, wispSpeed: 5, fade: 0.9, phase: 2.2, bursts: 3, burstEvery: 0.6, burstDelay: 1.2, burstR: 1.8, burstDamage: 20, appear: 0.5 },
+    p2: { haunt: 3.8, wisps: 3, fan: 0.35, wispEvery: 1.6, charge: 0.55, wispSpeed: 5.5, fade: 0.8, phase: 2.0, bursts: 5, burstEvery: 0.4, burstDelay: 1.1, burstR: 1.8, burstDamage: 20, appear: 0.5,
+          ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20 }, minions: 2 },
+    rage: { time: 1.5 },
+  },
 };

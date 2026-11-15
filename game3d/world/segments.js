@@ -11,6 +11,7 @@ import { parisTemplates } from './segmentsY.js';
 import { volcanoTemplates } from './segmentsV.js';
 import { islandTemplates } from './segmentsI.js';
 import { cloudTemplates } from './segmentsC.js';
+import { hauntedTemplates } from './segmentsG.js';
 export const JUMP_MAX_GAP = 5.2; // widest hole a full-speed jump clears with margin
 
 const r1 = (v) => Math.round(v * 2) / 2;
@@ -213,4 +214,4 @@ export const TEMPLATES = {
 };
 
 // Stage 2-4 hazards and set-pieces (world/segmentsX.js) share this file's helpers.
-Object.assign(TEMPLATES, extraTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), parisTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), volcanoTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), islandTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), cloudTemplates({ r1, ground, slot, coin, item, foe, populate, arc }));
+Object.assign(TEMPLATES, extraTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), parisTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), volcanoTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), islandTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), cloudTemplates({ r1, ground, slot, coin, item, foe, populate, arc }), hauntedTemplates({ r1, ground, slot, coin, item, foe, populate, arc }));

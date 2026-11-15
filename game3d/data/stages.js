@@ -14,7 +14,7 @@
 //   density[act]          share of each template's enemy slots that are kept
 //   weights[act]          segment template weights; templates live in world/segments.js
 //   act3Special           'chase' (toward-camera set piece) | 'hard' (platforming run) | 'either' | 'setpiece' (stages 2-7: act 3 holds the template named by
-//                         setPiece.template: 'vines' | 'reversal' | 'rooftops' | 'awnings' | 'lavaChase' | 'rainbowSlide' | 'cloudRide', defined in world/segmentsX.js, Y, V, I, C)
+//                         setPiece.template: 'vines' | 'reversal' | 'rooftops' | 'awnings' | 'lavaChase' | 'rainbowSlide' | 'cloudRide' | 'lightsOut', defined in world/segmentsX.js, Y, V, I, C, G)
 //   obstacle              rolling obstacle type (actors/obstacles.js)
 //   setPiece              the stage's set-piece: { id, template, name, warning (shouted when the player enters it), color } plus, for the chase, its speed / lag / damage.
 //                         Moving parts of a set-piece or hazard (vines, belts, pistons, traffic) live in world/haz*.js and read lists the template returns.
@@ -179,7 +179,26 @@ const STAGE8 = {
   palette: { ground: 0xfff3f8, platform: 0xe6d4f5, ledge: 0xffffff, beam: 0xf4eefc, barrier: 0xc2e4ff, wall: 0xd9c2ff, quicksand: 0xfff3f8 },
 };
 
-export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6, STAGE7, STAGE8];
+const STAGE9 = {
+  id: 9, name: 'Haunted Village', tagline: 'The dead stay dirty. Not on your watch.',
+  theme: 'stage09',
+  length: 1100, trackWidth: 8,
+  obstacle: 'gravestone',      // rolling obstacle (original: a gravestone with a cross)
+  roster: [['zombie'], ['ghost'], ['bat', 'spider']],   // PLAN 6: zombie -> ghost -> bat, spider
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, bog: 2.5, swingGate: 2.5, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 2.5, beam: 2, barrier: 2, bog: 2.5, swingGate: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, bog: 2, swingGate: 3 },
+  ],
+  setPiece: { id: 'lightsOut', template: 'lightsOut', name: 'LIGHTS OUT!', warning: 'LIGHTS OUT! SPRAY TO SEE!', color: '#7affb0' },
+  boss: { id: 'boss9', name: 'HOLLOW GHOST', intro: 'There is nobody home. That is the problem.', phaseAt: 0.5, arena: { radius: 14 } },
+  checkpoints: ['THE CHURCHYARD', 'BONE ALLEY'],
+  palette: { ground: 0x3a3c44, platform: 0x4a4e58, ledge: 0x5a5e66, beam: 0x3d322a, barrier: 0x2a2e34, wall: 0x2a2e34, quicksand: 0x3a3c44, mud: 0x10201a },
+};
+
+export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6, STAGE7, STAGE8, STAGE9];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).
