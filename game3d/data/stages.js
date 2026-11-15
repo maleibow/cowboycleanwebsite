@@ -122,7 +122,26 @@ const STAGE5 = {
   palette: { ground: 0x4a5064, platform: 0xcdbfa4, ledge: 0x6f7f98, beam: 0x8a6a45, barrier: 0x8a4a3a, wall: 0x3a4252, quicksand: 0x4a5064, bounce: 0xc0392b },
 };
 
-export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5];
+const STAGE6 = {
+  id: 6, name: 'Volcano Peak', tagline: 'Hot, black and filthy. Bring the bleach.',
+  theme: 'stage06',
+  length: 1100, trackWidth: 8,
+  obstacle: 'ash_pile',        // rolling obstacle (original: a smouldering ash pile)
+  roster: [['magma'], ['ember'], ['slag']],   // PLAN 6: magma -> ember -> slag
+  density: [0.6, 0.85, 1],
+  act3Special: 'setpiece',
+  weights: [
+    { flat: 4, curve: 3, climb: 2, drop: 2, gap: 3, barrier: 2, rockfall: 2.5, rest: 0.6 },
+    { flat: 2, curve: 2, climb: 2, drop: 1, gap: 3, doubleGap: 2, steps: 2.5, beam: 2, barrier: 2, rockfall: 2.5, collapse: 3 },
+    { flat: 1, curve: 2, climb: 1, gap: 2, doubleGap: 3, steps: 3, beam: 2, barrier: 3, rockfall: 2, collapse: 3 },
+  ],
+  setPiece: { id: 'lavaWave', template: 'lavaChase', name: 'RUN!', warning: 'A WALL OF LAVA! RUN FOR IT!', color: '#ff7a3a', speed: 8, lag: 15, damage: 15 },
+  boss: { id: 'boss6', name: 'MAGMA MAW', intro: 'The hottest thing on the mountain', phaseAt: 0.5, arena: { radius: 15 } },
+  checkpoints: ['ASH FIELDS', 'THE CALDERA'],
+  palette: { ground: 0x3a3236, platform: 0x4a4246, ledge: 0x2a2428, beam: 0x2a1c16, barrier: 0xa83a22, wall: 0x2a2428, quicksand: 0x3a3236 },
+};
+
+export const STAGES = [STAGE1, STAGE2, STAGE3, STAGE4, STAGE5, STAGE6];
 export const IMPLEMENTED = new Set(STAGES.map((s) => s.id));
 
 // Stages with no data yet are stage 1's theme and track under their own name and roster (data/standIns.js).

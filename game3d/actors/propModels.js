@@ -88,4 +88,15 @@ export const cafeChair = {
   },
   rock: 0.22, dust: false,
 };
-export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair };
+
+// Ash pile (original: a grey #7f8c8d heap with lighter #95a5a6 drifts and red/yellow embers): a drift of grey ash with glowing embers and a charred stick, slid along the path.
+export const ashPile = {
+  build: () => {
+    const b = new Builder().sphere(0.9, 0x6a6e72, { p: [0, 0, 0], jitter: 0.12, ao: 0.15 }).sphere(0.55, 0x95a5a6, { p: [-0.2, 0.18, 0.3], jitter: 0.1, ao: 0 }).sphere(0.4, 0x4a4e52, { p: [0.45, 0.05, -0.3], jitter: 0.1, ao: 0.05 });
+    for (const [x, y, z, r] of [[-0.5, 0.42, 0.45, 0.1], [0.25, 0.6, 0.3, 0.08], [0.62, 0.28, 0.5, 0.11], [-0.2, 0.7, -0.15, 0.08], [0.05, 0.25, 0.82, 0.09]]) b.sphere(r, new THREE.Color(3, 0.7, 0.15), { p: [x, y, z], s: [1, 0.6, 1], ao: 0 }).sphere(r * 0.45, new THREE.Color(3.4, 2.6, 0.7), { p: [x, y + 0.03, z], s: [1, 0.6, 1], ao: 0 });
+    b.cone(0.06, 0.4, 0x1c1414, { p: [0.3, 0.8, 0.1], r: [0, 0, 0.6], seg: 4, ao: 0 });
+    return b.build();
+  },
+  rock: 0.3, dust: true,
+};
+export const OBSTACLE_MODELS = { sand_pile: sandPile, log, barrel, trash_can: trashCan, cafe_chair: cafeChair, ash_pile: ashPile };

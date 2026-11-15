@@ -138,7 +138,7 @@ export function createPlayer(track, { startS = 4 } = {}) {
     }
 
     // ---- bookkeeping: safe ground, checkpoints, gate, pit
-    if (b.grounded && !low && track.supported(b.s, b.x, b.y)) { p.safe.s = b.s; p.safe.x = b.x; p.safe.y = b.y; }
+    if (b.grounded && !low && b.ground?.kind !== 'plank' && track.supported(b.s, b.x, b.y)) { p.safe.s = b.s; p.safe.x = b.x; p.safe.y = b.y; }   // (a collapsing plank, stage 6, is never a respawn point)
     const cps = track.checkpoints;
     for (let i = p.checkpointIdx + 1; i < cps.length; i++) {
       if (b.s < cps[i].s) break;

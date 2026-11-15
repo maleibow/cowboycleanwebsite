@@ -58,4 +58,18 @@ export const BOSS_PATTERNS = {
     p2: { aim: 0.9, shots: 5, every: 0.12, speed: 17, fan: 0.3, teleports: 2, minions: 2 },
     rage: { time: 1.5 }, laneW: 1.2,
   },
+  // Original boss6 "MAGMA - Submerge and Erupt" (cleaningup.html 4717-4775): slides in lobbing two bombs every 40 frames, sinks (invulnerable) for 60 frames, reappears under the
+  // player's x and bursts out with a fan of five acid globs.
+  // 3D: MAGMA MAW lobs bombs onto marked circles, sinks into the floor, burrows (a marker follows the player, then LOCKS for >= 1.1 s) and erupts under the marker with a lava pillar,
+  // a jumpable shock ring and a rain of globs on marked circles; then he is open to fire for a few seconds. Phase two: two burrows in a row, more bombs and globs, magmas at the rage.
+  boss6: {
+    name: 'MAGMA MAW', color: 0x34495e, size: { hs: 2.0, hx: 2.2, h: 3.8 },
+    intro: { emerge: 1.8, roar: 1.5 },
+    walkSpeed: 2.4, lobRange: 12,
+    p1: { volleys: 2, lobs: 2, every: 0.95, lobDelay: 1.2, lobR: 1.8, lobDamage: 20, sink: 0.8, burrow: 2.0, lock: 1.3, burrows: 1, eruptR: 2.7, eruptDamage: 25,
+          ring: { speed: 8, thick: 1.1, height: 0.9, damage: 20 }, globs: 4, globR: 1.7, globDelay: 1.2, globDamage: 20, recover: 2.6 },
+    p2: { volleys: 3, lobs: 3, every: 0.75, lobDelay: 1.1, lobR: 1.8, lobDamage: 20, sink: 0.6, burrow: 1.8, lock: 1.15, burrows: 2, eruptR: 2.7, eruptDamage: 25,
+          ring: { speed: 9, thick: 1.1, height: 0.9, damage: 20 }, globs: 6, globR: 1.7, globDelay: 1.1, globDamage: 20, recover: 1.8, minions: 2 },
+    rage: { time: 1.5 },
+  },
 };
