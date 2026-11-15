@@ -134,6 +134,13 @@ export function createTouchControls(input, { params = new URLSearchParams(locati
   onSetting((k) => { if (k === 'touchScale' || k === '*') resize(); });
   // iOS Safari: stop pinch / double-tap zoom and rubber-band scrolling under the game (viewport meta alone is ignored since iOS 10).
   for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, (e) => e.preventDefault());
+  // Double-tap zoom: iOS Safari ignores user-scalable=no and (on the buttons / gaps between them) can ignore touch-action, so two quick taps
+  // zoom the page. Cancel the touchend of a second tap landing within 350 ms while the in-game controls are up (never on menu buttons: they need the click).
+  let lastEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = performance.now(), quick = now - lastEnd < 350; lastEnd = now;
+    if (quick && api.visible && e.cancelable && !e.target.closest?.('[role=button],input,a')) e.preventDefault();
+  }, { passive: false });
   document.addEventListener('touchmove', (e) => { if (e.cancelable && !e.target.closest?.('[data-scroll]')) e.preventDefault(); }, { passive: false });
   document.addEventListener('contextmenu', (e) => { if (api.enabled) e.preventDefault(); });
   // A real finger on a page we thought was desktop (hybrid laptop, tablet with a mouse): turn the controls on for good.
