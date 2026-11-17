@@ -130,30 +130,192 @@
       color: #f43f5e;
     }
 
+    /* Print One-Sheet (hidden on screen, single-page layout in print/PDF) */
+    #print-onesheet {
+      display: none;
+    }
+
+    @page {
+      size: letter portrait;
+      margin: 0.38in;
+    }
+
     @media print {
-      body {
+      * {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+      html, body {
         background: #ffffff !important;
         color: #111827 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
       }
-      .content-container {
-        background: #ffffff !important;
-        backdrop-filter: none !important;
-      }
-      .tv-overlay, .no-print, #lightbox, #toast {
+      .content-container, .tv-overlay, .no-print, #lightbox, #toast {
         display: none !important;
       }
-      section, header, footer {
+      #print-onesheet {
+        display: block !important;
+        max-height: 10.2in;
+        overflow: hidden;
+        page-break-inside: avoid;
         break-inside: avoid;
-        background: #ffffff !important;
-        color: #111827 !important;
-        border-color: #d1d5db !important;
+        font-family: 'Michroma', sans-serif;
+        color: #111827;
+        background: #ffffff;
       }
-      .print-dark-text, h1, h2, h3, h4, p, span, td, th, dt, dd, blockquote {
-        color: #111827 !important;
-        text-shadow: none !important;
+      .os-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 2.5pt solid #e11d48;
+        padding-bottom: 8pt;
+        margin-bottom: 10pt;
       }
-      a {
-        color: #be123c !important;
+      .os-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 32pt;
+        line-height: 0.92;
+        letter-spacing: 0.04em;
+        color: #030712;
+        margin: 0;
+      }
+      .os-subtitle {
+        font-size: 7.5pt;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: #e11d48;
+        margin: 2pt 0 0 0;
+      }
+      .os-header-meta {
+        text-align: right;
+        font-size: 7.2pt;
+        line-height: 1.45;
+        color: #374151;
+      }
+      .os-header-badge {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 11pt;
+        letter-spacing: 0.1em;
+        color: #030712;
+      }
+      .os-top-grid {
+        display: grid;
+        grid-template-columns: 40% 1fr;
+        gap: 12pt;
+        margin-bottom: 10pt;
+        align-items: stretch;
+      }
+      .os-photos {
+        display: flex;
+        flex-direction: column;
+        gap: 6pt;
+      }
+      .os-photos img {
+        width: 100%;
+        height: 112pt;
+        object-fit: cover;
+        border-radius: 5pt;
+        border: 0.75pt solid #d1d5db;
+        display: block;
+      }
+      .os-card {
+        border: 0.75pt solid #d1d5db;
+        border-radius: 6pt;
+        padding: 8pt 10pt;
+        background: #f9fafb;
+      }
+      .os-sec-title {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 13pt;
+        letter-spacing: 0.06em;
+        color: #030712;
+        border-bottom: 0.75pt solid #e5e7eb;
+        padding-bottom: 3pt;
+        margin: 0 0 6pt 0;
+      }
+      .os-facts {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 7pt;
+        line-height: 1.4;
+      }
+      .os-facts th {
+        text-align: left;
+        vertical-align: top;
+        width: 66pt;
+        padding: 3.2pt 6pt 3.2pt 0;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #be123c;
+        font-weight: 700;
+        border-bottom: 0.5pt solid #e5e7eb;
+      }
+      .os-facts td {
+        vertical-align: top;
+        padding: 3.2pt 0;
+        color: #1f2937;
+        border-bottom: 0.5pt solid #e5e7eb;
+      }
+      .os-facts tr:last-child th,
+      .os-facts tr:last-child td {
+        border-bottom: none;
+      }
+      .os-quote {
+        border-left: 3pt solid #e11d48;
+        background: #f9fafb;
+        padding: 7pt 10pt;
+        margin: 0 0 9pt 0;
+        font-size: 7.2pt;
+        line-height: 1.48;
+        color: #1f2937;
+      }
+      .os-quote-cite {
+        display: block;
+        margin-top: 3pt;
+        font-size: 6.8pt;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #be123c;
+      }
+      .os-bio-box {
+        margin-bottom: 10pt;
+      }
+      .os-bio-text {
+        font-size: 7.2pt;
+        line-height: 1.5;
+        color: #1f2937;
+        margin: 0;
+      }
+      .os-bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12pt;
+      }
+      .os-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 6.9pt;
+        line-height: 1.48;
+        color: #1f2937;
+      }
+      .os-list li {
+        margin-bottom: 3.5pt;
+      }
+      .os-list li:last-child {
+        margin-bottom: 0;
+      }
+      .os-label {
+        color: #be123c;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+      }
+      #print-onesheet a {
+        color: #111827 !important;
+        text-decoration: none;
       }
     }
   </style>
@@ -994,6 +1156,96 @@
   <!-- Toast Feedback -->
   <div id="toast" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-lg bg-rose-600 text-white text-xs shadow-xl border border-rose-400/50"></div>
 
+  <!-- Dedicated Single-Page Print / PDF One-Sheet -->
+  <div id="print-onesheet" aria-hidden="true">
+    <div class="os-header">
+      <div>
+        <h1 class="os-title">COWBOY CLEAN</h1>
+        <p class="os-subtitle">When the Open Range Meets the Underground Club &bull; Future Rust</p>
+      </div>
+      <div class="os-header-meta">
+        <div class="os-header-badge">BOOKING &amp; PRESS ONE-SHEET</div>
+        <div><a href="mailto:booking@cowboyclean.com">booking@cowboyclean.com</a></div>
+        <div>cowboyclean.com/epk.html</div>
+      </div>
+    </div>
+
+    <div class="os-top-grid">
+      <div class="os-photos">
+        <img id="print-photo-live" src="" alt="Cowboy Clean live performance" style="object-position: center;" />
+        <img id="print-photo-studio" src="" alt="Cowboy Clean studio portrait" style="object-position: center 25%;" />
+      </div>
+
+      <div class="os-card">
+        <h2 class="os-sec-title">BOOKING AT A GLANCE</h2>
+        <table class="os-facts">
+          <tr>
+            <th>Base</th>
+            <td>Brooklyn / New York, NY</td>
+          </tr>
+          <tr>
+            <th>Artist</th>
+            <td>Matt Leibowitz (multi-instrumentalist &amp; baritone vocals; alum of Prison [Drag City], Donald Cumming [The Virgins], The Midnight Hollow)</td>
+          </tr>
+          <tr>
+            <th>Sound</th>
+            <td>Post-Punk / Indie Rock / Dystopian Country / Dark Synth</td>
+          </tr>
+          <tr>
+            <th>FFO</th>
+            <td>Black Marble, Depeche Mode, LCD Soundsystem, Talking Heads, Alex G</td>
+          </tr>
+          <tr>
+            <th>Live Setup</th>
+            <td>Scalable &mdash; Full Live Band or Solo Multi-Instrumentalist Setup (Driving Guitar, Synths, Drum Machine / Backing, Baritone Vocals)</td>
+          </tr>
+          <tr>
+            <th>Venues</th>
+            <td>Union Pool (Brooklyn, NY) &bull; La Sotterenea (Montreal, QC) &bull; Multiforo 246 (Mexico City, CDMX) &bull; Bowery Palace (New York, NY)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <blockquote class="os-quote">
+      &ldquo;Cowboy Clean is what happens when the open range meets the underground club. Matt croons with this deep, dust-worn cowboy baritone, but instead of twangy guitars you get pulsing synths and post-punk textures that shimmer like heat off asphalt. Think Black Marble riding into Twin Peaks with a Stetson and a drum machine.&rdquo;
+      <span class="os-quote-cite">&mdash; Peter Rittweger, Music Editor, FREEwilliamsburg</span>
+    </blockquote>
+
+    <div class="os-bio-box">
+      <h2 class="os-sec-title">BIOGRAPHY</h2>
+      <p class="os-bio-text">
+        Cowboy Clean is what happens when the open range meets the underground club. The solo project of NYC multi-instrumentalist Matt Leibowitz, Cowboy Clean joins driving guitars with pulsing synths and post-punk textures. Inspired by a solitude-seeking road trip through the Utah desert, Leibowitz uses his deep, dust-worn baritone to weave a soundscape where Depeche Mode aesthetics collide with the grit of the American West. Cowboy Clean is the takeoff point&mdash;the darkest night right before the dawn when the light starts creeping in. What does the desert feel like on a cold New York night? Come to a Cowboy Clean show to find out.
+      </p>
+    </div>
+
+    <div class="os-bottom-grid">
+      <div class="os-card">
+        <h2 class="os-sec-title">CATALOG &amp; SELECTED PRESS</h2>
+        <ul class="os-list">
+          <li><span class="os-label">Rubber Knife EP:</span> Grendel &bull; Speed Up &bull; Leaning on the Exit &bull; End Game &bull; Shelter</li>
+          <li><span class="os-label">Singles:</span> Charcoal &bull; Coins</li>
+          <li><span class="os-label">FREEwilliamsburg:</span> &ldquo;Think Black Marble riding into Twin Peaks with a Stetson and a drum machine.&rdquo;</li>
+          <li><span class="os-label">Too Much Love:</span> &ldquo;Synth, Grit, and Shadows&rdquo;</li>
+          <li><span class="os-label">Kaltblut:</span> &ldquo;Grendel Sets The Mood&rdquo;</li>
+          <li><span class="os-label">We Found New Music:</span> &ldquo;Ambition Meets Its Dark Side&rdquo;</li>
+        </ul>
+      </div>
+
+      <div class="os-card">
+        <h2 class="os-sec-title">ESSENTIAL MEDIA &amp; CONTACT</h2>
+        <ul class="os-list">
+          <li><span class="os-label">Booking / Press:</span> <a href="mailto:booking@cowboyclean.com">booking@cowboyclean.com</a></li>
+          <li><span class="os-label">Site &amp; Full EPK:</span> cowboyclean.com &bull; cowboyclean.com/epk.html</li>
+          <li><span class="os-label">Live Video (Charcoal):</span> youtube.com/watch?v=Vl1ln4vY50o</li>
+          <li><span class="os-label">Official Video (Grendel):</span> youtube.com/watch?v=EDuGd5yc5ik</li>
+          <li><span class="os-label">Spotify:</span> open.spotify.com/artist/6uiAnXipuNymu9Bd9ZYLN0</li>
+          <li><span class="os-label">Bandcamp / Socials:</span> cowboyclean.bandcamp.com &bull; IG @thecowboyclean &bull; cowboyclean.substack.com</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
   <script>
     const BIOS = {
       short: [
@@ -1195,8 +1447,12 @@
       if (e.target.id === "lightbox") closeLightbox();
     });
 
-    // Initialize default bio
+    // Initialize default bio and print one-sheet photos
     selectBio("short");
+    const printLive = document.getElementById("print-photo-live");
+    const printStudio = document.getElementById("print-photo-studio");
+    if (printLive && PHOTOS[0]) printLive.src = PHOTOS[0].src;
+    if (printStudio && PHOTOS[2]) printStudio.src = PHOTOS[2].src;
   </script>
 </body>
 </html>
