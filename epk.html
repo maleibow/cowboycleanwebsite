@@ -344,9 +344,9 @@
         <!-- Desktop Anchor Navigation -->
         <nav aria-label="EPK Sections" class="hidden lg:flex items-center gap-5 text-[11px] uppercase tracking-wider text-gray-400">
           <a href="#overview" class="nav-link hover:text-rose-500 transition-colors">Overview</a>
-          <a href="#photos" class="nav-link hover:text-rose-500 transition-colors">Photos</a>
-          <a href="#music" class="nav-link hover:text-rose-500 transition-colors">Music</a>
           <a href="#videos" class="nav-link hover:text-rose-500 transition-colors">Videos</a>
+          <a href="#music" class="nav-link hover:text-rose-500 transition-colors">Music</a>
+          <a href="#photos" class="nav-link hover:text-rose-500 transition-colors">Photos</a>
           <a href="#bio" class="nav-link hover:text-rose-500 transition-colors">Bio &amp; Press</a>
           <a href="#booking" class="nav-link hover:text-rose-500 transition-colors">Booking</a>
         </nav>
@@ -384,9 +384,9 @@
       <!-- Mobile Quick-Jump Strip -->
       <div class="lg:hidden border-t border-gray-800/80 px-4 py-2 flex items-center gap-4 overflow-x-auto text-[10px] uppercase tracking-wider text-gray-400">
         <a href="#overview" class="shrink-0 hover:text-rose-500">Overview</a>
-        <a href="#photos" class="shrink-0 hover:text-rose-500">Photos</a>
-        <a href="#music" class="shrink-0 hover:text-rose-500">Music</a>
         <a href="#videos" class="shrink-0 hover:text-rose-500">Videos</a>
+        <a href="#music" class="shrink-0 hover:text-rose-500">Music</a>
+        <a href="#photos" class="shrink-0 hover:text-rose-500">Photos</a>
         <a href="#bio" class="shrink-0 hover:text-rose-500">Bio &amp; Press</a>
         <a href="#booking" class="shrink-0 hover:text-rose-500">Booking</a>
       </div>
@@ -538,7 +538,203 @@
         </aside>
       </section>
 
-      <!-- SECTION 2: PRESS PHOTOS GALLERY -->
+      <!-- SECTION 2: FEATURED VIDEOS -->
+      <section id="videos" class="scroll-mt-24 rounded-2xl border border-gray-800 bg-gray-900/95 p-5 sm:p-7">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-5">
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-rose-400 mb-1">Visual &amp; Live Showcase</p>
+            <h2 class="font-display text-3xl sm:text-4xl text-gray-50 leading-none">FEATURED VIDEOS</h2>
+          </div>
+          <a
+            href="https://youtube.com/@cowboyclean"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-[11px] uppercase tracking-wider text-gray-400 hover:text-rose-400 transition-colors"
+          >
+            YouTube Channel &#8599;
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Video 1: Live Performance -->
+          <article class="rounded-xl border border-gray-800 bg-gray-950/90 overflow-hidden flex flex-col">
+            <div class="relative aspect-video bg-black group cursor-pointer" data-video-id="Vl1ln4vY50o" onclick="playVideo(this, 'Vl1ln4vY50o', 'Cowboy Clean — Charcoal (Live at La Sotterenea, Montreal)')">
+              <img
+                src="https://img.youtube.com/vi/Vl1ln4vY50o/maxresdefault.jpg"
+                onerror="this.onerror=null; this.src='https://img.youtube.com/vi/Vl1ln4vY50o/hqdefault.jpg';"
+                alt="Cowboy Clean performing Charcoal live at La Sotterenea in Montreal"
+                class="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-300"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30"></div>
+              <div class="absolute top-3 left-3">
+                <span class="px-2.5 py-1 rounded bg-black/75 border border-gray-700 text-[9px] uppercase tracking-widest text-rose-400">
+                  Live Performance &bull; La Sotterenea (Montreal)
+                </span>
+              </div>
+              <button
+                type="button"
+                aria-label="Play Charcoal Live at La Sotterenea video"
+                class="absolute inset-0 flex items-center justify-center"
+              >
+                <span class="w-16 h-16 rounded-full bg-rose-600/85 group-hover:bg-rose-600 group-hover:scale-110 transition-all duration-200 flex items-center justify-center shadow-xl shadow-rose-950/60">
+                  <svg class="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </span>
+              </button>
+              <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                <span class="px-2.5 py-1 rounded bg-black/75 text-xs text-gray-100">
+                  &ldquo;Charcoal&rdquo; &mdash; Live at La Sotterenea
+                </span>
+              </div>
+            </div>
+            <div class="p-4 flex items-center justify-between gap-3 border-t border-gray-800/80">
+              <p class="text-[11px] text-gray-400">
+                Full-stage live sound: baritone vocals, guitar, and pulsing synth momentum.
+              </p>
+              <a
+                href="https://www.youtube.com/watch?v=Vl1ln4vY50o"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="shrink-0 text-[10px] uppercase tracking-wider text-rose-400 hover:text-rose-300 border border-rose-500/40 hover:border-rose-400 px-2.5 py-1.5 rounded transition-colors"
+              >
+                YouTube &#8599;
+              </a>
+            </div>
+          </article>
+
+          <!-- Video 2: Official Music Video -->
+          <article class="rounded-xl border border-gray-800 bg-gray-950/90 overflow-hidden flex flex-col">
+            <div class="relative aspect-video bg-black group cursor-pointer" data-video-id="EDuGd5yc5ik" onclick="playVideo(this, 'EDuGd5yc5ik', 'Cowboy Clean — Grendel (Official Music Video)')">
+              <img
+                src="https://img.youtube.com/vi/EDuGd5yc5ik/maxresdefault.jpg"
+                onerror="this.onerror=null; this.src='https://img.youtube.com/vi/EDuGd5yc5ik/hqdefault.jpg';"
+                alt="Cowboy Clean Grendel Official Music Video"
+                class="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-300"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30"></div>
+              <div class="absolute top-3 left-3">
+                <span class="px-2.5 py-1 rounded bg-black/75 border border-gray-700 text-[9px] uppercase tracking-widest text-rose-400">
+                  Official Music Video
+                </span>
+              </div>
+              <button
+                type="button"
+                aria-label="Play Grendel Official Music Video"
+                class="absolute inset-0 flex items-center justify-center"
+              >
+                <span class="w-16 h-16 rounded-full bg-rose-600/85 group-hover:bg-rose-600 group-hover:scale-110 transition-all duration-200 flex items-center justify-center shadow-xl shadow-rose-950/60">
+                  <svg class="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </span>
+              </button>
+              <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between">
+                <span class="px-2.5 py-1 rounded bg-black/75 text-xs text-gray-100">
+                  &ldquo;GRENDEL&rdquo; &mdash; Official Video
+                </span>
+              </div>
+            </div>
+            <div class="p-4 flex items-center justify-between gap-3 border-t border-gray-800/80">
+              <p class="text-[11px] text-gray-400">
+                Lead visual from the <em>Rubber Knife</em> EP: dystopian synth textures and noir grit.
+              </p>
+              <a
+                href="https://www.youtube.com/watch?v=EDuGd5yc5ik"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="shrink-0 text-[10px] uppercase tracking-wider text-rose-400 hover:text-rose-300 border border-rose-500/40 hover:border-rose-400 px-2.5 py-1.5 rounded transition-colors"
+              >
+                YouTube &#8599;
+              </a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- SECTION 3: MUSIC & RELEASES -->
+      <section id="music" class="scroll-mt-24 rounded-2xl border border-gray-800 bg-gray-900/95 p-5 sm:p-7">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-5">
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-rose-400 mb-1">Audio &amp; Catalog</p>
+            <h2 class="font-display text-3xl sm:text-4xl text-gray-50 leading-none">MUSIC &amp; RELEASES</h2>
+          </div>
+          <div class="flex flex-wrap gap-2 text-[10px] uppercase tracking-wider">
+            <a href="https://open.spotify.com/artist/6uiAnXipuNymu9Bd9ZYLN0" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors">Spotify &#8599;</a>
+            <a href="https://cowboyclean.bandcamp.com/" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 transition-colors">Bandcamp &#8599;</a>
+            <a href="https://soundcloud.com/cowboy-clean-93763509" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 transition-colors">SoundCloud &#8599;</a>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Left: Spotify Artist Embed -->
+          <div class="lg:col-span-6 rounded-xl overflow-hidden border border-gray-800 bg-gray-950">
+            <iframe
+              title="Cowboy Clean Spotify Player"
+              style="border-radius:12px"
+              src="https://open.spotify.com/embed/artist/6uiAnXipuNymu9Bd9ZYLN0?utm_source=generator&theme=0"
+              width="100%"
+              height="352"
+              frameborder="0"
+              allowfullscreen=""
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+            ></iframe>
+          </div>
+
+          <!-- Right: Rubber Knife EP & Singles Overview -->
+          <div class="lg:col-span-6 rounded-xl border border-gray-800 bg-gray-950/85 p-5 space-y-4">
+            <div class="flex items-center justify-between gap-3 border-b border-gray-800 pb-3">
+              <div>
+                <span class="text-[10px] uppercase tracking-widest text-rose-400 block">Featured EP &amp; Singles</span>
+                <h3 class="font-display text-3xl text-gray-50 leading-none mt-0.5">RUBBER KNIFE EP &amp; CATALOG</h3>
+              </div>
+              <img
+                src="https://i.imgur.com/sUXYoUz.gif"
+                alt="Cowboy Clean glitch visual art"
+                class="w-12 h-12 rounded-lg object-cover border border-gray-700 shrink-0"
+              />
+            </div>
+
+            <p class="text-xs text-gray-300 leading-relaxed">
+              <em>Rubber Knife</em> is the sound of transformation&mdash;songs that cut away old skin, finding hope in loss and embracing the grace of letting go. Joining driving guitars with pulsing analog-style synths and baritone vocals, the EP anchors Cowboy Clean&rsquo;s live set alongside signature singles <strong>&ldquo;Charcoal&rdquo;</strong> and <strong>&ldquo;Coins.&rdquo;</strong>
+            </p>
+
+            <!-- Tracklist Highlights -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+              <div class="rounded-lg bg-gray-900 border border-gray-800 p-3">
+                <p class="text-[10px] uppercase tracking-wider text-rose-400 mb-1.5">Rubber Knife EP</p>
+                <ol class="space-y-1 text-gray-300 list-decimal list-inside">
+                  <li>Grendel</li>
+                  <li>Speed Up</li>
+                  <li>Leaning on the Exit</li>
+                  <li>End Game</li>
+                  <li>Shelter</li>
+                </ol>
+              </div>
+              <div class="rounded-lg bg-gray-900 border border-gray-800 p-3 flex flex-col justify-between">
+                <div>
+                  <p class="text-[10px] uppercase tracking-wider text-rose-400 mb-1.5">Signature Singles</p>
+                  <ul class="space-y-1 text-gray-300">
+                    <li>&bull; Charcoal</li>
+                    <li>&bull; Coins</li>
+                  </ul>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-3 pt-2 border-t border-gray-800">
+                  Full catalog streaming across all major platforms.
+                </p>
+              </div>
+            </div>
+
+            <blockquote class="border-l-2 border-rose-500/80 pl-3 text-[11px] text-gray-400 leading-relaxed">
+              &ldquo;I wanted the record to be authentic to who I am&mdash;caring, soft, but passionate and dedicated... &lsquo;Grendel&rsquo; is about the push and pull of the beast within, the dangerous line between ambition and destruction. How do we tame that motivating force without letting it burn down who we want to become?&rdquo;
+              <span class="block text-[10px] text-gray-300 mt-1">&mdash; Matt Leibowitz</span>
+            </blockquote>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: PRESS PHOTOS GALLERY -->
       <section id="photos" class="scroll-mt-24 rounded-2xl border border-gray-800 bg-gray-900/95 p-5 sm:p-7">
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5">
           <div>
@@ -669,202 +865,6 @@
         <p class="text-[10px] text-gray-400 mt-3 text-right">
           Click any image to inspect full-screen or save. Original high-resolution files available via the Dropbox folder link above.
         </p>
-      </section>
-
-      <!-- SECTION 3: MUSIC & RELEASES -->
-      <section id="music" class="scroll-mt-24 rounded-2xl border border-gray-800 bg-gray-900/95 p-5 sm:p-7">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-5">
-          <div>
-            <p class="text-[10px] uppercase tracking-widest text-rose-400 mb-1">Audio &amp; Catalog</p>
-            <h2 class="font-display text-3xl sm:text-4xl text-gray-50 leading-none">MUSIC &amp; RELEASES</h2>
-          </div>
-          <div class="flex flex-wrap gap-2 text-[10px] uppercase tracking-wider">
-            <a href="https://open.spotify.com/artist/6uiAnXipuNymu9Bd9ZYLN0" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white transition-colors">Spotify &#8599;</a>
-            <a href="https://cowboyclean.bandcamp.com/" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 transition-colors">Bandcamp &#8599;</a>
-            <a href="https://soundcloud.com/cowboy-clean-93763509" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 transition-colors">SoundCloud &#8599;</a>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          <!-- Left: Spotify Artist Embed -->
-          <div class="lg:col-span-6 rounded-xl overflow-hidden border border-gray-800 bg-gray-950">
-            <iframe
-              title="Cowboy Clean Spotify Player"
-              style="border-radius:12px"
-              src="https://open.spotify.com/embed/artist/6uiAnXipuNymu9Bd9ZYLN0?utm_source=generator&theme=0"
-              width="100%"
-              height="352"
-              frameborder="0"
-              allowfullscreen=""
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-            ></iframe>
-          </div>
-
-          <!-- Right: Rubber Knife EP & Singles Overview -->
-          <div class="lg:col-span-6 rounded-xl border border-gray-800 bg-gray-950/85 p-5 space-y-4">
-            <div class="flex items-center justify-between gap-3 border-b border-gray-800 pb-3">
-              <div>
-                <span class="text-[10px] uppercase tracking-widest text-rose-400 block">Featured EP &amp; Singles</span>
-                <h3 class="font-display text-3xl text-gray-50 leading-none mt-0.5">RUBBER KNIFE EP &amp; CATALOG</h3>
-              </div>
-              <img
-                src="https://i.imgur.com/sUXYoUz.gif"
-                alt="Cowboy Clean glitch visual art"
-                class="w-12 h-12 rounded-lg object-cover border border-gray-700 shrink-0"
-              />
-            </div>
-
-            <p class="text-xs text-gray-300 leading-relaxed">
-              <em>Rubber Knife</em> is the sound of transformation&mdash;songs that cut away old skin, finding hope in loss and embracing the grace of letting go. Joining driving guitars with pulsing analog-style synths and baritone vocals, the EP anchors Cowboy Clean&rsquo;s live set alongside signature singles <strong>&ldquo;Charcoal&rdquo;</strong> and <strong>&ldquo;Coins.&rdquo;</strong>
-            </p>
-
-            <!-- Tracklist Highlights -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
-              <div class="rounded-lg bg-gray-900 border border-gray-800 p-3">
-                <p class="text-[10px] uppercase tracking-wider text-rose-400 mb-1.5">Rubber Knife EP</p>
-                <ol class="space-y-1 text-gray-300 list-decimal list-inside">
-                  <li>Grendel</li>
-                  <li>Speed Up</li>
-                  <li>Leaning on the Exit</li>
-                  <li>End Game</li>
-                  <li>Shelter</li>
-                </ol>
-              </div>
-              <div class="rounded-lg bg-gray-900 border border-gray-800 p-3 flex flex-col justify-between">
-                <div>
-                  <p class="text-[10px] uppercase tracking-wider text-rose-400 mb-1.5">Signature Singles</p>
-                  <ul class="space-y-1 text-gray-300">
-                    <li>&bull; Charcoal</li>
-                    <li>&bull; Coins</li>
-                  </ul>
-                </div>
-                <p class="text-[10px] text-gray-400 mt-3 pt-2 border-t border-gray-800">
-                  Full catalog streaming across all major platforms.
-                </p>
-              </div>
-            </div>
-
-            <blockquote class="border-l-2 border-rose-500/80 pl-3 text-[11px] text-gray-400 leading-relaxed">
-              &ldquo;I wanted the record to be authentic to who I am&mdash;caring, soft, but passionate and dedicated... &lsquo;Grendel&rsquo; is about the push and pull of the beast within, the dangerous line between ambition and destruction. How do we tame that motivating force without letting it burn down who we want to become?&rdquo;
-              <span class="block text-[10px] text-gray-300 mt-1">&mdash; Matt Leibowitz</span>
-            </blockquote>
-          </div>
-        </div>
-      </section>
-
-      <!-- SECTION 4: FEATURED VIDEOS -->
-      <section id="videos" class="scroll-mt-24 rounded-2xl border border-gray-800 bg-gray-900/95 p-5 sm:p-7">
-        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-5">
-          <div>
-            <p class="text-[10px] uppercase tracking-widest text-rose-400 mb-1">Visual &amp; Live Showcase</p>
-            <h2 class="font-display text-3xl sm:text-4xl text-gray-50 leading-none">FEATURED VIDEOS</h2>
-          </div>
-          <a
-            href="https://youtube.com/@cowboyclean"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="text-[11px] uppercase tracking-wider text-gray-400 hover:text-rose-400 transition-colors"
-          >
-            YouTube Channel &#8599;
-          </a>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Video 1: Live Performance -->
-          <article class="rounded-xl border border-gray-800 bg-gray-950/90 overflow-hidden flex flex-col">
-            <div class="relative aspect-video bg-black group cursor-pointer" data-video-id="Vl1ln4vY50o" onclick="playVideo(this, 'Vl1ln4vY50o', 'Cowboy Clean — Charcoal (Live at La Sotterenea, Montreal)')">
-              <img
-                src="https://img.youtube.com/vi/Vl1ln4vY50o/maxresdefault.jpg"
-                onerror="this.onerror=null; this.src='https://img.youtube.com/vi/Vl1ln4vY50o/hqdefault.jpg';"
-                alt="Cowboy Clean performing Charcoal live at La Sotterenea in Montreal"
-                class="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-300"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30"></div>
-              <div class="absolute top-3 left-3">
-                <span class="px-2.5 py-1 rounded bg-black/75 border border-gray-700 text-[9px] uppercase tracking-widest text-rose-400">
-                  Live Performance &bull; La Sotterenea (Montreal)
-                </span>
-              </div>
-              <button
-                type="button"
-                aria-label="Play Charcoal Live at La Sotterenea video"
-                class="absolute inset-0 flex items-center justify-center"
-              >
-                <span class="w-16 h-16 rounded-full bg-rose-600/85 group-hover:bg-rose-600 group-hover:scale-110 transition-all duration-200 flex items-center justify-center shadow-xl shadow-rose-950/60">
-                  <svg class="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </span>
-              </button>
-              <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-                <span class="px-2.5 py-1 rounded bg-black/75 text-xs text-gray-100">
-                  &ldquo;Charcoal&rdquo; &mdash; Live at La Sotterenea
-                </span>
-              </div>
-            </div>
-            <div class="p-4 flex items-center justify-between gap-3 border-t border-gray-800/80">
-              <p class="text-[11px] text-gray-400">
-                Full-stage live sound: baritone vocals, guitar, and pulsing synth momentum.
-              </p>
-              <a
-                href="https://www.youtube.com/watch?v=Vl1ln4vY50o"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="shrink-0 text-[10px] uppercase tracking-wider text-rose-400 hover:text-rose-300 border border-rose-500/40 hover:border-rose-400 px-2.5 py-1.5 rounded transition-colors"
-              >
-                YouTube &#8599;
-              </a>
-            </div>
-          </article>
-
-          <!-- Video 2: Official Music Video -->
-          <article class="rounded-xl border border-gray-800 bg-gray-950/90 overflow-hidden flex flex-col">
-            <div class="relative aspect-video bg-black group cursor-pointer" data-video-id="EDuGd5yc5ik" onclick="playVideo(this, 'EDuGd5yc5ik', 'Cowboy Clean — Grendel (Official Music Video)')">
-              <img
-                src="https://img.youtube.com/vi/EDuGd5yc5ik/maxresdefault.jpg"
-                onerror="this.onerror=null; this.src='https://img.youtube.com/vi/EDuGd5yc5ik/hqdefault.jpg';"
-                alt="Cowboy Clean Grendel Official Music Video"
-                class="w-full h-full object-cover opacity-85 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-300"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/30"></div>
-              <div class="absolute top-3 left-3">
-                <span class="px-2.5 py-1 rounded bg-black/75 border border-gray-700 text-[9px] uppercase tracking-widest text-rose-400">
-                  Official Music Video
-                </span>
-              </div>
-              <button
-                type="button"
-                aria-label="Play Grendel Official Music Video"
-                class="absolute inset-0 flex items-center justify-center"
-              >
-                <span class="w-16 h-16 rounded-full bg-rose-600/85 group-hover:bg-rose-600 group-hover:scale-110 transition-all duration-200 flex items-center justify-center shadow-xl shadow-rose-950/60">
-                  <svg class="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
-                </span>
-              </button>
-              <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-                <span class="px-2.5 py-1 rounded bg-black/75 text-xs text-gray-100">
-                  &ldquo;GRENDEL&rdquo; &mdash; Official Video
-                </span>
-              </div>
-            </div>
-            <div class="p-4 flex items-center justify-between gap-3 border-t border-gray-800/80">
-              <p class="text-[11px] text-gray-400">
-                Lead visual from the <em>Rubber Knife</em> EP: dystopian synth textures and noir grit.
-              </p>
-              <a
-                href="https://www.youtube.com/watch?v=EDuGd5yc5ik"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="shrink-0 text-[10px] uppercase tracking-wider text-rose-400 hover:text-rose-300 border border-rose-500/40 hover:border-rose-400 px-2.5 py-1.5 rounded transition-colors"
-              >
-                YouTube &#8599;
-              </a>
-            </div>
-          </article>
-        </div>
       </section>
 
       <!-- SECTION 5: BIOGRAPHY & PRESS HIGHLIGHTS -->
