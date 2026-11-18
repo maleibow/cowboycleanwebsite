@@ -24,7 +24,7 @@ export function createJukebox({ sfx, box }) {
   const energy = { bass: 0, mid: 0, high: 0, pulse: 0 };
   const api = { cfg, energy, heard: [], SOURCES, LABEL, get slotKey() { return key; }, get source() { return cfg.source; } };
   const dock = createSpotifyDock(box), failed = new Set(), synthMusic = { m: null };
-  let key = null, spotKey = 'title', bossOn = false, stateName = 'BOOT', voice = { kind: 'none', key: null, deck: null };
+  let key = null, spotKey = 'title', bossOn = false, bossKey = 'boss', stateName = 'BOOT', voice = { kind: 'none', key: null, deck: null };
   let ac = null, mix, duck, analyser, synthGain, decks, bins, avg = 0, cool = 0, retryAt = 0;
 
   // ---- the audio graph, built once the browser lets the AudioContext run (first key / tap)
@@ -49,7 +49,7 @@ export function createJukebox({ sfx, box }) {
     if (stateName === 'TITLE') return 'title';
     if (stateName === 'STORE') return 'saloon';
     if (HOLD.has(stateName)) return stateName === 'CUTSCENE' && key === 'saloon' ? 'stage' + run.stage : key || 'title';
-    return bossOn ? 'boss' : 'stage' + run.stage;
+    return bossOn ? bossKey : 'stage' + run.stage;
   };
   const kindFor = (k) => {
     if (cfg.source === 'synth') return k === 'saloon' ? 'jingle' : 'synth';
@@ -133,7 +133,10 @@ export function createJukebox({ sfx, box }) {
     if (ac) fade(duck, name === 'CUTSCENE' ? 0.3 : 1, 0.6);             // duck under cutscene text
     sync();
   });
-  events.on('bossFight', () => { bossOn = true; sync(); });
+  events.on('bossFight', () => {            // no dedicated boss track yet: rotate through the stage songs at random (never the one already playing)
+    const pool = Object.keys(MUSIC).filter((k) => /^stage\d+$/.test(k) && MUSIC[k].file && !failed.has(k) && k !== key);
+    bossKey = pool.length ? pool[Math.floor(Math.random() * pool.length)] : 'boss'; bossOn = true; sync();
+  });
   apply(); sync();
   return api;
 }
