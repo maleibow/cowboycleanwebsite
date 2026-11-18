@@ -2,6 +2,7 @@ import { parseCheat } from '../core/cheats.js';
 import { fetchLeaderboard } from '../services/leaderboard.js';
 import { events } from '../core/events.js';
 import { TEXT, MONO, div, el, button, screen, isolateKeys } from './dom.js';
+import { createControlsCard } from './controlsCard.js';
 import { createJukeboxPanel } from './jukeboxPanel.js';
 
 // Title screen over the stage-1 fly-through: START, LEADERBOARD (global top 5) and ENTER SECRET CODE (the cheat modal).
@@ -15,7 +16,7 @@ export function createTitle(root, { onStart, onCheat, jukebox, onSettings }) {
   button(menu, 'LEADERBOARD', () => toggleBoard(true), { bg: '#3498db', border: '#2980b9', size: 24 });
   button(menu, 'SETTINGS', () => onSettings?.(), { bg: '#8e44ad', border: '#6c3483', size: 22 });
   button(menu, 'SECRET CODE', () => openCheat(), { bg: '#34495e', border: '#95a5a6', size: 22 });
-  div(ui.el, `font:10px/1.8 ${MONO};color:#fff;text-shadow:2px 2px 0 #000;margin-top:18px;background:rgba(0,0,0,.55);padding:8px 12px;border-radius:8px;border:2px dashed #34dbcc`, '[WASD] MOVE  [SPACE] JUMP  [J] SPRAY  [K] BOMB  [SHIFT] SLIDE').id = 'title-keys';
+  const keys = createControlsCard(ui.el, 'position:absolute;right:3%;top:5%;width:min(300px,34%)'); keys.el.id = 'title-keys';
 
   createJukeboxPanel(ui.el, jukebox, 'position:absolute;right:3%;bottom:5%;width:min(250px,34%);box-sizing:border-box');
 
@@ -50,7 +51,7 @@ export function createTitle(root, { onStart, onCheat, jukebox, onSettings }) {
   addEventListener('keydown', (e) => { if (ui.open && !modal.open && !board.open && !e.repeat && (e.code === 'Enter' || e.code === 'NumpadEnter')) go(); else if (board.open && e.code === 'Escape') toggleBoard(false); });
   return {
     ui, get open() { return ui.open; }, get modalOpen() { return modal.open; },
-    show() { board.hide(); modal.hide(); ui.show(); }, hide() { ui.hide(); },
+    show() { keys.refresh(); board.hide(); modal.hide(); ui.show(); }, hide() { ui.hide(); },
     start: go, openCheat, submitCheat: (code) => { input.value = code; submit(); }, openBoard: () => toggleBoard(true),
   };
 }
