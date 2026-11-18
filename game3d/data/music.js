@@ -21,14 +21,14 @@ const slot = (key, file, bpm, title = PLACEHOLDER) => ({ key, title, spotifyUrl:
 export const MUSIC = {
   title:   slot('title', 'title.mp3', 100),
   stage1:  slot('stage1', 'stage01.mp3', 100),       // Desert Scrub
-  stage2:  slot('stage2', 'stage02.mp3', 110),       // Toxic Jungle
-  stage3:  slot('stage3', 'stage03.mp3', 120),       // Neo-Scrap City
-  stage4:  slot('stage4', 'stage04.mp3', 112),       // New York City
-  stage5:  slot('stage5', 'stage05.mp3', 96),        // Paris Nights
-  stage6:  slot('stage6', 'stage06.mp3', 130),       // Volcano Peak
-  stage7:  slot('stage7', 'stage07.mp3', 120),       // Rainbow Island
-  stage8:  slot('stage8', 'stage08.mp3', 80),        // Cloud Dream
-  stage9:  slot('stage9', 'stage09.mp3', 72),        // Haunted Village
+  stage2:  slot('stage2', 'stage02.mp3', 110, 'Grendel'),       // Toxic Jungle
+  stage3:  slot('stage3', 'stage03.mp3', 120, 'Speed Up'),       // Neo-Scrap City
+  stage4:  slot('stage4', 'stage04.mp3', 112, 'Leaning on the Exit'),       // New York City
+  stage5:  slot('stage5', 'stage05.mp3', 96, 'End Game'),        // Paris Nights
+  stage6:  slot('stage6', 'stage06.mp3', 130, 'Shelter'),       // Volcano Peak
+  stage7:  slot('stage7', 'stage07.mp3', 120, 'Charcoal'),       // Rainbow Island
+  stage8:  slot('stage8', 'stage08.mp3', 80, 'Coins Live'),        // Cloud Dream
+  stage9:  slot('stage9', 'stage09.mp3', 72, 'Charcoal Live'),        // Haunted Village
   stage10: slot('stage10', 'stage10.mp3', 108, 'Charcoal'),   // Charcoal Streets: the original embeds "Charcoal" here (spotifyUrl still needed)
   boss:    slot('boss', 'boss.mp3', 150),
   saloon:  slot('saloon', 'saloon.mp3', 82),         // no file = the original saloon jingle (audio/saloon.js)
