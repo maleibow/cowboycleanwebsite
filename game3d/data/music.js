@@ -20,7 +20,7 @@ const slot = (key, file, bpm, title = PLACEHOLDER) => ({ key, title, spotifyUrl:
 
 export const MUSIC = {
   title:   slot('title', 'title.mp3', 100),
-  stage1:  slot('stage1', 'stage01.mp3', 100),       // Desert Scrub
+  stage1:  slot('stage1', 'stage01.mp3', 100, 'Coins'),       // Desert Scrub
   stage2:  slot('stage2', 'stage02.mp3', 110, 'Grendel'),       // Toxic Jungle
   stage3:  slot('stage3', 'stage03.mp3', 120, 'Speed Up'),       // Neo-Scrap City
   stage4:  slot('stage4', 'stage04.mp3', 112, 'Leaning on the Exit'),       // New York City
