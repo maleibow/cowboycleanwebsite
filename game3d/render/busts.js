@@ -7,21 +7,33 @@ import { createToon, makeOutline } from './materials.js';
 // rebuilt from merged primitives. Cowboy Clean follows the standing art rules (PLAN 4.2): black shirt, hat, long curly
 // hair, bare face, blue eyes. Each bust faces +z and is about 2 units tall, origin at the bottom of the chest.
 // Returns { group, mesh, mat, name }; the stage bobs the group while the character talks.
-const SKIN = 0xffccaa;
+const SKIN = 0xffccaa, HAIR = 0xe6c15a, HAIR2 = 0xf0cd68;   // Cowboy Clean's curls are blonde
 
 function cowboyClean(b) {
   b.box(1.5, 0.9, 0.8, 0x15151a, { p: [0, 0.35, 0], radius: 0.3 });                        // black shirt, shoulders
-  b.box(0.22, 0.7, 0.05, 0xf3efe6, { p: [0, 0.45, 0.4], ao: 0 });                          // collar opening
-  for (let i = 0; i < 3; i++) b.sphere(0.04, 0xd9d4c8, { p: [0, 0.15 + i * 0.22, 0.43], ao: 0 });  // buttons
+  b.box(0.06, 0.7, 0.04, 0x2a2a32, { p: [0, 0.4, 0.4], ao: 0 });                            // button placket: a dark seam, never a white strip
+  for (let i = 0; i < 3; i++) b.sphere(0.04, 0xd9d4c8, { p: [0, 0.1 + i * 0.2, 0.43], ao: 0 });  // buttons
+  // Bolo tie: a tan leather cord hung in a V from the collar, a silver-ringed turquoise slide, and two tails with silver tips.
+  for (const sx of [-1, 1]) {
+    b.box(0.05, 0.3, 0.04, 0x9a6a38, { p: [sx * 0.12, 0.74, 0.42], r: [0, 0, sx * 0.4], ao: 0 });              // cord, neck to slide
+    b.box(0.05, 0.36, 0.04, 0x9a6a38, { p: [sx * 0.07, 0.4, 0.43], r: [0, 0, sx * -0.06], ao: 0 });            // cord tail
+    b.cone(0.035, 0.07, 0xd0d4da, { p: [sx * 0.09, 0.17, 0.43], r: [0, 0, Math.PI + sx * 0.06], ao: 0 });      // silver tip
+  }
+  b.cyl(0.13, 0.13, 0.05, 0xd0d4da, { p: [0, 0.6, 0.44], r: [Math.PI / 2, 0, 0], seg: 16, ao: 0 });            // slide: silver ring
+  b.cyl(0.09, 0.09, 0.06, 0x2fc4c0, { p: [0, 0.6, 0.45], r: [Math.PI / 2, 0, 0], seg: 16, ao: 0 });            // slide: turquoise stone
   b.cyl(0.18, 0.2, 0.3, SKIN, { p: [0, 0.85, 0.02], ao: 0.1 });                            // neck
   b.sphere(0.55, SKIN, { p: [0, 1.4, 0.05], s: [0.92, 1.05, 0.95], jitter: 0.01 });         // head
   eyes(b, { y: 1.44, z: 0.5, gap: 0.2, r: 0.09, pupil: 0x2f6fd6, pr: 0.6, look: 0.3, brow: 0.05 });
   b.box(0.1, 0.05, 0.04, 0xd98a7a, { p: [0, 1.22, 0.52], ao: 0 });                          // smile
-  for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) b.sphere(0.2, 0x5a3a24, { p: [sx * (0.5 - i * 0.015), 1.55 - i * 0.2, -0.05 + i * 0.01], jitter: 0.06, ao: 0.1 });   // long curls
-  for (let i = 0; i < 6; i++) b.sphere(0.22, 0x6a4529, { p: [-0.45 + i * 0.18, 1.7, -0.25], jitter: 0.06 });
-  b.cyl(0.9, 0.9, 0.06, 0x18181c, { p: [0, 1.82, 0.05], seg: 20, ao: 0 });                  // hat brim
-  b.cyl(0.4, 0.5, 0.5, 0x1f1f25, { p: [0, 2.08, 0.05], seg: 16 });                          // crown
-  b.cyl(0.505, 0.505, 0.07, 0xc9a227, { p: [0, 1.92, 0.05], seg: 16, ao: 0 });               // gold hat band
+  for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) b.sphere(0.2, HAIR, { p: [sx * (0.5 - i * 0.015), 1.55 - i * 0.2, -0.05 + i * 0.01], jitter: 0.06, ao: 0.1 });   // long curls
+  for (let i = 0; i < 6; i++) b.sphere(0.22, HAIR2, { p: [-0.45 + i * 0.18, 1.7, -0.25], jitter: 0.06 });
+  // Cowboy hat, not a pilgrim hat: a low crown with a dent pinched into the top, and a brim whose sides curl up.
+  b.cyl(0.8, 0.8, 0.05, 0x18181c, { p: [0, 1.8, 0.05], seg: 20, s: [1, 1, 0.8], ao: 0 });  // brim centre
+  for (const sx of [-1, 1]) b.box(0.34, 0.05, 0.6, 0x18181c, { p: [sx * 0.85, 1.87, 0.05], r: [0, 0, sx * 0.35], ao: 0 });   // brim sides curl up
+  b.cyl(0.38, 0.47, 0.38, 0x1f1f25, { p: [0, 2.0, 0.05], seg: 16 });                          // crown
+  b.sphere(0.4, 0x1f1f25, { p: [0, 2.14, 0.05], s: [1, 0.45, 0.95] });                         // rounded top
+  b.box(0.1, 0.1, 0.62, 0x121216, { p: [0, 2.28, 0.05], ao: 0 });                              // crease down the middle of the crown
+  b.cyl(0.475, 0.475, 0.07, 0xc9a227, { p: [0, 1.88, 0.05], seg: 16, ao: 0 });                // gold hat band
 }
 function missCowboy(b) {
   b.box(1.4, 0.8, 0.75, 0xe84393, { p: [0, 0.35, 0], radius: 0.3 });                        // pink shirt

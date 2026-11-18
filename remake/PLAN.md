@@ -238,7 +238,7 @@ costs little to render.
 
 ### 4.2 Standing art rules (owner feedback after stage 1)
 
-- **Cowboy Clean's look:** black button-up shirt (visible buttons and collar), big gold
+- **Cowboy Clean's look:** black button-up shirt (visible buttons and collar), bolo tie (cord, silver and turquoise slide), big gold
   oval belt buckle, black bell-bottom jeans flaring over black boots, cowboy hat, long
   curly hair (as built), an ordinary uncovered face with blue eyes. No bandana, no vest,
   no goggles, no tanks or pack on his back at the start. Because the outfit is black,
