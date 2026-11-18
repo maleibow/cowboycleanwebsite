@@ -5,6 +5,7 @@ const FONT = 'Bangers,cursive';
 const css = (el, s) => { el.style.cssText = s; return el; };
 const div = (parent, s, text = '') => { const d = css(document.createElement('div'), s); if (text) d.textContent = text; parent?.appendChild(d); return d; };
 import { reducedMotion } from '../core/settings.js';
+import { createControlsCard } from './controlsCard.js';
 const TEXT = `font-family:${FONT};color:#fff;letter-spacing:2px;text-shadow:3px 3px 0 #000;`;
 const fmtTime = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 
@@ -21,13 +22,14 @@ export function createStageCards(root) {
   const listenA = spLink('Listen on Spotify', '#1ed760'), followA = spLink('Follow', '#fff'); followA.href = ARTIST_URL;
   const hint = div(intro, 'font-size:16px;opacity:.65;margin-top:18px', 'tap or press any key');
   const loadBar = div(intro, 'width:min(320px,60%);height:12px;margin-top:16px;background:rgba(0,0,0,.55);border:2px solid #fff;border-radius:8px;overflow:hidden;display:none'), loadFill = div(loadBar, 'height:100%;width:0;background:#ffd84a;transition:width .15s');
+  const introKeys = createControlsCard(intro, 'position:absolute;right:3%;bottom:6%;width:min(250px,27%)');   // reminder of the keys (SLIDE highlighted) while the stage loads
   let introDone = null, introTimer = 0;
   let loading = null, wantClose = false;      // the stage is still being built (0..1): the card stays up until it is ready
   const closeIntro = () => { if (!api.introOpen) return; if (loading !== null) { wantClose = true; return; } api.introOpen = false; intro.style.opacity = 0; setTimeout(() => { intro.style.display = 'none'; }, 500); clearTimeout(introTimer); removeEventListener('keydown', closeIntro); intro.removeEventListener('pointerdown', closeIntro); const f = introDone; introDone = null; f?.(); };
   api.showIntro = (stage, onDone, secs = 3.6) => {
     iNum.textContent = `STAGE ${stage.id}`; iName.textContent = stage.name.toUpperCase(); iTag.textContent = stage.tagline || '';
     const track = slotFor(stage.id); iTrack.textContent = `♪  ${track.title}  —  ${ARTIST}`; listenA.href = listenUrl(track);
-    intro.style.display = 'flex'; intro.style.opacity = 1; api.introOpen = true; introDone = onDone;
+    introKeys.refresh(); intro.style.display = 'flex'; intro.style.opacity = 1; api.introOpen = true; introDone = onDone;
     introTimer = setTimeout(closeIntro, secs * 1000); setTimeout(() => { if (api.introOpen) addEventListener('keydown', closeIntro); }, 350); intro.addEventListener('pointerdown', closeIntro);
   };
   api.setLoading = (f) => {
