@@ -3,6 +3,7 @@ import { run } from '../core/state.js';
 import { MUSIC } from '../data/music.js';
 import { createSynthMusic } from './synthMusic.js';
 import { createSpotifyDock } from './spotifyDock.js';
+import { detectTouch } from '../ui/touch.js';
 
 // The Jukebox (PLAN 8): which music plays, from which source, how loud, and what the visuals can read from it.
 //   source 'mix'     the artist's files streamed from game3d/music/ (one <audio>, preload="none", per deck) through WebAudio:
@@ -12,7 +13,10 @@ import { createSpotifyDock } from './spotifyDock.js';
 //   source 'spotify' the official embed docked in a corner (audio/spotifyDock.js); the game mix is silenced, SFX stay on.
 // Graph: decks + synth music -> mix -> duck -> analyser -> synth.musicBus (music volume) -> compressor.  Settings persist in localStorage.
 const KEY = 'cc3d_jukebox', FADE = 1.2;
-const SOURCES = ['mix', 'spotify', 'synth'], LABEL = { mix: 'Game mix', spotify: 'Spotify', synth: 'Synth' };
+// Touch-first devices get no embedded Spotify player: its 300x80 dock (plus label) covers the playfield of a 390 px tall phone.
+// They keep the Listen / Follow links (stage card, jukebox panel); the source choice there is Game mix | Synth.
+const TOUCH = detectTouch();
+const SOURCES = TOUCH ? ['mix', 'synth'] : ['mix', 'spotify', 'synth'], LABEL = { mix: 'Game mix', spotify: 'Spotify', synth: 'Synth' };
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
 const save = (c) => { try { localStorage.setItem(KEY, JSON.stringify(c)); } catch { /* private mode */ } };
 const clamp = (v, d) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : d);
